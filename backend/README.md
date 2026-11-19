@@ -96,7 +96,7 @@
 │  ├─ 📄 EmailVerification.java           email_verifications
 │  └─ 📄 EmailAuthLimit.java              email_auth_limits
 └─ 📁 dto/
-   ├─ 📄 SignupRequest.java
+   ├─ 📄 RegisterRequest.java
    ├─ 📄 LoginRequest.java
    ├─ 📄 LoginResponse.java
    ├─ 📄 TokenRefreshRequest.java
@@ -438,7 +438,7 @@
 | 패키지 | 소문자 한 단어 | `recommendation`, `passstory` |
 | 클래스 | 대문자로 시작, 역할을 뒤에 붙임 | `PassStoryController`, `PassStoryService` |
 | 엔티티 | 테이블 이름의 단수형 | `pass_stories` → `PassStory` |
-| DTO | 요청 `~Request`, 응답 `~Response` | `SignupRequest`, `RecommendationResponse` |
+| DTO | 요청 `~Request`, 응답 `~Response` | `RegisterRequest`, `RecommendationResponse` |
 | API 경로 | `/api/v1/` + 복수형 소문자, 단어 사이 `-` | `/api/v1/pass-stories`, `/api/v1/exam-schedules` |
 
 ## 만드는 순서
