@@ -17,8 +17,6 @@
 | **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 디자인 |
 | 공통 (담당 미정) | 공통 헤더·푸터·로그인 필요 팝업 | `global` | |
 
-> 담당은 임시 배정입니다. 바뀌면 이 표와 `.github/CODEOWNERS`, [backend](backend/README.md)·[frontend](frontend/README.md) 담당 표를 함께 고칩니다.
-
 ---
 
 ## 🚀 프로젝트 목표 및 필요성
