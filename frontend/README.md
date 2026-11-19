@@ -104,7 +104,7 @@
 ├─ 📁 Main/ [유다연]                       VIEW-01  /
 │  └─ 📄 MainPage.jsx                     슬로건·바로가기·트렌드·오늘의 일정 패널          CF-00-02·04
 ├─ 📁 Auth/ [유다연]                       VIEW-02~04
-│  ├─ 📄 SignupPage.jsx                   /signup  ① 이메일·인증·비밀번호 → ② 이름·닉네임 → ③ 학력(없으면 비활성)·보유 자격증(선택)  AUTH-01
+│  ├─ 📄 RegisterPage.jsx                   /Register  ① 이메일·인증·비밀번호 → ② 이름·닉네임 → ③ 학력(없으면 비활성)·보유 자격증(선택)  AUTH-01
 │  ├─ 📄 LoginPage.jsx                    /login                                        AUTH-02
 │  └─ 📄 PasswordResetPage.jsx            /password-reset                               AUTH-05
 ├─ 📁 Recommend/ [이은아]                  VIEW-05  /recommend
@@ -205,7 +205,7 @@
 | 경로 | 화면 | 접근 | 담당 |
 |---|---|---|---|
 | `/` | VIEW-01 초기 메인 (로그인 전·후) | 전체 | 유다연 |
-| `/signup` · `/login` · `/password-reset` | VIEW-02 · 03 · 04 | 비회원 | 유다연 |
+| `/Register` · `/login` · `/password-reset` | VIEW-02 · 03 · 04 | 비회원 | 유다연 |
 | `/recommend` | VIEW-05 자격증 추천 | 회원 | 이은아 |
 | `/qualifications` · `/qualifications/:jmcd` | VIEW-06 상세 첫 화면 · 특정 자격증 상세 | 회원 | 이은아 |
 | `/planner` | VIEW-07 플래너 다이어리 | 회원 | 박준성 |
@@ -223,7 +223,7 @@
 |---|---|---|---|
 | 공통 헤더 | 로고 | `/` | CF-00-01 |
 | 공통 헤더 | 자격증 상세 · 자격증 추천 · 플래너 다이어리 · 저격왕 | `/qualifications` · `/recommend` · `/planner` · `/pass-stories` | CF-00-01 |
-| 공통 헤더 | 로그인 · 회원가입 (비회원) | `/login` · `/signup` | CF-00-01 |
+| 공통 헤더 | 로그인 · 회원가입 (비회원) | `/login` · `/Register` | CF-00-01 |
 | 공통 헤더 | 마이페이지 (회원) | `/mypage` | CF-00-01 |
 | 공통 헤더 | 로그아웃 → 확인 팝업 | `/` | CF-00-01, AUTH-02 |
 | 공통 헤더 | 관리자 버튼 (ADMIN) | `/admin` (버튼 위치 팀 확인) | ADMIN-10 |
