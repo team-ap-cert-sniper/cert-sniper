@@ -8,12 +8,15 @@ from .store import DataStore, DEFAULT_DATA_DIR
 
 
 class ValidationError(ValueError):
-    """잘못된 입력. 백엔드에서는 HTTP 400 으로 매핑하면 된다."""
+    """잘못된 입력. 백엔드에서는 HTTP 400 VALIDATION_ERROR 로 매핑한다."""
+
+
+class NotFoundError(ValidationError):
+    """없는 종목코드·시험 회차. 백엔드에서는 HTTP 404 NOT_FOUND 로 매핑한다."""
 
 
 GRADES = ('1', '2', '3', '4', '5', '6', 'GRADUATED', 'NOT_ENROLLED')
-PROFILE_KEYS = {'school_id', 'major_id', 'grade', 'qualification_type',
-                'job_field_ids', 'interest_field_ids', 'owned_qualification_ids'}
+PROFILE_KEYS = {'school_id', 'major_id', 'grade', 'owned_qualification_ids'}   # 전공 맞춤 추천: 학교·학과·학년·보유 자격
 TYPE_CODE = {'TECHNICAL': 'T', 'PROFESSIONAL': 'S'}   # 추천 조건의 자격구분 → qualgbcd
 # 같은 해 안에서 단계 표시 순서 (필기→실기, 1차→2차→3차→면접)
 STAGE_ORDER = {'필기': 0, '1차': 1, '2차': 2, '3차': 3, '실기': 4, '면접': 5, '시험': 6}
@@ -23,9 +26,12 @@ SCORE = {
     'existing_direct_links': 40, 'recommended': 35, 'same_subfield': 30, 'faculty_aggregate': 40,
     'NOW': 20, 'NO_RESTRICTION': 20, 'FROM_GRADE_NEXT': 10, 'FROM_GRADE_LATER': 5, 'CHECK_QUALIFICATION': 5,
     'AFTER_GRADUATION_EXPERIENCE': 0, 'UPCOMING_2026': 10, 'LEVEL_FIT': 5, 'LEVEL_UNFIT': -20,
+    'NO_ELIGIBILITY_REQUIRED': 5,
 }
+RESULT_LIMIT = 5                                  # 추천 화면 최대 개수(후보가 적으면 그 수만큼)
+CONDITION_KEYS = {'qualification_type', 'job_field_ids', 'interest_field_ids', 'owned_qualification_ids'}
 BASIS_LABEL = {'existing_direct_links': '학과 직접 연결', 'recommended': '전공 연관', 'same_subfield': '동계열 공통',
-               'faculty_aggregate': '학부 소속 학과 합산', 'INTEREST_ONLY_NOT_ACADEMIC_LINK': '학과 연결 없음(관심·직무만)'}
+               'faculty_aggregate': '학부 소속 학과 합산'}
 # 트렌드: 최근 완결 연도의 1차(필기·1차·단일시험) 응시자 수 순위. 국가기술·국가전문 분리.
 FIRST_STAGES = ('필기', '1차', '시험')
 TREND_TYPES = {'TECHNICAL': '국가기술자격', 'PROFESSIONAL': '국가전문자격'}
@@ -56,41 +62,52 @@ class JeogyeokjeungService:
                 self.faculty_items[fs] = f
 
     # ---------- 입력 검증 ----------
-    def validate(self, profile: dict) -> dict:
-        if not isinstance(profile, dict) or set(profile) - PROFILE_KEYS:
-            raise ValidationError('알 수 없는 추천 입력 필드')
-        p = dict(profile)
-        if p.get('major_id') in self.db.major_alias:   # 합쳐진 동명 학과의 예전 ID도 받아 대표 ID로 바꾼다
-            p['major_id'] = self.db.major_alias[p['major_id']]
-        if not isinstance(p.get('grade'), str) or p['grade'] not in GRADES:
-            raise ValidationError('grade 선택값 필요')
-        if p.get('qualification_type') not in (None, *TYPE_CODE):
-            raise ValidationError('qualification_type: TECHNICAL 또는 PROFESSIONAL')
-        for key, catalog, maximum in [('job_field_ids', self.job_fields, 5),
-                                      ('interest_field_ids', self.interest_fields, 5),
-                                      ('owned_qualification_ids', self.db.qualifications, len(self.db.qualifications))]:
+    def _check_codes(self, p: dict, keys) -> None:
+        """선택 코드 목록 검증: 중복 없음, 목록에 있는 코드, 최대 개수(직무·관심 5개)."""
+        catalogs = {'job_field_ids': (self.job_fields, 5), 'interest_field_ids': (self.interest_fields, 5),
+                    'owned_qualification_ids': (self.db.qualifications, len(self.db.qualifications))}
+        for key in keys:
+            catalog, maximum = catalogs[key]
             values = p.get(key, [])
             if (not isinstance(values, list) or len(values) > maximum
                     or any(not isinstance(v, str) or v not in catalog for v in values)
                     or len(set(values)) != len(values)):
                 raise ValidationError(key + ': 유효한 고유 선택 코드 필요')
             p[key] = values
+
+    def validate(self, profile: dict) -> dict:
+        """전공 맞춤 추천 입력. 대학교·전공·학년은 함께 입력하거나 모두 비운다(학교 정보 없음)."""
+        if not isinstance(profile, dict) or set(profile) - PROFILE_KEYS:
+            raise ValidationError('알 수 없는 추천 입력 필드')
+        p = dict(profile)
+        for key in ('school_id', 'major_id', 'grade'):
+            p[key] = p.get(key) or None
+        if p['major_id'] in self.db.major_alias:   # 합쳐진 동명 학과의 예전 ID도 받아 대표 ID로 바꾼다
+            p['major_id'] = self.db.major_alias[p['major_id']]
+        filled = [p[k] is not None for k in ('school_id', 'major_id', 'grade')]
+        if any(filled) and not all(filled):
+            raise ValidationError('대학교·전공·학년은 함께 입력하거나 모두 비워 둠')
+        if p['grade'] is not None and (not isinstance(p['grade'], str) or p['grade'] not in GRADES):
+            raise ValidationError('grade 선택값 필요')
+        self._check_codes(p, ('owned_qualification_ids',))
         for key, catalog in [('school_id', self.db.schools), ('major_id', {**self.db.majors, **self.faculty_items})]:
-            value = p.get(key)
+            value = p[key]
             if value is not None and (not isinstance(value, str) or value not in catalog):
                 raise ValidationError(key + ': 유효하지 않거나 서비스 제외된 선택')
-        major = p.get('major_id')
-        if major and (self.db.majors.get(major) or self.faculty_items.get(major))['school_id'] != p.get('school_id'):
+        major = p['major_id']
+        if major and (self.db.majors.get(major) or self.faculty_items.get(major))['school_id'] != p['school_id']:
             raise ValidationError('학교·캠퍼스와 전공 불일치')
         return p
 
     # ---------- 선택 목록(회원가입 드롭다운) ----------
-    def options(self, kind, school_id=None, query='', offset=0, limit=50, qualification_type=None, series=None) -> dict:
+    def options(self, kind, school_id=None, query='', offset=0, limit=50, qualification_type=None, series=None,
+                interest_field_id=None, job_field_id=None) -> dict:
         if type(offset) is not int or type(limit) is not int or offset < 0 or not 1 <= limit <= 100:
             raise ValidationError('offset >= 0, 1 <= limit <= 100 필요')
         if not isinstance(query, str):
             raise ValidationError('검색어는 문자열')
-        self.validate({'grade': 'NOT_ENROLLED', 'school_id': school_id})
+        if school_id is not None and (not isinstance(school_id, str) or school_id not in self.db.schools):
+            raise ValidationError('school_id: 유효하지 않거나 서비스 제외된 선택')
         if kind == 'schools':
             values = [{'id': s['school_id'], 'name': s['school_name'], 'campus': s['campus'],
                        'school_type': s['school_type']} for s in self.db.schools.values()]
@@ -109,8 +126,19 @@ class JeogyeokjeungService:
                 v['label'] = f"{v['name']} · {v['parent_name']}" if v['parent_name'] else v['name']
                 v.setdefault('group', v['parent_name'] or v['name'])
         elif kind in ('job_fields', 'interest_fields'):
+            # 자격증 상세 탐색(자격구분 → 대직무분야 → 중직무분야 → 종목)에도 쓴다. count = 조건에 맞는 종목 수(0이면 제외)
+            if qualification_type is not None and qualification_type not in TREND_TYPES:
+                raise ValidationError('qualification_type 은 TECHNICAL 또는 PROFESSIONAL')
+            pool = [q for q in self.db.qualifications.values()
+                    if (qualification_type is None or q['qualgbnm'] == TREND_TYPES[qualification_type])
+                    and (kind == 'interest_fields' or interest_field_id is None or q['obligfldcd'] == interest_field_id)]
+            key = 'mdobligfldcd' if kind == 'job_fields' else 'obligfldcd'
             catalog = self.job_fields if kind == 'job_fields' else self.interest_fields
-            values = [{'id': k, 'name': v} for k, v in catalog.items()]
+            counts = {}
+            for q in pool:
+                if q[key]:
+                    counts[q[key]] = counts.get(q[key], 0) + 1
+            values = [{'id': k, 'name': v, 'count': counts[k]} for k, v in catalog.items() if k in counts]
         elif kind == 'qualifications':
             # 자격증 검색: 국가기술(TECHNICAL) / 국가전문(PROFESSIONAL) 분류. 없으면 613종 전체
             if qualification_type is not None and qualification_type not in TREND_TYPES:
@@ -123,7 +151,9 @@ class JeogyeokjeungService:
                        'series': level(q) if q['qualgbnm'] == TREND_TYPES['TECHNICAL'] else None}
                       for k, q in self.db.qualifications.items()
                       if (qualification_type is None or q['qualgbnm'] == TREND_TYPES[qualification_type])
-                      and (series is None or (q['qualgbnm'] == TREND_TYPES['TECHNICAL'] and level(q) == series))]
+                      and (series is None or (q['qualgbnm'] == TREND_TYPES['TECHNICAL'] and level(q) == series))
+                      and (interest_field_id is None or q['obligfldcd'] == interest_field_id)
+                      and (job_field_id is None or q['mdobligfldcd'] == job_field_id)]
         elif kind == 'grades':
             values = [{'id': g, 'name': g} for g in GRADES]
         else:
@@ -139,35 +169,35 @@ class JeogyeokjeungService:
 
     # ---------- 추천 ----------
     def recommend(self, profile: dict, today: str | None = None) -> dict:
-        """today: 'YYYY-MM-DD'(남은 시험 회차 계산 기준). 없으면 오늘 날짜."""
+        """전공 맞춤 추천: 대학교·전공·학년(+보유 자격)만 쓴다. 희망 직무·관심 분야는 받지 않는다.
+        점수 = 학과 연결 + 응시 시점 + 올해 남은 시험 + 시작 등급 / 재학 중 응시 불가 등급 감점. 점수순 최대 5개(후보가 적으면 그 수만큼).
+        학교 정보가 없으면 결과 없이 needs_school_info=True (화면은 관심 분야·희망 직무 선택 안내).
+        학교 정보는 있는데 학과 연결 자격이 없으면 needs_school_info=False, items=[] (화면은 학과 연결 없음 안내).
+        today: 'YYYY-MM-DD'(남은 시험 회차 계산 기준). 없으면 오늘 날짜."""
         p = self.validate(profile)
         current = date.fromisoformat(today) if today else date.today()
+        if not p['major_id']:
+            return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613', 'profile': p,
+                    'recommendation_scope': 'NONE', 'major_discipline': None, 'major_category': None,
+                    'recommended': [], 'owned_excluded_count': 0, 'roadmap': [], 'next_levels': [],
+                    'grade_guidance': None, 'exam_window_basis': EXAM_WINDOW_SOURCE,
+                    'personal_eligibility_verified': False, 'score_basis_date': current.isoformat(),
+                    'needs_school_info': True, 'items': [], 'result_limit': RESULT_LIMIT}
         owned = set(p['owned_qualification_ids'])
         owned_rows = [self.db.qualifications[c] for c in sorted(owned)]
         owned |= self._lower_levels(owned_rows)            # 보유 자격과 그 하위 등급은 추천 제외
         school_type = self.db.schools.get(p.get('school_id') or '', {}).get('school_type', '')
         start = start_level(school_type, p['grade'])
 
-        def reasons(q):
-            out = []
-            if q['mdobligfldcd'] in p['job_field_ids']:
-                out.append({'type': 'JOB_FIELD', 'id': q['mdobligfldcd']})
-            if q['obligfldcd'] in p['interest_field_ids']:
-                out.append({'type': 'INTEREST_FIELD', 'id': q['obligfldcd']})
-            return out
-
         def item(code, basis):
             q = self.db.qualifications[code]
-            matches = reasons(q)
             return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'name': q['name'], 'basis': basis,
-                    'interest_matches': matches, 'interest_match_count': len(matches),
                     'exam_window': grade_exam_window(q, school_type, p['grade'], owned_rows),
                     'personal_eligibility_verified': False, 'card': self._card(code, current)}
 
         def scored(v, share=1.0):
             q, w, g = self.db.qualifications[v['jmcd']], v['exam_window'], p['grade']
-            parts = [(m['type'], SCORE[m['type']], '희망직무 일치' if m['type'] == 'JOB_FIELD' else '관심분야 일치')
-                     for m in v['interest_matches']]
+            parts = []
             if v['basis'] in SCORE:
                 pts = round(SCORE[v['basis']] * share)
                 parts.append(('ACADEMIC_LINK', pts, BASIS_LABEL[v['basis']] + (f' {share:.0%}' if v['basis'] == 'faculty_aggregate' else '')))
@@ -192,15 +222,11 @@ class JeogyeokjeungService:
             v['score_breakdown'] = [{'factor': f, 'points': pt, 'reason': r} for f, pt, r in parts if pt]
             return v
 
-        t = p.get('qualification_type')         # 자격구분 조건: 다른 구분은 후보에서 제외
-        skip = {c for c, q in self.db.qualifications.items() if q['qualgbcd'] != TYPE_CODE[t]} if t else set()
         base = {}
         fac = p.get('major_id') if p.get('major_id') in self.faculty_items else self.major_faculty.get(p.get('major_id'))
         if p.get('major_id') and not fac:          # 전공 기준
             scope = 'MAJOR'
             for link in self.db.major_links.get(p['major_id'], []):
-                if link['jmcd'] in skip:
-                    continue
                 base.setdefault(link['jmcd'], item(link['jmcd'], link['basis']))
             order = {k: i for i, k in enumerate(base)}
             recommended = sorted((scored(v) for k, v in base.items() if k not in owned),
@@ -211,8 +237,6 @@ class JeogyeokjeungService:
             share, first = {}, {}
             for mid in members:
                 for link in self.db.major_links.get(mid, []):
-                    if link['jmcd'] in skip:
-                        continue
                     share[link['jmcd']] = share.get(link['jmcd'], 0) + 1
                     first.setdefault(link['jmcd'], (int(link['link_rank']), link['basis']))
             for code in share:
@@ -220,27 +244,69 @@ class JeogyeokjeungService:
                                   faculty_share={'majors': share[code], 'of': len(members)})
             recommended = sorted((scored(v, share[v['jmcd']] / len(members)) for k, v in base.items() if k not in owned),
                                  key=lambda v: (-v['score'], -share[v['jmcd']], first[v['jmcd']][0], v['jmcd']))
-        else:
-            scope = 'NONE'
-            recommended = []
-        discovery = [item(k, 'INTEREST_ONLY_NOT_ACADEMIC_LINK') for k, q in self.db.qualifications.items()
-                     if k not in base and k not in owned and k not in skip and reasons(q)]
-        discovery = [scored(v) for v in discovery]
-        discovery.sort(key=lambda v: (-v['score'], v['jmcd']))
         grade = p['grade']
         major = self.db.majors.get(p.get('major_id') or '')
-        return {'schema_version': '2', 'qualification_scope': 'QNET_MASTER_613',
+        return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613',
                 'profile': p, 'recommendation_scope': scope, 'major_discipline': major['discipline'] if major else None,
                 'major_category': ({'large': major['category_large'], 'mid': major['category_mid'],
                                     'small': major['category_small']} if major else None),
-                'recommended': recommended, 'interest_candidates': discovery,
+                'recommended': recommended,
                 'owned_excluded_count': len(set(base) & owned),
                 'roadmap': self._roadmap(recommended, school_type, grade, owned_rows),
                 'next_levels': self._next_levels(owned_rows, school_type, grade),
                 'grade_guidance': '기초 학습과 시험 과목 탐색' if grade in ('1', '2') else '학습 일정 수립 및 공식 응시요건 별도 확인',
                 'exam_window_basis': EXAM_WINDOW_SOURCE, 'personal_eligibility_verified': False,
                 'score_basis_date': current.isoformat(),
-                'needs_preferences': not p.get('major_id') and not p['job_field_ids'] and not p['interest_field_ids']}
+                'needs_school_info': False,
+                'items': recommended[:RESULT_LIMIT], 'result_limit': RESULT_LIMIT}
+
+    def recommend_by_condition(self, conditions: dict, today: str | None = None) -> dict:
+        """추천 화면에서 조건을 직접 고른 경우: 자격구분·관심 분야·희망 직무만 쓴다.
+        대학교·전공·학년은 받지 않고, 학과 연결·응시 시점·학년 등급 점수(기존 합산)는 넣지 않는다.
+        점수 = 희망직무 일치 +30, 관심분야 일치 +20, 올해 남은 시험 +10, 응시 조건 없음 +5.
+        동점이면 최근 연도 1차 응시자 많은 순 → 종목코드 순. 보유 자격과 그 하위 등급은 제외(점수 아님)."""
+        if not isinstance(conditions, dict) or set(conditions) - CONDITION_KEYS:
+            raise ValidationError('조건 추천 입력은 qualification_type · interest_field_ids · job_field_ids 만 받는다')
+        p = dict(conditions)
+        if p.get('qualification_type') not in (None, *TYPE_CODE):
+            raise ValidationError('qualification_type: TECHNICAL 또는 PROFESSIONAL')
+        self._check_codes(p, ('job_field_ids', 'interest_field_ids', 'owned_qualification_ids'))
+        if not p['job_field_ids'] and not p['interest_field_ids']:
+            raise ValidationError('관심 분야 또는 희망 직무를 하나 이상 선택')
+        current = date.fromisoformat(today) if today else date.today()
+        owned_rows = [self.db.qualifications[c] for c in p['owned_qualification_ids']]
+        owned = set(p['owned_qualification_ids']) | self._lower_levels(owned_rows)
+        t = p.get('qualification_type')
+        year = self._trend_year(current.isoformat())
+        items = []
+        for code, q in self.db.qualifications.items():
+            if code in owned or (t and q['qualgbcd'] != TYPE_CODE[t]):
+                continue
+            parts = []
+            if q['mdobligfldcd'] in p['job_field_ids']:
+                parts.append(('JOB_FIELD', SCORE['JOB_FIELD'], '희망직무 일치'))
+            if q['obligfldcd'] in p['interest_field_ids']:
+                parts.append(('INTEREST_FIELD', SCORE['INTEREST_FIELD'], '관심분야 일치'))
+            if not parts:
+                continue
+            upcoming = [s_ for s_ in self.db.schedules.get(code, []) if s_['exam_start_date'] >= current.isoformat()]
+            if upcoming:
+                parts.append(('UPCOMING_2026', SCORE['UPCOMING_2026'], f"남은 시험 {upcoming[0]['exam_start_date']} {upcoming[0]['exam_stage']}"))
+            if q['eligibility_required'] == 'N':
+                parts.append(('NO_ELIGIBILITY_REQUIRED', SCORE['NO_ELIGIBILITY_REQUIRED'], '응시 조건 없음(바로 응시 가능)'))
+            popular = self._first_stage_counts(code).get(year, (0,))[0]
+            items.append({'jmcd': code, 'qualification_id': 'QNET:' + code, 'name': q['name'],
+                          'interest_matches': [{'type': f, 'id': q['mdobligfldcd'] if f == 'JOB_FIELD' else q['obligfldcd']}
+                                               for f, _, _ in parts if f in ('JOB_FIELD', 'INTEREST_FIELD')],
+                          'score': sum(x[1] for x in parts),
+                          'score_breakdown': [{'factor': f, 'points': pt, 'reason': r} for f, pt, r in parts],
+                          'recent_examinees': {'year': year, 'count': popular},
+                          'eligibility_required': q['eligibility_required'] or None,
+                          'card': self._card(code, current)})
+        items.sort(key=lambda v: (-v['score'], -v['recent_examinees']['count'], v['jmcd']))
+        return {'schema_version': '3', 'mode': 'CONDITION', 'conditions': p, 'items': items[:RESULT_LIMIT],
+                'total_candidates': len(items), 'result_limit': RESULT_LIMIT, 'score_basis_date': current.isoformat(),
+                'score_rule': '희망직무 +30, 관심분야 +20, 올해 남은 시험 +10, 응시 조건 없음 +5 / 동점: 최근 1차 응시자 많은 순'}
 
     def _roadmap(self, items, school_type, grade, owned_rows):
         """학년별 로드맵: 추천 종목을 '처음 응시 가능한 학년'에 배치(지금 학년~최종 학년, 이후 졸업 후 / 개별 확인)."""
@@ -398,12 +464,17 @@ class JeogyeokjeungService:
         else:
             st, label = 'UPCOMING', f"D-{(date.fromisoformat(start) - current).days}"
         rs, re_ = r.get('registration_start_date', ''), r.get('registration_end_date', '')
+        vs, ve = r.get('vacancy_registration_start_date', ''), r.get('vacancy_registration_end_date', '')
         if not rs or not re_:
             reg = 'UNKNOWN'
         elif today < rs:
             reg = 'NOT_OPEN'
         elif today <= re_:
             reg = 'OPEN'
+        elif vs and today < vs:
+            reg = 'VACANCY_NOT_OPEN'        # 정기 접수 끝, 빈자리 접수 전
+        elif vs and today <= ve:
+            reg = 'VACANCY_OPEN'            # 빈자리 접수 중
         else:
             reg = 'CLOSED'
         return {'exam_status': st, 'dday_label': label, 'registration_status': reg}
@@ -412,7 +483,7 @@ class JeogyeokjeungService:
         code = str(jmcd).strip().upper().removeprefix('QNET:').zfill(4)
         q = self.db.qualifications.get(code)
         if not q:
-            raise ValidationError('Q-Net 613종 원장에 없는 종목: ' + str(jmcd))
+            raise NotFoundError('Q-Net 613종 원장에 없는 종목: ' + str(jmcd))
         current = date.fromisoformat(today) if today else date.today()
         schedules = [dict(r, schedule_id=f'{code}:{i}', **self.schedule_status(r, current))
                      for i, r in enumerate(self.db.schedules.get(code, []))]
@@ -423,7 +494,9 @@ class JeogyeokjeungService:
         rates = []
         for r in self.db.pass_rates.get(code, []):
             n, k = int(r['examinees']), int(r['passed'])
-            rates.append({'exam_year': int(r['exam_year']), 'exam_stage': r['exam_stage'], 'examinees': n, 'passed': k,
+            a = int(r['applicants']) if r.get('applicants') else None
+            rates.append({'exam_year': int(r['exam_year']), 'exam_stage': r['exam_stage'], 'applicants': a, 'examinees': n, 'passed': k,
+                          'attendance_rate_percent': round(100 * n / a, 1) if a else None,
                           'pass_rate_percent': round(100 * k / n, 2) if n else None,
                           'source_type': r['source_type'], 'source_url': r['source_url']})
         rates.sort(key=lambda r: (r['exam_year'], STAGE_ORDER.get(r['exam_stage'], 99), r['exam_stage']))
@@ -434,7 +507,19 @@ class JeogyeokjeungService:
         schedules = active + ended
         by_id = {s_['schedule_id']: s_ for s_ in schedules}
         latest_year = max((r['exam_year'] for r in rates), default=None)
-        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': q,
+        rounds = {}                      # 화면용: 같은 회차의 필기·실기(1차·2차…)를 한 줄로
+        for s_ in sorted(schedules, key=lambda s_: (s_['exam_start_date'], STAGE_ORDER.get(s_['exam_stage'], 99))):
+            rounds.setdefault(s_['exam_round'], []).append(s_['schedule_id'])
+        rules = self.db.eligibility_rules.get(q['eligibility_rule_key'], [])
+        eligibility = {'required': {'Y': True, 'N': False}.get(q['eligibility_required']), 'summary': q['eligibility_summary'],
+                       'conditions': [{'type': r['condition_type'], 'text': r['condition_text']} for r in rules],
+                       'note': ('조건 중 하나만 충족하면 응시 가능. 관련학과·실무경력 인정 범위는 큐넷 응시자격 자가진단으로 확인'
+                                if rules else ''),
+                       'source_url': 'https://www.q-net.or.kr/crf006.do?id=crf00603',
+                       'personal_eligibility_verified': False}
+        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': q, 'eligibility': eligibility,
+                'schedule_rounds': [{'exam_round': k, 'schedule_ids': v} for k, v in rounds.items()],
+                'pass_rate_years': sorted({r['exam_year'] for r in rates}, reverse=True),
                 'schedules_2026': schedules, 'schedule_status': 'AVAILABLE' if schedules else 'NOT_ACQUIRED',
                 'schedule_basis_date': current.isoformat(),
                 'next_schedule_id': applicable[0]['schedule_id'] if applicable else None,
@@ -467,7 +552,7 @@ class JeogyeokjeungService:
         code, _, idx = str(schedule_id).partition(':')
         rows = self.db.schedules.get(code, [])
         if not idx.isdigit() or int(idx) >= len(rows):
-            raise ValidationError('schedule_id 는 qualification_detail 의 schedules_2026[].schedule_id 값이어야 함')
+            raise NotFoundError('schedule_id 는 qualification_detail 의 schedules_2026[].schedule_id 값이어야 함')
         r = rows[int(idx)]
         start, end = date.fromisoformat(r['exam_start_date']), date.fromisoformat(r['exam_end_date'])
         if not exam_date and start != end:

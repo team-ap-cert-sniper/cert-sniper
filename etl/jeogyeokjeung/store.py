@@ -6,7 +6,7 @@ from pathlib import Path
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[1] / 'data'
 TABLES = ('schools', 'majors', 'faculties', 'faculty_majors', 'qualifications',
-          'major_qualifications', 'exam_schedules', 'pass_rates')
+          'major_qualifications', 'exam_schedules', 'pass_rates', 'eligibility_rules')
 
 
 def _read(path: Path):
@@ -40,3 +40,8 @@ class DataStore:
         self.pass_rates = defaultdict(list)
         for r in _read(d / 'pass_rates.csv'):
             self.pass_rates[r['jmcd']].append(r)
+        self.eligibility_rules = defaultdict(list)       # rule_key(GRADE:등급 | Q:종목코드) → 응시 조건 목록
+        for r in _read(d / 'eligibility_rules.csv'):
+            self.eligibility_rules[r['rule_key']].append(r)
+        for rows in self.eligibility_rules.values():
+            rows.sort(key=lambda r: int(r['seq']))

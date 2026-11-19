@@ -1,0 +1,680 @@
+# 🗂 ERD
+
+DB 설계서 Ver.7 기준 서비스 스키마 `jg_service` 40개 테이블입니다. 희망 직무·관심 분야는 회원정보로 저장하지 않습니다(추천 페이지 조건 선택에서만 사용). 기준 문서: 요구사항 정의서 v1.8.0 · 기능 명세서 v1.4.0. [← 처음으로](../README.md)
+
+> `recommendation_conditions`(추천 조건)는 현재 미사용입니다. 기능 명세서 v1.4.0에서 추천 조건을 저장하지 않기로 했고, 팀 확인 전까지 구조만 남겨 둡니다.
+
+| 쓰는 곳 | 방법 |
+|---|---|
+| GitHub · Notion | 아래 `mermaid` 코드 블록이 그대로 그림으로 보입니다. Notion은 코드 블록을 만들고 언어를 Mermaid로 고른 뒤 붙여 넣습니다 |
+| ERD 프로그램 | [schema.sql](schema.sql)을 SQL 가져오기(ERDCloud·dbdiagram·draw.io 등)에 넣거나, MySQL에 실행한 뒤 DBeaver의 ER 다이어그램으로 엽니다 |
+| 기능 ID에서 테이블 찾기 | [TRACEABILITY.md](TRACEABILITY.md) |
+
+관계 표기: `||--o{` 1:N (부모 필수) · `|o--o{` 0..1:N (부모 선택) · `||--o|` 1:1. 선 위 이름은 자식 테이블의 FK 컬럼입니다.
+
+## 전체 관계
+
+```mermaid
+erDiagram
+    universities |o--o{ users : "university_id"
+    colleges |o--o{ users : "college_id"
+    majors |o--o{ users : "major_id"
+    users ||--o{ user_tokens : "user_id"
+    users |o--o{ email_verifications : "user_id"
+    users ||--o{ user_certificates : "user_id"
+    qualifications |o--o{ user_certificates : "jmcd"
+    users ||--o{ account_status_histories : "user_id"
+    users |o--o{ account_status_histories : "admin_id"
+    universities ||--o{ colleges : "university_id"
+    universities ||--o{ majors : "university_id"
+    colleges |o--o{ majors : "college_id"
+    colleges |o--o{ majors : "aggregate_college_id"
+    majors |o--o{ majors : "successor_major_id"
+    majors ||--o{ major_aliases : "major_id"
+    interest_fields ||--o{ job_categories : "interest_field_id"
+    majors ||--o{ major_qualification_links : "major_id"
+    qualifications ||--o{ major_qualification_links : "jmcd"
+    users |o--o{ recommendation_weight_policies : "created_by"
+    users ||--o| recommendation_conditions : "user_id"
+    universities |o--o{ recommendation_conditions : "university_id"
+    majors |o--o{ recommendation_conditions : "major_id"
+    colleges |o--o{ recommendation_conditions : "college_id"
+    qualifications ||--o{ qualification_subject_items : "jmcd"
+    qualifications ||--o{ qualification_statistics_yearly : "jmcd"
+    qualifications ||--o{ qualification_exam_schedules : "jmcd"
+    qualification_eligibility_rules |o..o{ qualifications : "eligibility_rule_key"
+    users ||--o{ favorites : "user_id"
+    qualifications ||--o{ favorites : "jmcd"
+    users ||--o{ target_exams : "user_id"
+    qualifications ||--o{ target_exams : "jmcd"
+    qualification_exam_schedules |o--o{ target_exams : "exam_schedule_id"
+    users ||--o| planners : "user_id"
+    users ||--o{ personal_schedules : "user_id"
+    users ||--o{ planner_bars : "user_id"
+    target_exams |o--o{ planner_bars : "target_exam_id"
+    personal_schedules |o--o{ planner_bars : "personal_schedule_id"
+    planner_bars ||--o{ planner_milestones : "bar_id"
+    users ||--o{ planner_milestones : "user_id"
+    users ||--o{ memos : "user_id"
+    target_exams ||--o| memos : "target_exam_id"
+    users ||--o{ pass_stories : "user_id"
+    qualifications ||--o{ pass_stories : "jmcd"
+    users |o--o{ pass_stories : "hidden_confirmed_by"
+    pass_stories ||--o{ pass_story_subject_difficulties : "story_id"
+    qualification_subject_items |o--o{ pass_story_subject_difficulties : "subject_item_id"
+    pass_stories ||--o{ pass_story_reports : "story_id"
+    users ||--o{ pass_story_reports : "reporter_id"
+    users |o--o{ pass_story_reports : "reviewed_by"
+    pass_stories ||--o{ pass_story_moderation_logs : "story_id"
+    users ||--o{ pass_story_moderation_logs : "actor_id"
+    pass_story_reports |o--o{ pass_story_moderation_logs : "report_id"
+    users ||--o| user_ranks : "user_id"
+    users |o--o{ user_ranks : "override_by"
+    users ||--o{ user_rank_histories : "user_id"
+    pass_stories |o--o{ user_rank_histories : "trigger_story_id"
+    users |o--o{ user_rank_histories : "admin_id"
+    users ||--o{ rank_notifications : "user_id"
+    pass_stories ||--o{ rank_notifications : "story_id"
+    users ||--o{ notices : "author_id"
+    users |o--o{ faqs : "author_id"
+    users ||--o{ inquiries : "user_id"
+    inquiries ||--o| inquiry_answers : "inquiry_id"
+    users ||--o{ inquiry_answers : "admin_id"
+    users ||--o{ admin_audit_logs : "admin_id"
+    users |o--o{ admin_audit_logs : "target_user_id"
+```
+
+## 3장 회원·인증
+
+```mermaid
+erDiagram
+    users {
+        bigint id PK "회원 ID"
+        varchar email UK "이메일(아이디)"
+        varchar password_hash "비밀번호 해시"
+        varchar name "이름"
+        varchar nickname UK "닉네임"
+        varchar role "권한"
+        varchar status "계정 상태"
+        bigint university_id FK "대학 ID"
+        bigint college_id FK "학부(단과대학) ID"
+        bigint major_id FK "학과 ID"
+        varchar grade "학년(학교 정보 없음이면 NULL)"
+        int confirmed_hidden_count "누적 숨김 횟수"
+        datetime suspended_until "정지 종료 일시"
+        datetime withdrawal_requested_at "탈퇴 신청 일시"
+        datetime last_login_at "최종 로그인 일시"
+        datetime withdrawn_at "탈퇴 확정 일시"
+        datetime purge_due_at "연관 데이터 삭제 예정일시"
+        datetime purged_at "연관 데이터 삭제 완료일시"
+        datetime created_at "가입 일시"
+        datetime updated_at "수정 일시"
+    }
+    user_tokens {
+        bigint id PK "토큰 ID"
+        bigint user_id FK "회원 ID"
+        char token_hash UK "토큰 해시"
+        char token_family "토큰 계열 ID"
+        datetime expires_at "만료 일시"
+        datetime last_used_at "최종 재발급 사용 일시"
+        varchar user_agent "접속 환경"
+        varchar client_ip "접속 IP"
+        datetime created_at "발급 일시"
+    }
+    email_verifications {
+        bigint id PK "인증 ID"
+        bigint user_id FK "회원 ID"
+        varchar email "발송 이메일"
+        varchar purpose "용도"
+        char code_hash "인증코드 해시"
+        char code_salt "해시 salt"
+        datetime expires_at "코드 만료 일시"
+        tinyint attempt_count "검증 시도 횟수"
+        varchar send_status "발송 상태"
+        datetime sent_at "발송 성공 일시"
+        varchar send_error_code "발송 실패 코드"
+        varchar status "상태"
+        datetime verified_at "인증 성공 일시"
+        char verified_token_hash UK "인증 완료 토큰 해시"
+        datetime verified_token_expires_at "인증 완료 토큰 만료"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    email_auth_limits {
+        bigint id PK "ID"
+        varchar email "이메일"
+        varchar purpose "용도"
+        smallint failure_count "누적 실패 횟수"
+        datetime window_started_at "집계 시작 일시"
+        datetime restricted_until "제한 종료 일시"
+        datetime last_failed_at "최근 실패 일시"
+        datetime updated_at "수정 일시"
+    }
+    user_certificates {
+        bigint id PK "ID"
+        bigint user_id FK "회원 ID"
+        varchar jmcd FK "자격 종목코드"
+        varchar cert_name "자격증명(직접 입력)"
+        date acquired_date "취득일"
+        datetime created_at "등록 일시"
+    }
+    account_status_histories {
+        bigint id PK "이력 ID"
+        bigint user_id FK "회원 ID"
+        varchar change_type "변경 유형"
+        varchar previous_status "변경 전 상태"
+        varchar new_status "변경 후 상태"
+        varchar reason "사유"
+        datetime starts_at "정지 시작 일시"
+        datetime ends_at "정지 종료 일시"
+        bigint admin_id FK "처리 관리자"
+        datetime created_at "기록 일시"
+    }
+    universities |o--o{ users : "university_id"
+    colleges |o--o{ users : "college_id"
+    majors |o--o{ users : "major_id"
+    users ||--o{ user_tokens : "user_id"
+    users |o--o{ email_verifications : "user_id"
+    users ||--o{ user_certificates : "user_id"
+    qualifications |o--o{ user_certificates : "jmcd"
+    users ||--o{ account_status_histories : "user_id"
+    users |o--o{ account_status_histories : "admin_id"
+```
+
+## 4장 대학·학과·직무·추천
+
+```mermaid
+erDiagram
+    universities {
+        bigint id PK "대학 ID"
+        varchar source "원천"
+        varchar source_univ_code "원천 대학 코드"
+        varchar name "대학명"
+        varchar campus_name "캠퍼스명"
+        varchar school_type "학교 유형"
+        varchar region "소재 지역"
+        tinyint is_active "운영 여부"
+        date source_base_date "원천 기준일"
+        datetime synced_at "최종 적재 일시"
+    }
+    colleges {
+        bigint id PK "단과대학 ID"
+        bigint university_id FK "대학 ID"
+        varchar source_college_code "원천 학부 코드"
+        varchar name "학부·단과대학명"
+        tinyint is_list_item "전공 목록 노출 여부"
+        tinyint is_active "운영 여부"
+        date source_base_date "원천 기준일"
+        datetime synced_at "최종 적재 일시"
+    }
+    majors {
+        bigint id PK "학과 ID"
+        bigint university_id FK "대학 ID"
+        bigint college_id FK "소속 학부 ID"
+        varchar source_major_code "원천 학과 코드"
+        varchar name "학과·전공명"
+        varchar parent_name "소속 표시명"
+        varchar degree_course "과정"
+        varchar academic_field "학문 계열(대계열)"
+        varchar discipline "학과명 보완 계열"
+        bigint aggregate_college_id FK "합산 대상 학부 ID"
+        varchar status "학과 상태"
+        bigint successor_major_id FK "개편 후 학과 ID"
+        date source_base_date "원천 기준일"
+        datetime synced_at "최종 적재 일시"
+    }
+    major_aliases {
+        bigint id PK "ID"
+        bigint major_id FK "학과 ID"
+        varchar alias "별칭"
+        varchar alias_type "별칭 유형"
+    }
+    job_categories {
+        bigint id PK "직무 ID"
+        varchar code UK "직무 코드"
+        varchar name "직무명"
+        bigint interest_field_id FK "관심 분야 ID"
+        smallint sort_order "정렬 순서"
+        tinyint is_active "사용 여부"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    interest_fields {
+        bigint id PK "관심 분야 ID"
+        varchar code UK "관심 분야 코드"
+        varchar name "관심 분야명"
+        smallint sort_order "정렬 순서"
+        tinyint is_active "사용 여부"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    major_qualification_links {
+        bigint id PK "ID"
+        bigint major_id FK "학과 ID"
+        varchar jmcd FK "자격 종목코드"
+        smallint link_rank "연결 순서"
+        varchar basis "연결 근거 유형"
+        varchar link_basis "근거 설명"
+        varchar recommendation_type "추천 유형"
+        date source_base_date "원천 기준일"
+        datetime synced_at "최종 적재 일시"
+    }
+    recommendation_weight_policies {
+        bigint id PK "정책 ID"
+        varchar version UK "정책 버전"
+        varchar policy_type UK "정책 종류(MAJOR·CONDITION)"
+        json score_rules "점수표"
+        varchar tie_breaker "동점 정렬 규칙"
+        tinyint is_active "활성 여부"
+        varchar description "설명"
+        bigint created_by FK "등록 관리자"
+        datetime created_at "등록 일시"
+    }
+    recommendation_conditions {
+        bigint user_id PK, FK "회원 ID"
+        bigint university_id FK "대학 ID"
+        bigint major_id FK "학과·전공 ID"
+        bigint college_id FK "학부 ID"
+        varchar grade "학년"
+        varchar qualification_type "자격구분"
+        json interest_field_codes "관심 분야 코드 목록"
+        json job_category_codes "희망 직무 코드 목록"
+        datetime confirmed_at "조건 반영 일시"
+        datetime updated_at "수정 일시"
+    }
+    universities ||--o{ colleges : "university_id"
+    universities ||--o{ majors : "university_id"
+    colleges |o--o{ majors : "college_id"
+    colleges |o--o{ majors : "aggregate_college_id"
+    majors |o--o{ majors : "successor_major_id"
+    majors ||--o{ major_aliases : "major_id"
+    interest_fields ||--o{ job_categories : "interest_field_id"
+    majors ||--o{ major_qualification_links : "major_id"
+    qualifications ||--o{ major_qualification_links : "jmcd"
+    users |o--o{ recommendation_weight_policies : "created_by"
+    users ||--o| recommendation_conditions : "user_id"
+    universities |o--o{ recommendation_conditions : "university_id"
+    majors |o--o{ recommendation_conditions : "major_id"
+    colleges |o--o{ recommendation_conditions : "college_id"
+```
+
+## 5장 자격증
+
+```mermaid
+erDiagram
+    qualifications {
+        varchar jmcd PK "자격 종목코드"
+        varchar jmfldnm "자격 종목명"
+        varchar eng_name "영문명"
+        varchar qualgbcd "자격구분 코드"
+        varchar qualgbnm "자격구분명"
+        varchar seriescd "계열·등급 코드"
+        varchar seriesnm "계열·등급명"
+        varchar obligfldcd "대직무분야 코드"
+        varchar obligfldnm "대직무분야명"
+        varchar mdobligfldcd "중직무분야 코드"
+        varchar mdobligfldnm "중직무분야명"
+        varchar related_ministry "관련부처"
+        varchar summary "한 줄 소개"
+        varchar summary_basis "소개 근거"
+        text overview "개요"
+        text job_description "수행직무"
+        text career_outlook "진로 및 전망"
+        varchar conducting_agency "시행처"
+        text related_majors "관련학과"
+        text exam_method "검정방법"
+        text exam_subjects "시험과목"
+        text exam_standard "합격 기준"
+        text eligibility "응시자격"
+        char eligibility_required "응시 조건 여부"
+        varchar eligibility_summary "응시 조건 안내"
+        varchar eligibility_rule_key "응시 조건 키"
+        int fee_written "필기 수수료"
+        int fee_practical "실기 수수료"
+        varchar fee_note "수수료 안내"
+        varchar schedule_type "시험 형태"
+        tinyint is_active "서비스 노출 여부"
+        date source_base_date "원천 기준일"
+        datetime etl_synced_at "최종 ETL 적재 일시"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    qualification_subject_items {
+        bigint id PK "과목 ID"
+        varchar jmcd FK "자격 종목코드"
+        varchar exam_stage "시험 단계"
+        tinyint seq "과목 순서"
+        varchar subject_name "과목명"
+        varchar parse_rule_version "분해 규칙 버전"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    qualification_statistics_yearly {
+        varchar jmcd PK, FK "자격 종목코드"
+        smallint year PK "기준 연도"
+        varchar exam_stage PK "시험 단계"
+        int applicants "접수자 수"
+        int examinees "응시자 수"
+        int passers "합격자 수"
+        decimal pass_rate_pct "합격률(%)"
+        varchar data_source "통계 출처"
+        varchar source_url "출처 URL"
+        datetime synced_at "최종 적재 일시"
+    }
+    qualification_exam_schedules {
+        bigint id PK "일정 ID"
+        varchar jmcd FK "자격 종목코드"
+        smallint exam_year "시행 연도"
+        varchar exam_round "회차"
+        varchar exam_stage "시험 단계"
+        date registration_start_date "정기 접수 시작일"
+        date registration_end_date "정기 접수 종료일"
+        date vacancy_registration_start_date "빈자리 접수 시작일"
+        date vacancy_registration_end_date "빈자리 접수 종료일"
+        date exam_start_date "시험 시작일"
+        date exam_end_date "시험 종료일"
+        date pass_announcement_date "합격 발표일"
+        varchar source_type "일정 출처"
+        varchar source_url "출처 URL"
+        varchar source_note "출처 메모"
+        date source_base_date "원천 기준일"
+        datetime synced_at "최종 적재 일시"
+    }
+    qualification_eligibility_rules {
+        varchar rule_key PK "응시 조건 키"
+        tinyint seq PK "조건 순서"
+        varchar condition_type "조건 구분"
+        varchar condition_text "조건 내용"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    qualifications ||--o{ qualification_subject_items : "jmcd"
+    qualifications ||--o{ qualification_statistics_yearly : "jmcd"
+    qualifications ||--o{ qualification_exam_schedules : "jmcd"
+    qualification_eligibility_rules |o..o{ qualifications : "eligibility_rule_key (논리 참조)"
+```
+
+## 6장 개인화 (찜·목표 자격증·플래너·메모)
+
+```mermaid
+erDiagram
+    favorites {
+        bigint id PK "찜 ID"
+        bigint user_id FK "회원 ID"
+        varchar jmcd FK "자격 종목코드"
+        datetime created_at "찜 일시"
+    }
+    target_exams {
+        bigint id PK "목표 자격증 ID"
+        bigint user_id FK "회원 ID"
+        varchar jmcd FK "자격 종목코드"
+        bigint exam_schedule_id FK "선택한 시험 회차"
+        date exam_date "목표 시험일"
+        char display_color "일정 색상"
+        varchar plan_source "일정 생성 방식"
+        datetime ai_generated_at "AI 플랜 생성 일시"
+        json ai_meta "AI 플랜 요약"
+        tinyint sort_order "표시 순서"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    planners {
+        bigint user_id PK, FK "회원 ID"
+        varchar mode "화면 상태"
+        datetime mode_changed_at "상태 전환 일시"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    personal_schedules {
+        bigint id PK "개인 일정 ID"
+        bigint user_id FK "회원 ID"
+        varchar name "일정 이름"
+        char display_color "일정 색상"
+        tinyint sort_order "표시 순서"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    planner_bars {
+        bigint id PK "일정바 ID"
+        bigint user_id FK "회원 ID"
+        bigint target_exam_id FK "목표 자격증 ID"
+        bigint personal_schedule_id FK "개인 일정 ID"
+        varchar title "일정명"
+        date start_date "시작일"
+        date end_date "종료일"
+        tinyint is_single_day "당일 일정 여부"
+        varchar source "생성 출처"
+        smallint sort_order "표시 순서"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    planner_milestones {
+        bigint id PK "항목 ID"
+        bigint bar_id FK "일정바 ID"
+        bigint user_id FK "회원 ID"
+        date point_date "날짜"
+        varchar content "내용"
+        tinyint is_rest "휴식 여부"
+        varchar source "생성 출처"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    memos {
+        bigint id PK "메모 ID"
+        bigint user_id FK "회원 ID"
+        bigint target_exam_id FK, UK "목표 자격증 ID"
+        varchar content_text "메모 텍스트"
+        text content_html "서식 본문"
+        int version "버전"
+        tinyint is_deleted "삭제 여부"
+        datetime deleted_at "삭제 일시"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    users ||--o{ favorites : "user_id"
+    qualifications ||--o{ favorites : "jmcd"
+    users ||--o{ target_exams : "user_id"
+    qualifications ||--o{ target_exams : "jmcd"
+    qualification_exam_schedules |o--o{ target_exams : "exam_schedule_id"
+    users ||--o| planners : "user_id"
+    users ||--o{ personal_schedules : "user_id"
+    users ||--o{ planner_bars : "user_id"
+    target_exams |o--o{ planner_bars : "target_exam_id"
+    personal_schedules |o--o{ planner_bars : "personal_schedule_id"
+    planner_bars ||--o{ planner_milestones : "bar_id"
+    users ||--o{ planner_milestones : "user_id"
+    users ||--o{ memos : "user_id"
+    target_exams ||--o| memos : "target_exam_id"
+```
+
+## 7장 저격왕 (합격수기·신고·등급)
+
+```mermaid
+erDiagram
+    pass_stories {
+        bigint id PK "게시글 ID"
+        bigint user_id FK "작성 회원 ID"
+        varchar jmcd FK "합격 자격 종목코드"
+        varchar title "제목"
+        varchar body "상세 후기·실전 팁"
+        varchar examinee_base "응시자 베이스"
+        varchar prep_period "준비 기간"
+        varchar attempt_band "응시 횟수"
+        varchar textbook_name "사용 교재명"
+        decimal pass_score "합격 점수"
+        varchar pass_stage "합격 구분"
+        date exam_date "시험 응시일"
+        varchar status "게시 상태"
+        varchar hidden_reason "숨김 사유"
+        datetime hidden_at "숨김 일시"
+        bigint hidden_confirmed_by FK "숨김 확정 관리자"
+        datetime hidden_confirmed_at "숨김 확정 일시"
+        datetime deleted_at "삭제 일시"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    pass_story_subject_difficulties {
+        bigint id PK "ID"
+        bigint story_id FK "게시글 ID"
+        bigint subject_item_id FK "시험과목 ID"
+        varchar subject_name "과목명"
+        varchar difficulty "체감 난이도"
+    }
+    pass_story_reports {
+        bigint id PK "신고 ID"
+        bigint story_id FK "게시글 ID"
+        bigint reporter_id FK "신고 회원 ID"
+        varchar report_type "신고 사유"
+        varchar status "처리 상태"
+        bigint reviewed_by FK "검토 관리자"
+        datetime reviewed_at "검토 일시"
+        datetime created_at "신고 일시"
+    }
+    pass_story_moderation_logs {
+        bigint id PK "이력 ID"
+        bigint story_id FK "게시글 ID"
+        varchar action "조치"
+        bigint actor_id FK "처리자 ID"
+        varchar actor_role "처리자 구분"
+        bigint report_id FK "관련 신고 ID"
+        varchar reason_code "사유 코드"
+        varchar reason_text "관리자 메모"
+        varchar previous_status "변경 전 상태"
+        varchar new_status "변경 후 상태"
+        json content_snapshot "내용 스냅샷"
+        datetime created_at "기록 일시"
+    }
+    user_ranks {
+        bigint user_id PK, FK "회원 ID"
+        int valid_story_count "유효 합격수기 수"
+        int distinct_cert_count "합격 자격증 수"
+        varchar auto_rank "자동 산정 등급"
+        varchar override_rank "보정 등급"
+        tinyint override_active "보정 활성 여부"
+        varchar override_reason "보정 사유"
+        bigint override_by FK "보정 관리자"
+        datetime override_at "보정 일시"
+        varchar effective_rank "최종 적용 등급"
+        datetime last_calculated_at "최종 산정 일시"
+        datetime updated_at "수정 일시"
+    }
+    user_rank_histories {
+        bigint id PK "이력 ID"
+        bigint user_id FK "회원 ID"
+        varchar change_type "변경 유형"
+        varchar previous_auto_rank "변경 전 자동 등급"
+        varchar new_auto_rank "변경 후 자동 등급"
+        varchar previous_effective_rank "변경 전 적용 등급"
+        varchar new_effective_rank "변경 후 적용 등급"
+        bigint trigger_story_id FK "원인 게시글 ID"
+        varchar reason "사유"
+        bigint admin_id FK "처리 관리자"
+        datetime created_at "기록 일시"
+    }
+    rank_notifications {
+        bigint id PK "알림 ID"
+        bigint user_id FK "회원 ID"
+        bigint story_id FK "등록 게시글 ID"
+        varchar previous_rank "이전 적용 등급"
+        varchar new_rank "새 적용 등급"
+        datetime shown_at "표시 일시"
+        datetime dismissed_at "확인 일시"
+        datetime created_at "생성 일시"
+    }
+    users ||--o{ pass_stories : "user_id"
+    qualifications ||--o{ pass_stories : "jmcd"
+    users |o--o{ pass_stories : "hidden_confirmed_by"
+    pass_stories ||--o{ pass_story_subject_difficulties : "story_id"
+    qualification_subject_items |o--o{ pass_story_subject_difficulties : "subject_item_id"
+    pass_stories ||--o{ pass_story_reports : "story_id"
+    users ||--o{ pass_story_reports : "reporter_id"
+    users |o--o{ pass_story_reports : "reviewed_by"
+    pass_stories ||--o{ pass_story_moderation_logs : "story_id"
+    users ||--o{ pass_story_moderation_logs : "actor_id"
+    pass_story_reports |o--o{ pass_story_moderation_logs : "report_id"
+    users ||--o| user_ranks : "user_id"
+    users |o--o{ user_ranks : "override_by"
+    users ||--o{ user_rank_histories : "user_id"
+    pass_stories |o--o{ user_rank_histories : "trigger_story_id"
+    users |o--o{ user_rank_histories : "admin_id"
+    users ||--o{ rank_notifications : "user_id"
+    pass_stories ||--o{ rank_notifications : "story_id"
+```
+
+## 8장 고객센터·운영
+
+```mermaid
+erDiagram
+    common_codes {
+        varchar group_code PK "코드 그룹"
+        varchar code PK "코드"
+        varchar code_name "코드명"
+        smallint sort_order "정렬 순서"
+        tinyint is_active "사용 여부"
+        varchar description "설명"
+        datetime created_at "생성 일시"
+        datetime updated_at "수정 일시"
+    }
+    notices {
+        bigint id PK "공지 ID"
+        bigint author_id FK "작성 관리자"
+        varchar notice_type "공지 유형"
+        varchar title "제목"
+        text content "본문"
+        tinyint is_deleted "삭제 여부"
+        datetime deleted_at "삭제 일시"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    faqs {
+        bigint id PK "FAQ ID"
+        bigint author_id FK "작성 관리자"
+        varchar question "질문"
+        text answer "답변"
+        smallint sort_order "정렬 순서"
+        tinyint is_deleted "삭제 여부"
+        datetime deleted_at "삭제 일시"
+        datetime created_at "등록 일시"
+        datetime updated_at "수정 일시"
+    }
+    inquiries {
+        bigint id PK "문의 ID"
+        bigint user_id FK "작성 회원 ID"
+        varchar inquiry_type_code "문의 유형"
+        varchar title "문의 제목"
+        varchar content "문의 내용"
+        varchar status "처리 상태"
+        datetime answered_at "답변 완료 일시"
+        datetime created_at "접수 일시"
+        datetime updated_at "수정 일시"
+    }
+    inquiry_answers {
+        bigint id PK "답변 ID"
+        bigint inquiry_id FK, UK "문의 ID"
+        bigint admin_id FK "답변 관리자"
+        varchar content "답변 내용"
+        datetime created_at "답변 일시"
+        datetime updated_at "수정 일시"
+    }
+    admin_audit_logs {
+        bigint id PK "로그 ID"
+        bigint admin_id FK "관리자 ID"
+        bigint target_user_id FK "대상 회원 ID"
+        varchar action "작업"
+        varchar target_table "대상 테이블"
+        varchar target_id "대상 키"
+        json before_json "변경 전 값"
+        json after_json "변경 후 값"
+        varchar reason "처리 사유"
+        char request_id "요청 ID"
+        varchar client_ip "접속 IP"
+        datetime created_at "기록 일시"
+    }
+    users ||--o{ notices : "author_id"
+    users |o--o{ faqs : "author_id"
+    users ||--o{ inquiries : "user_id"
+    inquiries ||--o| inquiry_answers : "inquiry_id"
+    users ||--o{ inquiry_answers : "admin_id"
+    users ||--o{ admin_audit_logs : "admin_id"
+    users |o--o{ admin_audit_logs : "target_user_id"
+```

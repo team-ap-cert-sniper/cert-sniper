@@ -1,12 +1,12 @@
 import json, unittest
 from pathlib import Path
-from jeogyeokjeung import JeogyeokjeungService, ValidationError
+from jeogyeokjeung import JeogyeokjeungService, NotFoundError, ValidationError
 from jeogyeokjeung.eligibility import grade_exam_window
 
 ROOT = Path(__file__).resolve().parents[1]
-# 기준 프로필: 백석대학교 첨단IT학부 빅데이터전공 4학년, 관심분야 정보통신(21), 희망직무 정보기술(211)
+# 기준 프로필: 백석대학교 첨단IT학부 빅데이터전공 4학년 (전공 맞춤 추천은 학교·학과·학년만 받음)
 EXAMPLE = {'school_id': '084d0e1ab9bcfde8', 'major_id': '298669b03b67514f',
-           'grade': '4', 'interest_field_ids': ['21'], 'job_field_ids': ['211'], 'owned_qualification_ids': []}
+           'grade': '4', 'owned_qualification_ids': []}
 
 
 class Service(unittest.TestCase):
@@ -14,20 +14,12 @@ class Service(unittest.TestCase):
     def setUpClass(cls):
         cls.s = JeogyeokjeungService()
 
-    def test_two_paths_type_filter_and_card(self):
+    def test_major_path_and_no_school_info(self):
         major = self.s.recommend(EXAMPLE, today='2026-11-18')                       # ① 전공 맞춤
-        explore = self.s.recommend(dict(EXAMPLE, school_id=None, major_id=None), today='2026-11-18')   # ② 관심 분야 탐색
-        self.assertTrue(major['recommended']); self.assertEqual(explore['recommended'], [])
-        self.assertTrue(explore['interest_candidates'])
-        self.assertTrue(all(b['factor'] != 'ACADEMIC_LINK' for x in explore['interest_candidates'] for b in x['score_breakdown']))
-        pro = self.s.recommend(dict(EXAMPLE, school_id=None, major_id=None, qualification_type='PROFESSIONAL',
-                                    interest_field_ids=['02'], job_field_ids=[]), today='2026-11-18')
-        self.assertTrue(pro['interest_candidates'])
-        self.assertTrue(all(self.s.db.qualifications[x['jmcd']]['qualgbcd'] == 'S' for x in pro['interest_candidates']))
-        tech = self.s.recommend(dict(EXAMPLE, qualification_type='TECHNICAL'), today='2026-11-18')
-        self.assertTrue(all(self.s.db.qualifications[x['jmcd']]['qualgbcd'] == 'T' for x in tech['recommended'] + tech['interest_candidates']))
-        with self.assertRaises(ValidationError):
-            self.s.recommend(dict(EXAMPLE, qualification_type='X'))
+        self.assertTrue(major['recommended']); self.assertFalse(major['needs_school_info'])
+        none = self.s.recommend({}, today='2026-11-18')                             # 학교 정보 없음 → 안내
+        self.assertTrue(none['needs_school_info']); self.assertEqual((none['recommended'], none['items']), ([], []))
+        self.assertTrue(all(b['factor'] not in ('JOB_FIELD', 'INTEREST_FIELD') for x in major['recommended'] for b in x['score_breakdown']))
         card = major['recommended'][0]['card']                                       # 카드 값 = 상세 화면 기준과 같음
         d = self.s.qualification_detail(major['recommended'][0]['jmcd'], today='2026-11-18')
         self.assertEqual(card['pass_rate_latest']['exam_year'], d['pass_rate_latest']['exam_year'])
@@ -61,22 +53,22 @@ class Service(unittest.TestCase):
         r = self.s.recommend(EXAMPLE)
         json.dumps(r, ensure_ascii=False)  # JSON 직렬화 가능
         codes = [x['jmcd'] for x in r['recommended']]
-        self.assertEqual(codes, ['1320', '2290', '9521'])  # 관심·직무 일치 2개(정보처리기사, 동계열 정보처리산업기사) 먼저
-        self.assertEqual(r['recommended'][1]['basis'], 'same_subfield')
-        self.assertEqual(r['recommended'][0]['interest_match_count'], 2)
+        self.assertEqual(codes, ['1320', '9521', '2290'])  # 학과 연결 점수순: 정보처리기사 → 사회조사분석사2급 → 동계열 정보처리산업기사
+        self.assertEqual(r['recommended'][2]['basis'], 'same_subfield')
         self.assertEqual(r['major_discipline'], '빅데이터·AI')
-        self.assertTrue(all(x['basis'] == 'INTEREST_ONLY_NOT_ACADEMIC_LINK' for x in r['interest_candidates']))
-        self.assertFalse(set(codes) & {x['jmcd'] for x in r['interest_candidates']})
 
     def test_output_contract_keys(self):
         r = self.s.recommend(EXAMPLE)
         self.assertEqual(set(r), {'schema_version', 'qualification_scope', 'profile', 'recommendation_scope', 'major_discipline', 'major_category', 'recommended',
-                                  'interest_candidates', 'owned_excluded_count', 'grade_guidance', 'exam_window_basis',
-                                  'personal_eligibility_verified', 'needs_preferences', 'score_basis_date',
-                                  'roadmap', 'next_levels'})
-        self.assertEqual(set(r['recommended'][0]), {'jmcd', 'qualification_id', 'name', 'basis', 'interest_matches',
-                                                    'interest_match_count', 'exam_window', 'personal_eligibility_verified',
-                                                    'score', 'score_breakdown', 'card'})
+                                  'owned_excluded_count', 'grade_guidance', 'exam_window_basis',
+                                  'personal_eligibility_verified', 'needs_school_info', 'score_basis_date',
+                                  'roadmap', 'next_levels', 'items', 'result_limit'})
+        self.assertEqual(set(self.s.recommend({})), set(r))                        # 학교 정보 없음도 같은 키
+        self.assertEqual(r['result_limit'], 5)
+        self.assertEqual(len(r['items']), min(5, len(r['recommended'])))
+        self.assertEqual([x['jmcd'] for x in r['items']], [x['jmcd'] for x in r['recommended'][:5]])
+        self.assertEqual(set(r['recommended'][0]), {'jmcd', 'qualification_id', 'name', 'basis', 'exam_window',
+                                                    'personal_eligibility_verified', 'score', 'score_breakdown', 'card'})
 
     def test_owned_qualifications_are_excluded(self):
         r = self.s.recommend(dict(EXAMPLE, owned_qualification_ids=['1320']))
@@ -98,9 +90,10 @@ class Service(unittest.TestCase):
         self.assertEqual([x['name'] for x in self.s.recommend(dict(EXAMPLE, owned_qualification_ids=['9752']))['next_levels']],
                          ['2급 청소년지도사', '1급 청소년지도사'])
         # 보유 기사 → 같은 직무분야(정보기술) 다른 기사·산업기사는 학년 무관 바로 응시
-        own = self.s.recommend(dict(EXAMPLE, grade='1', owned_qualification_ids=['1320']), today='2026-11-11')
-        w = {x['jmcd']: x['exam_window'] for x in own['recommended'] + own['interest_candidates']}
-        self.assertEqual((w['1998']['status'], w['1998']['via_owned_qualification']), ('NOW', '1320'))
+        from jeogyeokjeung.eligibility import grade_exam_window as gew
+        Q = self.s.db.qualifications
+        w = gew(Q['1998'], '대학교', '1', [Q['1320']])
+        self.assertEqual((w['status'], w['via_owned_qualification']), ('NOW', '1320'))
         # 유사 직무분야([별표 11의2]): 전기기사 → 소방설비산업기사(전기분야, 안전관리)·건축기사 가능 / 한식조리산업기사 → 전기기사 불가
         from jeogyeokjeung.eligibility import owned_route
         Q = self.s.db.qualifications
@@ -116,10 +109,13 @@ class Service(unittest.TestCase):
         self.assertEqual(level(Q['2900']), '산업기사')                                                  # 소방설비산업기사(기계분야)
         # 국가전문 직무분야 보완: 관심분야 필터에 잡힘(영업·판매 → 공인중개사)
         self.assertEqual(Q['9630']['field_source'], 'MAPPED')
-        # 관련부처(Q-Net crf005 공식 분류): 국가전문 100종 전부, 국가기술은 빈칸
+        # 관련부처(Q-Net crf005): 613종 전부. 영문명·수수료·응시 조건
         self.assertEqual(self.s.qualification_detail('9630')['qualification']['related_ministry'], '국토교통부')
-        self.assertEqual(sum(1 for q in Q.values() if q['related_ministry']), 100)
-        self.assertEqual(Q['1320']['related_ministry'], '')
+        self.assertEqual(sum(1 for q in Q.values() if q['related_ministry']), 613)
+        self.assertEqual((Q['1320']['related_ministry'], Q['1320']['eng_name'], Q['1320']['fee_written']),
+                         ('과학기술정보통신부', 'Engineer Information Processing', '19400'))
+        self.assertEqual([Q[c]['eligibility_required'] for c in ('7910', '1320', '9630', '9738', '9511', '9510')],
+                         ['N', 'Y', 'N', 'Y', 'N', 'Y'])                  # 한식조리기능사·정보처리기사·공인중개사·사회복지사1급·직업상담사2·1급
         self.assertEqual(self.s.trends('PROFESSIONAL', interest_field_id='10', limit=1, today='2026-11-11')['items'][0]['name'], '공인중개사')
 
     def test_golden_cases(self):
@@ -128,12 +124,18 @@ class Service(unittest.TestCase):
             r = self.s.recommend(c['profile'], today=g['today'])
             self.assertEqual([[x['jmcd'], x['basis'], x['exam_window']['status'], x['score']] for x in r['recommended']],
                              c['recommended'], c['profile']['major_id'])
-            self.assertEqual([x['jmcd'] for x in r['interest_candidates']], c['interest_candidate_jmcds'])
+
+    def test_not_found(self):
+        for call in (lambda: self.s.qualification_detail('9999'), lambda: self.s.dday('1320:999')):
+            with self.assertRaises(NotFoundError):
+                call()
 
     def test_validation_errors(self):
-        bad = [{}, dict(EXAMPLE, grade='7'), dict(EXAMPLE, unknown=1), dict(EXAMPLE, major_id='nope'),
+        bad = [dict(EXAMPLE, grade='7'), dict(EXAMPLE, unknown=1), dict(EXAMPLE, major_id='nope'),
                dict(EXAMPLE, school_id=next(k for k in self.s.db.schools if k != EXAMPLE['school_id'])),
-               dict(EXAMPLE, interest_field_ids=['21', '21']), dict(EXAMPLE, job_field_ids=['x'])]
+               dict(EXAMPLE, interest_field_ids=['21']), dict(EXAMPLE, job_field_ids=['211']),   # 직무·관심은 조건 추천에서만
+               {'grade': '3'}, {'school_id': EXAMPLE['school_id'], 'major_id': EXAMPLE['major_id']},  # 대학교·전공·학년 묶음
+               dict(EXAMPLE, owned_qualification_ids=['1320', '1320'])]
         for p in bad:
             with self.assertRaises(ValidationError, msg=str(p)):
                 self.s.recommend(p)
@@ -200,14 +202,13 @@ class Service(unittest.TestCase):
 
     def test_score_ranking(self):
         r = self.s.recommend(EXAMPLE, today='2026-11-11')
-        for lst in (r['recommended'], r['interest_candidates']):
-            scores = [x['score'] for x in lst]
-            self.assertEqual(scores, sorted(scores, reverse=True))
-            for x in lst:
-                self.assertEqual(x['score'], sum(b['points'] for b in x['score_breakdown']))
+        scores = [x['score'] for x in r['recommended']]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        for x in r['recommended']:
+            self.assertEqual(x['score'], sum(b['points'] for b in x['score_breakdown']))
         top = r['recommended'][0]
         self.assertEqual(top['name'], '정보처리기사')
-        self.assertEqual({b['factor'] for b in top['score_breakdown']} >= {'JOB_FIELD', 'INTEREST_FIELD', 'ACADEMIC_LINK', 'EXAM_WINDOW'}, True)
+        self.assertTrue({b['factor'] for b in top['score_breakdown']} >= {'ACADEMIC_LINK', 'EXAM_WINDOW'})
         # 남은 시험 회차: 2026-11-11 기준 이후 시험이 있으면 +10, 연말이면 없음
         late = self.s.recommend(EXAMPLE, today='2026-12-31')
         self.assertFalse(any(b['factor'] == 'UPCOMING_2026' for x in late['recommended'] for b in x['score_breakdown']))
@@ -267,10 +268,18 @@ class Service(unittest.TestCase):
         with self.assertRaises(ValidationError):
             self.s.trends('OTHER')
 
-    def test_needs_preferences_without_major_or_interest(self):
-        r = self.s.recommend({'grade': 'NOT_ENROLLED'})
-        self.assertTrue(r['needs_preferences'])
+    def test_needs_school_info_without_school(self):
+        r = self.s.recommend({'owned_qualification_ids': ['1320']})
+        self.assertTrue(r['needs_school_info'])
         self.assertEqual(r['recommended'], [])
+
+    def test_major_without_links_returns_empty_items(self):
+        db = self.s.db
+        mid = next(m for m, row in sorted(db.majors.items())
+                   if row['school_id'] and not db.major_links.get(m) and not self.s.major_faculty.get(m) and m not in self.s.faculty_items)
+        r = self.s.recommend({'school_id': db.majors[mid]['school_id'], 'major_id': mid, 'grade': '2'})
+        self.assertFalse(r['needs_school_info'])
+        self.assertEqual((r['recommended'], r['items']), ([], []))
 
     def test_options(self):
         o = self.s.options('schools', query='백석대학교')
@@ -328,7 +337,7 @@ class Service(unittest.TestCase):
 
     def test_any_major_flag_from_data(self):
         r = self.s.recommend(EXAMPLE)
-        info = {x['jmcd']: x['exam_window'] for x in r['recommended'] + r['interest_candidates']}
+        info = {x['jmcd']: x['exam_window'] for x in r['recommended']}
         self.assertFalse(info['1320']['related_major_required'])   # 정보처리기사: 모든 학과
         self.assertEqual(info['9521']['status'], 'NO_RESTRICTION')   # 사회조사분석사2급: 서비스분야 2급 제한 없음(Q-Net)
 
@@ -353,6 +362,41 @@ class Service(unittest.TestCase):
         self.assertEqual(years, sorted(years))
         y = [r['exam_stage'] for r in self.s.qualification_detail('9714')['pass_rates'] if r['exam_year'] == 2024]
         self.assertEqual(y, ['1차', '2차', '3차'])
+
+
+    def test_condition_mode(self):
+        # 조건 선택 추천: 관심 분야·희망 직무·자격구분만, 학교·전공·학년은 받지 않음, 학과 연결·응시 시점·학년 점수 없음, 최대 5개
+        r = self.s.recommend_by_condition({'interest_field_ids': ['21'], 'job_field_ids': ['211']}, today='2026-11-18')
+        self.assertEqual(r['mode'], 'CONDITION')
+        self.assertEqual(len(r['items']), 5)
+        factors = {b['factor'] for x in r['items'] for b in x['score_breakdown']}
+        self.assertLessEqual(factors, {'JOB_FIELD', 'INTEREST_FIELD', 'UPCOMING_2026', 'NO_ELIGIBILITY_REQUIRED'})
+        keys = [(-x['score'], -x['recent_examinees']['count'], x['jmcd']) for x in r['items']]
+        self.assertEqual(keys, sorted(keys))
+        for bad in ({'school_id': EXAMPLE['school_id'], 'interest_field_ids': ['21']}, {'grade': '4', 'interest_field_ids': ['21']}, {}):
+            with self.assertRaises(ValidationError):
+                self.s.recommend_by_condition(bad)
+        pro = self.s.recommend_by_condition({'interest_field_ids': ['10'], 'qualification_type': 'PROFESSIONAL'}, today='2026-11-18')
+        self.assertTrue(pro['items'] and all(self.s.db.qualifications[x['jmcd']]['qualgbcd'] == 'S' for x in pro['items']))
+        own = self.s.recommend_by_condition({'interest_field_ids': ['21'], 'owned_qualification_ids': ['1320']}, today='2026-11-18')
+        self.assertNotIn('1320', [x['jmcd'] for x in own['items']])
+
+    def test_detail_new_fields(self):
+        d = self.s.qualification_detail('1320', today='2026-01-24')
+        self.assertTrue(d['eligibility']['required'])
+        self.assertEqual(len(d['eligibility']['conditions']), 10)                       # 기사 법정 응시자격 10개
+        self.assertFalse(self.s.qualification_detail('7910')['eligibility']['required'])   # 한식조리기능사
+        first = d['schedules_2026'][0]
+        self.assertEqual((first['registration_start_date'], first['registration_end_date'],
+                          first['vacancy_registration_start_date'], first['registration_status']),
+                         ('2026-01-12', '2026-01-15', '2026-01-24', 'VACANCY_OPEN'))
+        y = [r for r in d['pass_rates'] if r['exam_year'] == 2025 and r['exam_stage'] == '필기'][0]
+        self.assertTrue(y['applicants'] and y['attendance_rate_percent'])               # 2021~2025 국가기술: 접수자·응시율
+        self.assertIn(2001, d['pass_rate_years'])
+        sub = self.s.options('job_fields', interest_field_id='21', limit=100)['items']   # 정보통신 아래 중직무분야만, 종목 0개 분야는 없음
+        self.assertTrue(sub and all(o['count'] > 0 and o['id'].startswith('21') for o in sub))
+        tree = self.s.options('qualifications', qualification_type='TECHNICAL', interest_field_id='21', job_field_id='211', limit=100)
+        self.assertIn('정보처리기사', [x['name'] for x in tree['items']])
 
 
 if __name__ == '__main__':

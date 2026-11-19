@@ -1,5 +1,5 @@
 {
-  "built_at_unix": 1794930209,
+  "built_at_unix": 1795002170,
   "built_from": "collection_pipeline",
   "tables": {
     "schools.csv": {
@@ -22,17 +22,21 @@
       "rows": 3535,
       "sha256": "13ee2ace33f2215db62ad210c2115908a13b7a82a453550e4c373228f713a6b6"
     },
+    "eligibility_rules.csv": {
+      "rows": 124,
+      "sha256": "e4a81149392b919783981542a4202fef2289c03c5ad0fefe94426a05253a15df"
+    },
     "qualifications.csv": {
       "rows": 613,
-      "sha256": "73f59edd63af9c79ec84b8cb629d4f65da4b5edb6681a9efe86e62f0f56beab7"
+      "sha256": "ca1dedabb617cea007ee67fdc6349282bec3062a71c84dd48afc381732f07fd1"
     },
     "exam_schedules.csv": {
       "rows": 3041,
-      "sha256": "d75ebcf9bae8886717981e263ae9da4e14ef63de6be6c4b5d2a6cffd8b79deb2"
+      "sha256": "d82a5b16fe0b74ae0d5ba7a8c59318194d04f7390c2a912425937936d3ccd95a"
     },
     "pass_rates.csv": {
-      "rows": 13016,
-      "sha256": "470e15b0134d6ac99350daf446bb3c135dff7d2d5d950503be9dc9682fcc42ca"
+      "rows": 22333,
+      "sha256": "91f2e9dc632e9b49e8721b0d7ea6d69d45babbd59d718fb44e355e59ca272cd9"
     }
   },
   "major_merge": {
@@ -806,12 +810,17 @@
     "kept_majors": 21730,
     "kept_schools": 539
   },
+  "eligibility_required_counts": {
+    "Y": 361,
+    "N": 228,
+    "확인 필요": 24
+  },
   "professional_field_mapping": {
     "QNET": 513,
     "MAPPED": 98,
     "": 2
   },
-  "professional_ministry_filled": 100,
+  "professional_ministry_filled": 613,
   "qualification_text_counts": {
     "summary": 613,
     "summary_basis": 613,
@@ -820,13 +829,23 @@
     "career_outlook": 217
   },
   "qualification_text_split_counts": {
-    "conducting_agency": 483,
+    "conducting_agency": 613,
     "related_majors": 294,
     "exam_subjects": 540,
     "exam_method": 473,
     "pass_criteria": 480,
     "eligibility": 76
   },
-  "pass_rates_overlap_rows_skipped": 1927,
-  "seconds": 78.8
+  "vacancy_found": {
+    "qnet_rows": 1804,
+    "matched": 1788,
+    "registration_fixed_to_qnet_page": 1396
+  },
+  "pass_rates_sources": {
+    "QNET_PAGE": 21345,
+    "with_applicants": 4560,
+    "yearbook_examinee_mismatch": 0
+  },
+  "pass_rates_overlap_rows_skipped": 4616,
+  "seconds": 86.4
 }

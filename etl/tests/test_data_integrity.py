@@ -79,7 +79,18 @@ class DataIntegrity(unittest.TestCase):
     def test_value_ranges(self):
         for r in self.t['pass_rates.csv']:
             self.assertTrue(0 <= int(r['passed']) <= int(r['examinees']) and int(r['examinees']) > 0, r)
-        self.assertTrue(all(r['source_type'] in ('QNET_OFFICIAL', 'QNET_STATS_API') for r in self.t['pass_rates.csv']))
+        self.assertTrue(all(r['source_type'] in ('QNET_PAGE', 'QNET_OFFICIAL', 'QNET_STATS_API') for r in self.t['pass_rates.csv']))
+        for r in self.t['pass_rates.csv']:     # 접수자는 통계연보가 있는 행만, 있으면 응시자 이상
+            self.assertTrue(r['applicants'] == '' or int(r['applicants']) >= int(r['examinees']), r)
+        keys = {r['rule_key'] for r in self.t['eligibility_rules.csv']}
+        for q in self.t['qualifications.csv']:  # 응시 조건 필요(Y)인데 조건 목록이 없는 건 국가유산수리기술자뿐
+            self.assertIn(q['eligibility_required'], ('Y', 'N', ''))
+            self.assertTrue(not q['eligibility_rule_key'] or q['eligibility_rule_key'] in keys, q['jmcd'])
+            if q['eligibility_required'] == 'Y' and not q['eligibility_rule_key']:
+                self.assertTrue(q['name'].startswith('국가유산수리기술자'), q['name'])
+        for r in self.t['exam_schedules.csv']:  # 빈자리 접수는 정규 접수 이후, 시험 시작 전
+            if r['vacancy_registration_start_date']:
+                self.assertTrue(r['registration_end_date'] <= r['vacancy_registration_start_date'] <= r['vacancy_registration_end_date'] <= r['exam_start_date'], r)
         for r in self.t['exam_schedules.csv']:
             self.assertEqual(r['exam_year'], '2026')
             self.assertLessEqual(r['exam_start_date'], r['exam_end_date'], r)

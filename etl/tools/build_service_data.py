@@ -148,6 +148,61 @@ def apply_same_subfield(majors, links, manifest, series):
     return links
 
 
+QNET_PAGES = 'data/source/qnet/qnet_detail_pages_2026-11-18.json'   # Q-Net 종목 상세 페이지(crf00503·s01·s02) 브라우저 수집 원본
+YEARBOOK = 'data/reference/yearbook_2026/national_technical_qualification_exam_statistics_2026.xlsx'
+DATE_RE = re.compile(r'(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})')
+# 응시자격: 국가기술은 등급별 법정 기준(GRADE:등급), 서비스 분야·국가전문은 종목별(Q:종목코드). 조건 목록은 tools/eligibility_rules.csv
+SERVICE_FREE = {'9511', '9521', '9536', '9538', '9541', '9545', '9546', '9547', '9777'}
+PRO_DISQUALIFY_ONLY = {'9500', '9641', '9737', '9745', '9747', '9748', '9749'}   # 결격사유만 규정(학력·경력 요건 없음)
+PRO_SIBLING = {'9502': '9501', '9696': '9698', '9697': '9698', '9699': '9698', '9700': '9698', '9728': '9698', '9758': '9729', '9759': '9729'}
+HERITAGE_TECH = {'9666', '9667', '9668', '9669', '9670', '9671'}                # 국가유산수리기술자: 응시요건 있음, 세부는 큐넷 확인
+FREE_RE = re.compile(r'제한\s*없음|제한없음|:\s*없음')
+
+
+def qdates(text):
+    return [f'{y}-{int(m):02d}-{int(d):02d}' for y, m, d in DATE_RE.findall(text or '')]
+
+
+def split_vacancy(cell):
+    """'2026.01.12 ~ 2026.01.15 [빈자리접수 : 2026.01.24 ~ 2026.01.25]' → (정규 날짜, 빈자리 날짜)"""
+    head, _, tail = (cell or '').partition('빈자리')
+    return qdates(head), qdates(tail)
+
+
+def won(text):
+    digits = re.sub(r'[^\d]', '', text or '')
+    return int(digits) if digits else ''
+
+
+def tech_grade(q):
+    if q['seriescd'] in ('01', '02', '04'):
+        return {'01': '기술사', '02': '기능장', '04': '기능사'}[q['seriescd']]
+    name = re.sub(r'\(.*\)$', '', q['name'])
+    return '산업기사' if name.endswith('산업기사') else '기사' if name.endswith('기사') else '서비스'
+
+
+def eligibility(q, page, pages, rule_keys, sib_eligibility):
+    """→ (eligibility_required Y/N/'', eligibility_summary, eligibility_rule_key)"""
+    code = q['jmcd']
+    if q['qualgbcd'] == 'T':
+        g = tech_grade(q)
+        if g == '기능사' or code in SERVICE_FREE:
+            return 'N', '응시 조건 없음', ''
+        key = 'GRADE:' + g if g != '서비스' else 'Q:' + code
+        return 'Y', ('관련학과 졸업(예정)·실무경력·보유 자격 중 하나 필요' if g in ('산업기사', '기사') else
+                     '실무경력 또는 보유 자격 필요' if g in ('기능장', '기술사') else '종목별 응시 조건 필요'), key
+    if 'Q:' + code in rule_keys:
+        return 'Y', '종목별 응시 조건 필요', 'Q:' + code
+    if code in HERITAGE_TECH:
+        return 'Y', '응시 요건 있음 (큐넷 국가유산수리기술자 응시자격 확인)', ''
+    sib = PRO_SIBLING.get(code, '')
+    text = (page.get('texts', {}).get('응시자격', '') or q['eligibility']
+            or pages.get(sib, {}).get('texts', {}).get('응시자격', '') or sib_eligibility.get(sib, ''))
+    if code in PRO_DISQUALIFY_ONLY or FREE_RE.search(text):
+        return 'N', '응시 조건 없음 (결격사유 해당자는 응시 불가)', ''
+    return '', '응시 조건 확인 필요', ''
+
+
 def read_csv(path):
     with open(path, encoding='utf-8-sig', newline='') as f:
         return list(csv.DictReader(f))
@@ -299,6 +354,32 @@ def main():
     for r in qrows:
         r.update({k: texts.get(r['jmcd'], {}).get(k, '') for k in tf})
     qf += tf
+    # Q-Net 종목 상세 페이지: 영문명·관련부처(국가기술 포함)·시행기관·수수료·시험 형태(정기/상시)·응시 조건
+    pages = {x['jmcd']: x for x in json.loads((src / QNET_PAGES).read_text(encoding='utf-8'))['items']}
+    rules = read_csv(V2 / 'tools/eligibility_rules.csv')
+    rule_keys = {r['rule_key'] for r in rules}
+    for r in qrows:
+        pg = pages.get(r['jmcd'], {})
+        info = pg.get('info', {})
+        r['eng_name'] = pg.get('eng', '')
+        ministry = ', '.join(dict.fromkeys(m.strip() for m in info.get('관련부처', '').split(',') if m.strip()))
+        r['related_ministry'] = ministry or r['related_ministry']
+        r['conducting_agency'] = r['conducting_agency'] or info.get('시행기관', '')
+        fee = next((t for t in pg.get('tables', []) if '수수료' in t['cap']), None)
+        heads = fee['heads'][0] if fee and fee['heads'] else []
+        vals = dict(zip(heads, fee['rows'][0])) if fee and fee['rows'] else {}
+        r['fee_written'], r['fee_practical'] = won(vals.get('필기')), won(vals.get('실기'))
+        note = pg.get('texts', {}).get('응시수수료', '')
+        r['fee_note'] = re.sub(r'\s+', ' ', note.replace('□ 응시수수료', '')).strip()
+        sched_text = ' '.join(c for t in pg.get('tables', []) if '수수료' not in t['cap'] for row in t['rows'] for c in row)
+        r['schedule_type'] = '상시' if '상시' in sched_text and not qdates(sched_text) else '정기'
+        r['eligibility_required'], r['eligibility_summary'], r['eligibility_rule_key'] = eligibility(r, pg, pages, rule_keys, {x['jmcd']: x['eligibility'] for x in qrows})
+    qf += ['eng_name', 'fee_written', 'fee_practical', 'fee_note', 'schedule_type',
+           'eligibility_required', 'eligibility_summary', 'eligibility_rule_key']
+    used = {r['eligibility_rule_key'] for r in qrows}
+    manifest['tables']['eligibility_rules.csv'] = write_csv('eligibility_rules.csv', ['rule_key', 'seq', 'condition_type', 'condition_text'],
+                                                            [r for r in rules if r['rule_key'] in used])
+    manifest['eligibility_required_counts'] = dict(Counter(r['eligibility_required'] or '확인 필요' for r in qrows))
     qrows.sort(key=lambda r: r['jmcd'])
     manifest['tables']['qualifications.csv'] = write_csv('qualifications.csv', qf, qrows)
     manifest['professional_field_mapping'] = {k: sum(1 for r in qrows if r['field_source'] == k) for k in ('QNET', 'MAPPED', '')}
@@ -343,6 +424,35 @@ def main():
                           'registration_end_date': r.get(prefix + '_reg_end_date', ''),
                           'pass_announcement_date': r.get(prefix + '_pass_date', ''), 'source_type': 'QNET_SCHEDULE_API',
                           'source_url': 'https://www.data.go.kr/data/15074408/openapi.do', 'source_note': r.get('description', '')})
+    # 빈자리 접수 기간: Q-Net 종목 상세 시험일정 표(정기 접수 칸의 [빈자리접수 : …]). 같은 종목·단계·시험 시작일 행에 붙인다.
+    vacancy = {}
+    for code, pg in pages.items():
+        for t in pg.get('tables', []):
+            if '수수료' in t['cap'] or not t['heads']:
+                continue
+            h = t['heads'][0]
+            for row in t['rows']:
+                cells = dict(zip(h, row))
+                if '필기시험' in h:        # 국가기술: 필기·실기 한 줄
+                    pairs = [('필기', cells.get(h[1], ''), cells.get('필기시험', '')), ('실기', cells.get(h[4], ''), cells.get('실기시험', ''))]
+                else:                      # 국가전문: 'N회1차' 단계
+                    m = re.search(r'(\d차|면접)', cells.get('구분', ''))
+                    pairs = [(m.group(1) if m else '시험', cells.get('접수기간', ''), cells.get('시험일정', ''))]
+                for stage, reg, exam in pairs:
+                    regular, vac = split_vacancy(reg)
+                    ex = qdates(exam)
+                    if len(vac) >= 2 and ex:
+                        vacancy[(code, stage, ex[0])] = (vac[0], vac[1], regular[:2])
+    fixed = 0
+    for r in sched:     # 정규 접수 칸에 빈자리 기간이 들어간 행은 Q-Net 표의 정규 접수 기간으로 바로잡는다
+        vs, ve, regular = vacancy.get((r['jmcd'], r['exam_stage'], r['exam_start_date']), ('', '', []))
+        r['vacancy_registration_start_date'], r['vacancy_registration_end_date'] = vs, ve
+        if len(regular) == 2 and (r['registration_start_date'], r['registration_end_date']) != tuple(regular):
+            r['registration_start_date'], r['registration_end_date'] = regular
+            fixed += 1
+    sf += ['vacancy_registration_start_date', 'vacancy_registration_end_date']
+    manifest['vacancy_found'] = {'qnet_rows': len(vacancy), 'matched': sum(1 for r in sched if r['vacancy_registration_start_date']),
+                                 'registration_fixed_to_qnet_page': fixed}
     sched.sort(key=lambda r: (r['jmcd'], r['exam_start_date'], r['exam_stage']))
     manifest['tables']['exam_schedules.csv'] = write_csv('exam_schedules.csv', sf, sched)
 
@@ -350,11 +460,27 @@ def main():
     #   QNET_OFFICIAL : qnet_annual_pass_rates.csv (Q-Net 종목 상세 검정현황 표 + 국가전문 통계 게시판 첨부)
     #   QNET_STATS_API: qualification_statistics_2021_2025.csv 중 위에 없는 연도·단계만.
     #                   두 출처가 겹치는 1,927건이 응시자·합격자 모두 일치(불일치 0)해 applicants=응시자로 판단.
-    pf = ['jmcd', 'exam_year', 'exam_stage', 'examinees', 'passed', 'source_type', 'source_url']
+    #   QNET_PAGE     : Q-Net 종목 상세 '종목별 검정현황' 표 전 연도(2026-11-18 수집). 같은 연도·단계는 이 값을 먼저 쓴다.
+    #   applicants    : 원서 접수자 수. 2026 국가기술자격 통계연보(2021~2025, 국가기술)에만 있음 → 나머지는 빈칸.
+    pf = ['jmcd', 'exam_year', 'exam_stage', 'applicants', 'examinees', 'passed', 'source_type', 'source_url']
     rates, have = [], set()
+    for code, pg in sorted(pages.items()):
+        for t in pg.get('stats', []):
+            for row in t['rows']:
+                if not re.fullmatch(r'\d{4}', row[0]):
+                    continue
+                for stage, (n, k) in (('필기', row[1:3]), ('실기', row[4:6])):
+                    n, k = won(n), won(k)
+                    if n == '' or n <= 0:
+                        continue
+                    assert k != '' and 0 <= k <= n, (code, row)
+                    rates.append({'jmcd': code, 'exam_year': row[0], 'exam_stage': stage, 'examinees': n, 'passed': k,
+                                  'source_type': 'QNET_PAGE', 'source_url': f'https://www.q-net.or.kr/crf005.do?id=crf00503&jmCd={code}'})
+                    have.add((code, row[0], stage))
+    page_rows = len(rates)
     for r in read_csv(src / 'data/curated/pass_rates/qnet_annual_pass_rates.csv'):
         code = r['qualification_id'].split(':', 1)[1]
-        if code in svc.master and int(r['examinees']) > 0:  # 응시 0명 행은 합격률이 없으므로 제외
+        if code in svc.master and int(r['examinees']) > 0 and (code, r['exam_year'], r['exam_stage']) not in have:  # 응시 0명 행 제외
             rates.append({'jmcd': code, 'exam_year': r['exam_year'], 'exam_stage': r['exam_stage'], 'examinees': r['examinees'],
                           'passed': r['passed'], 'source_type': 'QNET_OFFICIAL', 'source_url': r['source_url']})
             have.add((code, r['exam_year'], r['exam_stage']))
@@ -373,6 +499,33 @@ def main():
                 continue
             rates.append({'jmcd': code, 'exam_year': r['year'], 'exam_stage': stage, 'examinees': n, 'passed': k,
                           'source_type': 'QNET_STATS_API', 'source_url': 'data.go.kr Q-Net 종목별 검정현황(qualification_statistics_2021_2025.csv)'})
+    import openpyxl
+    wb = openpyxl.load_workbook(src / YEARBOOK, read_only=True, data_only=True)
+    norm = lambda x: re.sub(r'[\s·.ㆍ()（）]', '', x)
+    by_name = {norm(q['jmfldnm']): c for c, q in svc.master.items()}
+    applicants, mismatch = {}, 0
+    for ws in wb.worksheets[:6]:          # 2-1(기술사·기능장·기사·산업기사·기능사·서비스) 종목별 연도별 접수·응시·합격
+        suffix = re.search(r'\((.+)\)', ws.title).group(1)
+        suffix = '' if suffix == '서비스' else suffix
+        name = None
+        for row in ws.iter_rows(min_row=6, values_only=True):
+            if row[0] not in (None, ''):
+                name = str(row[0]).strip()
+            if row[2] != '전체' or not name or name == '합계' or name.endswith('분야') or not re.fullmatch(r'\d{2}', str(row[1]).strip()):
+                continue
+            m = re.match(r'(.*?)(\(.*\))$', name)
+            code = next((by_name[norm(c)] for c in [name + suffix, name] + ([m.group(1) + suffix + m.group(2)] if m else []) if norm(c) in by_name), None)
+            if code:
+                year = str(2000 + int(str(row[1]).strip()))
+                for stage, (a, e) in (('필기', row[3:5]), ('실기', row[7:9])):
+                    if isinstance(a, int) and a > 0:
+                        applicants[(code, year, stage)] = (a, e)
+    for r in rates:
+        a = applicants.get((r['jmcd'], r['exam_year'], r['exam_stage']))
+        r['applicants'] = a[0] if a else ''
+        mismatch += bool(a and isinstance(a[1], int) and a[1] != int(r['examinees']))
+    manifest['pass_rates_sources'] = {'QNET_PAGE': page_rows, 'with_applicants': sum(1 for r in rates if r['applicants']),
+                                      'yearbook_examinee_mismatch': mismatch}
     rates.sort(key=lambda r: (r['jmcd'], r['exam_year'], r['exam_stage']))
     manifest['tables']['pass_rates.csv'] = write_csv('pass_rates.csv', pf, rates)
     manifest['pass_rates_overlap_rows_skipped'] = overlap_checked
