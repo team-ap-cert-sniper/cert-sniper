@@ -1,0 +1,851 @@
+{
+  "built_at_unix": 1795002170,
+  "built_from": "collection_pipeline",
+  "tables": {
+    "schools.csv": {
+      "rows": 539,
+      "sha256": "426d72db4162a613b9c84a13495a915685f49db51796584191a05016780197b9"
+    },
+    "majors.csv": {
+      "rows": 21730,
+      "sha256": "13d2214864c6823025f84a9a74c0187e2f4912a31ca23f5646e81b37b988a457"
+    },
+    "major_qualifications.csv": {
+      "rows": 41707,
+      "sha256": "fc3d6e9f57ef56844bbe5d1574e688ccde5ac96cba0ce2c2a77c579995af387d"
+    },
+    "faculties.csv": {
+      "rows": 3551,
+      "sha256": "8aad10938169f9730b3897ef806822859df9ba19b50ed5e3ad7aa4b4cf36bce7"
+    },
+    "faculty_majors.csv": {
+      "rows": 3535,
+      "sha256": "13ee2ace33f2215db62ad210c2115908a13b7a82a453550e4c373228f713a6b6"
+    },
+    "eligibility_rules.csv": {
+      "rows": 124,
+      "sha256": "e4a81149392b919783981542a4202fef2289c03c5ad0fefe94426a05253a15df"
+    },
+    "qualifications.csv": {
+      "rows": 613,
+      "sha256": "ca1dedabb617cea007ee67fdc6349282bec3062a71c84dd48afc381732f07fd1"
+    },
+    "exam_schedules.csv": {
+      "rows": 3041,
+      "sha256": "d82a5b16fe0b74ae0d5ba7a8c59318194d04f7390c2a912425937936d3ccd95a"
+    },
+    "pass_rates.csv": {
+      "rows": 22333,
+      "sha256": "91f2e9dc632e9b49e8721b0d7ea6d69d45babbd59d718fb44e355e59ca272cd9"
+    }
+  },
+  "major_merge": {
+    "before": 26083,
+    "after": 21730
+  },
+  "name_rule_supplement": {
+    "majors_added": 599,
+    "by_discipline": {
+      "항공우주·항공정비": 57,
+      "기계공학": 55,
+      "빅데이터·AI": 49,
+      "식품·영양": 46,
+      "컴퓨터·소프트웨어": 44,
+      "화학·화공": 42,
+      "건축공학": 38,
+      "축산·동물": 38,
+      "환경공학": 36,
+      "경영·경제": 32,
+      "자동차공학": 27,
+      "의류·패션": 21,
+      "실내건축·공간디자인": 19,
+      "전자공학": 18,
+      "조리": 16,
+      "전기공학": 12,
+      "토목공학": 10,
+      "소방": 10,
+      "국제무역·물류": 9,
+      "바이오제조·생물공학": 7,
+      "재료·금속": 3,
+      "산업공학·품질": 3,
+      "메카트로닉스·자동화": 2,
+      "뷰티·미용": 2,
+      "농업·원예": 1,
+      "조선·해양공학": 1,
+      "정보보안": 1
+    },
+    "rules": [
+      {
+        "keyword": "정보보안",
+        "discipline": "정보보안",
+        "mode": "DATA",
+        "known_n": 23,
+        "share": 1.0,
+        "applied": true
+      },
+      {
+        "keyword": "정보보호",
+        "discipline": "정보보안",
+        "mode": "DATA",
+        "known_n": 22,
+        "share": 0.95,
+        "applied": true
+      },
+      {
+        "keyword": "빅데이터",
+        "discipline": "빅데이터·AI",
+        "mode": "DATA",
+        "known_n": 103,
+        "share": 0.96,
+        "applied": true
+      },
+      {
+        "keyword": "데이터",
+        "discipline": "빅데이터·AI",
+        "mode": "DATA",
+        "known_n": 180,
+        "share": 0.88,
+        "applied": true
+      },
+      {
+        "keyword": "인공지능",
+        "discipline": "빅데이터·AI",
+        "mode": "DATA",
+        "known_n": 129,
+        "share": 0.95,
+        "applied": true
+      },
+      {
+        "keyword": "AI",
+        "discipline": "빅데이터·AI",
+        "mode": "MANUAL",
+        "known_n": 174,
+        "share": 0.22,
+        "applied": true
+      },
+      {
+        "keyword": "메카",
+        "discipline": "메카트로닉스·자동화",
+        "mode": "DATA",
+        "known_n": 63,
+        "share": 0.86,
+        "applied": true
+      },
+      {
+        "keyword": "항공정비",
+        "discipline": "항공우주·항공정비",
+        "mode": "DATA",
+        "known_n": 27,
+        "share": 0.96,
+        "applied": true
+      },
+      {
+        "keyword": "무인항공",
+        "discipline": "항공우주·항공정비",
+        "mode": "DATA",
+        "known_n": 5,
+        "share": 1.0,
+        "applied": true
+      },
+      {
+        "keyword": "드론",
+        "discipline": "항공우주·항공정비",
+        "mode": "MANUAL",
+        "known_n": 27,
+        "share": 0.59,
+        "applied": true
+      },
+      {
+        "keyword": "항공운항",
+        "discipline": "항공우주·항공정비",
+        "mode": "DATA",
+        "known_n": 12,
+        "share": 0.75,
+        "applied": true
+      },
+      {
+        "keyword": "실내건축",
+        "discipline": "실내건축·공간디자인",
+        "mode": "DATA",
+        "known_n": 36,
+        "share": 1.0,
+        "applied": true
+      },
+      {
+        "keyword": "인테리어",
+        "discipline": "실내건축·공간디자인",
+        "mode": "DATA",
+        "known_n": 19,
+        "share": 0.84,
+        "applied": true
+      },
+      {
+        "keyword": "건축",
+        "discipline": "건축공학",
+        "mode": "DATA",
+        "known_n": 442,
+        "share": 0.8,
+        "applied": true
+      },
+      {
+        "keyword": "건설",
+        "discipline": "토목공학",
+        "mode": "DATA",
+        "known_n": 108,
+        "share": 0.9,
+        "applied": true
+      },
+      {
+        "keyword": "소방",
+        "discipline": "소방",
+        "mode": "MANUAL",
+        "known_n": 129,
+        "share": 0.5,
+        "applied": true
+      },
+      {
+        "keyword": "냉동공조",
+        "discipline": "기계공학",
+        "mode": "DATA",
+        "known_n": 6,
+        "share": 1.0,
+        "applied": true
+      },
+      {
+        "keyword": "로봇",
+        "discipline": "기계공학",
+        "mode": "MANUAL",
+        "known_n": 30,
+        "share": 0.5,
+        "applied": true
+      },
+      {
+        "keyword": "기계",
+        "discipline": "기계공학",
+        "mode": "DATA",
+        "known_n": 449,
+        "share": 0.84,
+        "applied": true
+      },
+      {
+        "keyword": "자동차",
+        "discipline": "자동차공학",
+        "mode": "MANUAL",
+        "known_n": 160,
+        "share": 0.53,
+        "applied": true
+      },
+      {
+        "keyword": "전기",
+        "discipline": "전기공학",
+        "mode": "DATA",
+        "known_n": 311,
+        "share": 0.82,
+        "applied": true
+      },
+      {
+        "keyword": "전자",
+        "discipline": "전자공학",
+        "mode": "MANUAL",
+        "known_n": 380,
+        "share": 0.48,
+        "applied": true
+      },
+      {
+        "keyword": "반도체",
+        "discipline": "전자공학",
+        "mode": "DATA",
+        "known_n": 236,
+        "share": 0.98,
+        "applied": true
+      },
+      {
+        "keyword": "통신",
+        "discipline": "통신·네트워크",
+        "mode": "DATA",
+        "known_n": 173,
+        "share": 0.75,
+        "applied": false
+      },
+      {
+        "keyword": "IT",
+        "discipline": "컴퓨터·소프트웨어",
+        "mode": "DATA",
+        "known_n": 116,
+        "share": 0.79,
+        "applied": true
+      },
+      {
+        "keyword": "소프트",
+        "discipline": "컴퓨터·소프트웨어",
+        "mode": "DATA",
+        "known_n": 302,
+        "share": 0.93,
+        "applied": true
+      },
+      {
+        "keyword": "컴퓨터",
+        "discipline": "컴퓨터·소프트웨어",
+        "mode": "DATA",
+        "known_n": 473,
+        "share": 0.94,
+        "applied": true
+      },
+      {
+        "keyword": "고분자",
+        "discipline": "화학·화공",
+        "mode": "DATA",
+        "known_n": 5,
+        "share": 0.8,
+        "applied": true
+      },
+      {
+        "keyword": "세라믹",
+        "discipline": "재료·금속",
+        "mode": "DATA",
+        "known_n": 4,
+        "share": 0.75,
+        "applied": false
+      },
+      {
+        "keyword": "재료",
+        "discipline": "재료·금속",
+        "mode": "DATA",
+        "known_n": 44,
+        "share": 0.75,
+        "applied": true
+      },
+      {
+        "keyword": "섬유",
+        "discipline": "의류·패션",
+        "mode": "DATA",
+        "known_n": 13,
+        "share": 0.85,
+        "applied": true
+      },
+      {
+        "keyword": "의류",
+        "discipline": "의류·패션",
+        "mode": "DATA",
+        "known_n": 49,
+        "share": 0.96,
+        "applied": true
+      },
+      {
+        "keyword": "패션",
+        "discipline": "의류·패션",
+        "mode": "DATA",
+        "known_n": 138,
+        "share": 0.86,
+        "applied": true
+      },
+      {
+        "keyword": "화학",
+        "discipline": "화학·화공",
+        "mode": "DATA",
+        "known_n": 465,
+        "share": 0.86,
+        "applied": true
+      },
+      {
+        "keyword": "제약",
+        "discipline": "바이오제조·생물공학",
+        "mode": "DATA",
+        "known_n": 37,
+        "share": 0.95,
+        "applied": true
+      },
+      {
+        "keyword": "식품",
+        "discipline": "식품·영양",
+        "mode": "DATA",
+        "known_n": 319,
+        "share": 0.88,
+        "applied": true
+      },
+      {
+        "keyword": "조리",
+        "discipline": "조리",
+        "mode": "DATA",
+        "known_n": 214,
+        "share": 0.98,
+        "applied": true
+      },
+      {
+        "keyword": "베이커리",
+        "discipline": "조리",
+        "mode": "DATA",
+        "known_n": 14,
+        "share": 0.93,
+        "applied": true
+      },
+      {
+        "keyword": "원예",
+        "discipline": "농업·원예",
+        "mode": "DATA",
+        "known_n": 70,
+        "share": 0.83,
+        "applied": true
+      },
+      {
+        "keyword": "동물",
+        "discipline": "축산·동물",
+        "mode": "DATA",
+        "known_n": 132,
+        "share": 0.95,
+        "applied": true
+      },
+      {
+        "keyword": "산림",
+        "discipline": "산림",
+        "mode": "DATA",
+        "known_n": 79,
+        "share": 0.75,
+        "applied": false
+      },
+      {
+        "keyword": "선박",
+        "discipline": "조선·해양공학",
+        "mode": "DATA",
+        "known_n": 8,
+        "share": 0.75,
+        "applied": true
+      },
+      {
+        "keyword": "환경",
+        "discipline": "환경공학",
+        "mode": "MANUAL",
+        "known_n": 344,
+        "share": 0.47,
+        "applied": true
+      },
+      {
+        "keyword": "금융",
+        "discipline": "경영·경제",
+        "mode": "DATA",
+        "known_n": 87,
+        "share": 0.76,
+        "applied": true
+      },
+      {
+        "keyword": "물류",
+        "discipline": "국제무역·물류",
+        "mode": "DATA",
+        "known_n": 88,
+        "share": 0.76,
+        "applied": true
+      },
+      {
+        "keyword": "무역",
+        "discipline": "국제무역·물류",
+        "mode": "DATA",
+        "known_n": 99,
+        "share": 0.9,
+        "applied": true
+      },
+      {
+        "keyword": "미용",
+        "discipline": "뷰티·미용",
+        "mode": "DATA",
+        "known_n": 39,
+        "share": 1.0,
+        "applied": true
+      },
+      {
+        "keyword": "경영공학",
+        "discipline": "산업공학·품질",
+        "mode": "DATA",
+        "known_n": 51,
+        "share": 0.94,
+        "applied": true
+      },
+      {
+        "keyword": "산업공학",
+        "discipline": "산업공학·품질",
+        "mode": "DATA",
+        "known_n": 59,
+        "share": 0.85,
+        "applied": true
+      }
+    ]
+  },
+  "same_subfield": {
+    "rule": "소계열 학과 5개 이상, 50% 이상 공통, 기술사·기능장 제외, 최대 5개",
+    "groups_with_set": 83,
+    "majors_gaining": 2824,
+    "rows_added": 4849,
+    "sets": {
+      "공학계열/전기・전자・컴퓨터/인공지능공학": [
+        "1320",
+        "9521"
+      ],
+      "공학계열/전기・전자・컴퓨터/정보・통신공학": [
+        "1320"
+      ],
+      "인문사회계열/사회과학/행정학": [
+        "9511",
+        "9521"
+      ],
+      "인문사회계열/경영・경제/경영학": [
+        "9521"
+      ],
+      "인문사회계열/사회과학/사회복지학": [
+        "9511",
+        "9738"
+      ],
+      "공학계열/전기・전자・컴퓨터/응용소프트웨어공학": [
+        "1320",
+        "2290"
+      ],
+      "공학계열/건설/토목공학": [
+        "1250",
+        "1380",
+        "1750"
+      ],
+      "공학계열/건설/건축공학": [
+        "1630",
+        "1632",
+        "2530",
+        "1750",
+        "1350"
+      ],
+      "공학계열/건설/건축학": [
+        "1630",
+        "1632",
+        "2530"
+      ],
+      "인문사회계열/경영・경제/경제학": [
+        "9521"
+      ],
+      "인문사회계열/경영・경제/관광학": [
+        "9663"
+      ],
+      "인문사회계열/경영・경제/무역・유통학": [
+        "9640",
+        "9746"
+      ],
+      "자연과학계열/수학・물리・천문・지구/수학": [
+        "9521"
+      ],
+      "자연과학계열/수학・물리・천문・지구/통계학": [
+        "9521"
+      ],
+      "공학계열/기계/기계공학": [
+        "1021",
+        "1837",
+        "2031"
+      ],
+      "공학계열/산업・안전/산업공학": [
+        "1500",
+        "2420"
+      ],
+      "공학계열/기계/메카트로닉스공학": [
+        "1837"
+      ],
+      "공학계열/산업・안전/방재공학": [
+        "1910"
+      ],
+      "자연과학계열/수학・물리・천문・지구/물리학": [
+        "1513"
+      ],
+      "공학계열/건설/도시공학": [
+        "1380"
+      ],
+      "인문사회계열/사회과학/도시・지역・지리학": [
+        "1380"
+      ],
+      "인문사회계열/언어・문학/중국어・문학": [
+        "9629"
+      ],
+      "공학계열/전기・전자・컴퓨터/전산학・컴퓨터공학": [
+        "1320",
+        "2290"
+      ],
+      "인문사회계열/사회과학/언론・방송・매체학": [
+        "9545",
+        "9521"
+      ],
+      "공학계열/기계/자동차공학": [
+        "1070",
+        "2070",
+        "6281"
+      ],
+      "예체능계열/미술/디자인": [
+        "7796"
+      ],
+      "공학계열/화공・고분자・에너지/생명공학": [
+        "1563",
+        "1800"
+      ],
+      "자연과학계열/화학・생명과학・환경/생명과학": [
+        "1988",
+        "1989"
+      ],
+      "공학계열/전기・전자・컴퓨터/의공학": [
+        "1176",
+        "2176"
+      ],
+      "공학계열/재료/반도체공학": [
+        "1170",
+        "2170"
+      ],
+      "공학계열/전기・전자・컴퓨터/전자공학": [
+        "1170",
+        "2170"
+      ],
+      "인문사회계열/법학/법학": [
+        "9500"
+      ],
+      "자연과학계열/생활과학/식품영양학": [
+        "2450",
+        "2971",
+        "2972",
+        "2973",
+        "2974"
+      ],
+      "공학계열/재료/신소재공학": [
+        "1104",
+        "2101"
+      ],
+      "인문사회계열/사회과학/심리학": [
+        "9511"
+      ],
+      "공학계열/화공・고분자・에너지/에너지공학": [
+        "1114",
+        "1340"
+      ],
+      "인문사회계열/언어・문학/영어・영문학": [
+        "9661"
+      ],
+      "인문사회계열/언어・문학/독일어・문학": [
+        "9625"
+      ],
+      "인문사회계열/언어・문학/일본어・문학": [
+        "9628"
+      ],
+      "공학계열/산업・안전/안전공학": [
+        "1431",
+        "1910",
+        "1440"
+      ],
+      "공학계열/전기・전자・컴퓨터/전기공학": [
+        "1150",
+        "2140",
+        "1160"
+      ],
+      "공학계열/건설/조경학": [
+        "1370",
+        "2320",
+        "7900"
+      ],
+      "인문사회계열/언어・문학/국어・국문학": [
+        "9660"
+      ],
+      "공학계열/화공・고분자・에너지/화학공학": [
+        "1563",
+        "1110",
+        "1125"
+      ],
+      "자연과학계열/화학・생명과학・환경/화학": [
+        "1563",
+        "1110",
+        "1125"
+      ],
+      "인문사회계열/경영・경제/광고・홍보학": [
+        "9521"
+      ],
+      "공학계열/기계/항공・우주공학": [
+        "1240",
+        "2230",
+        "6288"
+      ],
+      "예체능계열/N.C.E/뷰티아트": [
+        "7937",
+        "7947",
+        "7957",
+        "7967"
+      ],
+      "자연과학계열/생활과학/조리과학": [
+        "7910",
+        "7892",
+        "7911"
+      ],
+      "예체능계열/응용예술/영상예술": [
+        "9545"
+      ],
+      "공학계열/교통・수송/항공운항학": [
+        "1240",
+        "2230",
+        "6288"
+      ],
+      "인문사회계열/경영・경제/금융・보험학": [
+        "9521"
+      ],
+      "인문사회계열/인문학/역사・고고학": [
+        "9659"
+      ],
+      "인문사회계열/경영・경제/경영정보학": [
+        "9521"
+      ],
+      "인문사회계열/사회과학/사회학": [
+        "9521"
+      ],
+      "공학계열/건설/환경공학": [
+        "1661",
+        "1662",
+        "1950",
+        "1663",
+        "1948"
+      ],
+      "자연과학계열/생활과학/의류・의상학": [
+        "1301",
+        "2085",
+        "2301"
+      ],
+      "인문사회계열/언어・문학/프랑스어・문학": [
+        "9624"
+      ],
+      "자연과학계열/화학・생명과학・환경/환경학": [
+        "1661",
+        "1662"
+      ],
+      "자연과학계열/보건/피부미용": [
+        "7937",
+        "7947",
+        "7957",
+        "7967"
+      ],
+      "공학계열/기계/철도공학": [
+        "1030",
+        "2030"
+      ],
+      "인문사회계열/경영・경제/부동산": [
+        "9630"
+      ],
+      "자연과학계열/농림・수산/산림학": [
+        "1564",
+        "2481",
+        "7632"
+      ],
+      "자연과학계열/농림・수산/작물・원예학": [
+        "1592",
+        "1560",
+        "9695"
+      ],
+      "공학계열/재료/재료공학": [
+        "1104",
+        "2101"
+      ],
+      "공학계열/재료/금속공학": [
+        "1104",
+        "2101"
+      ],
+      "자연과학계열/농림・수산/축산학": [
+        "1581",
+        "2491",
+        "7481"
+      ],
+      "자연과학계열/보건/동물보건": [
+        "1581",
+        "2491",
+        "7481"
+      ],
+      "인문사회계열/사회과학/인류학": [
+        "9659"
+      ],
+      "인문사회계열/사회과학/정치외교학": [
+        "9521"
+      ],
+      "공학계열/기계/조선・해양공학": [
+        "1221",
+        "1403",
+        "2220"
+      ],
+      "예체능계열/미술/시각디자인": [
+        "7796"
+      ],
+      "인문사회계열/사회과학/소비자・가정자원": [
+        "9521"
+      ],
+      "자연과학계열/농림・수산/식품공학": [
+        "2450"
+      ],
+      "예체능계열/미술/산업디자인": [
+        "7796",
+        "1512"
+      ],
+      "공학계열/교통・수송/무인항공기(운항)학": [
+        "1240",
+        "2230",
+        "6288"
+      ],
+      "예체능계열/응용예술/게임": [
+        "9545"
+      ],
+      "예체능계열/응용예술/만화": [
+        "7796"
+      ],
+      "인문사회계열/언어・문학/러시아어・문학": [
+        "9627"
+      ],
+      "예체능계열/응용예술/사진": [
+        "7795",
+        "9545"
+      ],
+      "예체능계열/연극・영화/영화": [
+        "9545"
+      ],
+      "예체능계열/미술/생활디자인": [
+        "7796"
+      ],
+      "인문사회계열/언어・문학/스페인어・문학": [
+        "9626"
+      ]
+    }
+  },
+  "service_scope": {
+    "rule": "학부·전문대 과정만(대학원 소속·석사·박사 과정 제외)",
+    "v1_selectable_majors": 40077,
+    "excluded_graduate_majors": 13994,
+    "kept_majors": 21730,
+    "kept_schools": 539
+  },
+  "eligibility_required_counts": {
+    "Y": 361,
+    "N": 228,
+    "확인 필요": 24
+  },
+  "professional_field_mapping": {
+    "QNET": 513,
+    "MAPPED": 98,
+    "": 2
+  },
+  "professional_ministry_filled": 613,
+  "qualification_text_counts": {
+    "summary": 613,
+    "summary_basis": 613,
+    "overview": 391,
+    "job_description": 389,
+    "career_outlook": 217
+  },
+  "qualification_text_split_counts": {
+    "conducting_agency": 613,
+    "related_majors": 294,
+    "exam_subjects": 540,
+    "exam_method": 473,
+    "pass_criteria": 480,
+    "eligibility": 76
+  },
+  "vacancy_found": {
+    "qnet_rows": 1804,
+    "matched": 1788,
+    "registration_fixed_to_qnet_page": 1396
+  },
+  "pass_rates_sources": {
+    "QNET_PAGE": 21345,
+    "with_applicants": 4560,
+    "yearbook_examinee_mismatch": 0
+  },
+  "pass_rates_overlap_rows_skipped": 4616,
+  "seconds": 86.4
+}
