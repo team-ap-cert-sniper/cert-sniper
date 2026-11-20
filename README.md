@@ -101,7 +101,7 @@
 
 * **Client**: 화면별 페이지와 API 호출 모듈로 사용자 요청 처리
 * **Server**: 기능별 패키지(Controller → Service → Repository)로 비즈니스 로직 수행
-* **Storage**: MySQL `jg_service` (서비스 데이터 40개 테이블, [ERD](docs/ERD.md))
+* **Storage**: MySQL `jg_service` (서비스 데이터 40개 테이블, [ERD](docs/ERD.md), [사자성어·합격수기 변경 안내](docs/DB_UPDATE_DAILY_IDIOM.md))
 * **Data Pipeline**: Python으로 공공데이터를 수집·정제해 CSV로 만들고 DB에 적재. 추천 로직의 기준 구현과 테스트도 함께 보관
 
 ---
@@ -121,7 +121,7 @@
 |---|---|
 | 🖥 [backend](backend/README.md) | 패키지별 담당, 만들 파일 전체 트리, 패키지끼리 부르는 곳, 이름 규칙 |
 | 🎨 [frontend](frontend/README.md) | 화면별 담당, 만들 파일 전체 트리, 화면 경로·화면 이동 전체, 이름 규칙 |
-| 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 9종), 추천·자격증 로직, 테이블 정의·API 명세 |
+| 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, 테이블 정의·API 명세 |
 | 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). [schema.sql](docs/schema.sql)은 ERD 프로그램·MySQL용 DDL |
 | 🔎 [기능 추적표](docs/TRACEABILITY.md) | 기능 ID → 담당 → 화면 → 프론트 위치 → API → 백엔드 패키지 → 테이블 |
 | 🧭 [플로우차트](docs/FLOWCHART.md) | 전체 + 파트별 화면 흐름 (Mermaid) |
