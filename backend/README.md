@@ -1,6 +1,6 @@
 # 🖥 backend (Spring Boot)
 
-기능 명세서 v1.4.0 · DB 설계서 Ver.7(40개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
+기능 명세서 v1.4.0 · DB 설계서 Ver.9(40개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
 
 * 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [docs/schema.sql](../docs/schema.sql)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
@@ -167,12 +167,10 @@
 │  └─ 📄 RecommendationCardAssembler.java 카드 정보 (한 줄 소개·최근 합격률·다음 접수·시험일)  CF-01-10
 ├─ 📁 repository/
 │  ├─ 📄 MajorQualificationLinkRepository.java
-│  ├─ 📄 RecommendationWeightPolicyRepository.java
-│  └─ 📄 RecommendationConditionRepository.java
+│  └─ 📄 RecommendationWeightPolicyRepository.java
 ├─ 📁 entity/
 │  ├─ 📄 MajorQualificationLink.java      major_qualification_links
-│  ├─ 📄 RecommendationWeightPolicy.java  recommendation_weight_policies (점수표 버전, MAJOR·CONDITION)
-│  └─ 📄 RecommendationCondition.java     recommendation_conditions (현재 미사용, 팀 확인 전까지 유지)
+│  └─ 📄 RecommendationWeightPolicy.java  recommendation_weight_policies (점수표 버전, MAJOR·CONDITION)
 └─ 📁 dto/
    ├─ 📄 RecommendationRequest.java
    ├─ 📄 ConditionRecommendationRequest.java 자격 구분·관심 분야·희망 직무
@@ -241,20 +239,24 @@
 📁 planner/  [박준성]                      플래너 다이어리                                 CF-04-03·07·12~16·18·19, CF-00-04
 ├─ 📁 controller/
 │  ├─ 📄 PlannerController.java           /api/v1/planner (모드·일정바·당일 일정·개인 일정)
-│  └─ 📄 TodayScheduleController.java     GET /api/v1/planner/today (메인 오늘의 일정)
+│  ├─ 📄 TodayScheduleController.java     GET /api/v1/planner/today (메인 오늘의 일정)
+│  └─ 📄 DailyIdiomController.java        GET /api/v1/daily-idiom (오늘의 사자성어, 로그인 무관)  CF-00-04, CF-04-19
 ├─ 📁 service/
 │  ├─ 📄 PlannerService.java              타임라인 조회·일정 등록·수정·삭제·모드 전환
-│  └─ 📄 ScheduleLimitValidator.java      6개 제한 (aiplanner도 사용)              CF-04-16
+│  ├─ 📄 ScheduleLimitValidator.java      6개 제한 (aiplanner도 사용)              CF-04-16
+│  └─ 📄 DailyIdiomService.java           오늘의 사자성어 (기준일부터 1~50번 하루 1개씩 순환, etl daily_idiom 이식)  CF-00-04, CF-04-19
 ├─ 📁 repository/
 │  ├─ 📄 PlannerRepository.java
 │  ├─ 📄 PersonalScheduleRepository.java
 │  ├─ 📄 PlannerBarRepository.java
-│  └─ 📄 PlannerMilestoneRepository.java
+│  ├─ 📄 PlannerMilestoneRepository.java
+│  └─ 📄 DailyIdiomRepository.java
 ├─ 📁 entity/
 │  ├─ 📄 Planner.java                     planners (모드·6개 제한 잠금)
 │  ├─ 📄 PersonalSchedule.java            personal_schedules
 │  ├─ 📄 PlannerBar.java                  planner_bars (일정바·당일 일정)
-│  └─ 📄 PlannerMilestone.java            planner_milestones (세부 일정·AI 일일 항목·휴식)
+│  ├─ 📄 PlannerMilestone.java            planner_milestones (세부 일정·AI 일일 항목·휴식)
+│  └─ 📄 DailyIdiom.java                  daily_idioms (사자성어 50개, display_order 순서로 순환)
 └─ 📁 dto/
    ├─ 📄 PlannerResponse.java
    ├─ 📄 BarRequest.java
@@ -390,7 +392,7 @@
 └─ 📁 (각 패키지)/                          담당자가 같은 구조로 추가 (예: planner/ScheduleLimitValidatorTest.java)
 ```
 
-> 엔티티 40개 = auth 3 · user 3 · university 4 · job 2 · recommendation 3 · qualification 4 · examschedule 1 · favorite 1 · targetexam 1 · planner 4 · memo 1 · passstory 2 · report 2 · rank 3 · support 4 · admin 1 · global 1 (DB 설계서 Ver.7 테이블 수와 같음)
+> 엔티티 40개 = auth 3 · user 3 · university 4 · job 2 · recommendation 2 · qualification 4 · examschedule 1 · favorite 1 · targetexam 1 · planner 5 · memo 1 · passstory 2 · report 2 · rank 3 · support 4 · admin 1 · global 1 (DB 설계서 Ver.9 테이블 수와 같음)
 
 ## 🧱 global 공통을 쓰는 곳
 
@@ -445,7 +447,7 @@
 
 1. **공통(★)**: 루트 `docker-compose.yml`·`.env.example` → `build.gradle`·`application.yml`·`V1__init.sql` → `global/` → `user/entity/User.java`·`UserRepository.java`
    * `users`는 auth(가입·로그인)와 user(마이페이지)가 같이 쓰므로 공통 단계에서 엔티티만 먼저 만듭니다
-2. **데이터 적재**: `etl/sql/load_service_data.sql`로 로컬 MySQL에 CSV 적재
+2. **데이터 적재**: `python etl/tools/load_service_data.py`로 적재 SQL을 만들어 로컬 MySQL에 실행 (CSV 10종, 사자성어 50개 포함, [etl README](../etl/README.md))
 3. **기능별**: 각자 `feature/{파트}/{작업}` 브랜치에서 엔티티 → 리포지토리 → 서비스 → 컨트롤러 → DTO 순
 
 ## 지켜 주세요
@@ -454,4 +456,3 @@
 * DB는 `db/migration`의 SQL 파일로만 바꿉니다. 이미 병합된 SQL 파일은 고치지 않고 새 번호 파일을 추가합니다. 기준 DDL은 [docs/schema.sql](../docs/schema.sql)입니다
 * DB 계정·SMTP 앱 비밀번호·AI API 키는 환경변수(`.env`)나 `application-local.yml`에 둡니다 (커밋 금지)
 * 추천·자격증 로직(`recommendation`, `qualification`, `examschedule`)의 기준 구현은 [etl/](../etl/README.md)에 있습니다. 같은 입력에 같은 결과가 나와야 합니다
-* `recommendation_conditions`(추천 조건)는 현재 미사용입니다. 엔티티는 팀 확인 전까지 만들지 않아도 됩니다
