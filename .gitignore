@@ -38,3 +38,6 @@ __pycache__/
 .venv/
 venv/
 etl/tmp/
+
+# 초기 적재용으로 만드는 SQL (etl/tools/load_service_data.py 출력, 커밋 안 함)
+service-data-*.sql
