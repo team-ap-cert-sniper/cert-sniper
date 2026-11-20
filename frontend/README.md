@@ -55,8 +55,7 @@
    │  ├─ 📄 qualification.js          ★ 자격구분·등급
    │  ├─ 📄 rank.js                   ★ 저격 등급·아이콘
    │  ├─ 📄 report.js                 ★ 신고 사유 5개
-   │  ├─ 📄 inquiry.js                ★ 문의 유형 5개
-   │  └─ 📄 quotes.js                 ★ 사자성어 목록                                   CF-04-19
+   │  └─ 📄 inquiry.js                ★ 문의 유형 5개
    ├─ 📁 styles/
    │  ├─ 📄 global.css                ★
    │  └─ 📄 variables.css             ★ 색·글꼴·간격
@@ -173,7 +172,7 @@
 │  ├─ 📄 PersonalScheduleModal.jsx        개인 일정                                        CF-04-18
 │  ├─ 📄 TargetExamSearchModal.jsx        목표 자격증 검색 추가                            CF-04-09
 │  ├─ 📄 MemoModal.jsx                    메모 편집·서식·축소·확장                         CF-04-01·08·17
-│  └─ 📄 DailyQuote.jsx                   오늘의 사자성어                                  CF-04-19
+│  └─ 📄 DailyQuote.jsx                   오늘의 사자성어 (GET /api/v1/daily-idiom, 한국시간 기준 공통)          CF-00-04, CF-04-19
 └─ 📁 passstory/ [최기완]
    ├─ 📄 PassStoryCard.jsx                카드 (추천 페이지 미리보기에서도 사용)           CF-05-05, CF-01-12
    ├─ 📄 RankDashboard.jsx                등급 대시보드                                    CF-05-04
