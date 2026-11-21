@@ -1,5 +1,5 @@
 -- 저격증 jg_service 스키마 (DB 설계서 Ver.12 기준, MySQL 8.0.16 이상)
--- 테이블 31개 · FK 44개
+-- 테이블 31개 · FK 46개
 -- 시간대: Asia/Seoul. 문자셋: utf8mb4 / utf8mb4_0900_ai_ci
 
 CREATE DATABASE IF NOT EXISTS `jg_service` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
@@ -109,20 +109,17 @@ CREATE TABLE `majors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='학과·전공';
 
 CREATE TABLE `job_categories` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '직무 ID',
-  `code` varchar(30) NOT NULL COMMENT '직무 코드',
+  `code` varchar(10) NOT NULL COMMENT '직무 코드',
   `name` varchar(50) NOT NULL COMMENT '직무명',
-  `interest_field_id` bigint NOT NULL COMMENT '관심 분야 ID',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_job_categories_1` (`code`)
+  `interest_field_code` varchar(10) NOT NULL COMMENT '관심 분야 코드',
+  PRIMARY KEY (`code`),
+  KEY `idx_job_categories_1` (`interest_field_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='희망 직무';
 
 CREATE TABLE `interest_fields` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '관심 분야 ID',
-  `code` varchar(30) NOT NULL COMMENT '관심 분야 코드',
+  `code` varchar(10) NOT NULL COMMENT '관심 분야 코드',
   `name` varchar(50) NOT NULL COMMENT '관심 분야명',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_interest_fields_1` (`code`)
+  PRIMARY KEY (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='관심 분야';
 
 CREATE TABLE `major_qualification_links` (
@@ -144,13 +141,9 @@ CREATE TABLE `qualifications` (
   `jmfldnm` varchar(100) NOT NULL COMMENT '자격 종목명',
   `eng_name` varchar(200) NULL COMMENT '영문명',
   `qualgbcd` varchar(5) NULL COMMENT '자격구분 코드',
-  `qualgbnm` varchar(30) NULL COMMENT '자격구분명',
-  `seriesnm` varchar(30) NULL COMMENT '계열·등급명',
   `grade_level` varchar(10) NULL COMMENT '등급',
-  `obligfldcd` varchar(10) NULL COMMENT '대직무분야 코드',
-  `obligfldnm` varchar(50) NULL COMMENT '대직무분야명',
-  `mdobligfldcd` varchar(10) NULL COMMENT '중직무분야 코드',
-  `mdobligfldnm` varchar(50) NULL COMMENT '중직무분야명',
+  `obligfldcd` varchar(10) NULL COMMENT '관심 분야 코드',
+  `mdobligfldcd` varchar(10) NULL COMMENT '희망 직무 코드',
   `related_ministry` varchar(50) NULL COMMENT '관련부처',
   `summary` varchar(200) NULL COMMENT '한 줄 소개',
   `summary_basis` varchar(20) NULL COMMENT '소개 근거',
@@ -171,11 +164,12 @@ CREATE TABLE `qualifications` (
   `fee_note` varchar(300) NULL COMMENT '수수료 안내',
   `schedule_type` varchar(10) NOT NULL DEFAULT '정기' COMMENT '시험 형태',
   PRIMARY KEY (`jmcd`),
-  CONSTRAINT `ck_qualifications_1` CHECK (summary_basis IS NULL OR summary_basis IN ('QNET_TEXT','EXAM_INFO')),
-  CONSTRAINT `ck_qualifications_2` CHECK (eligibility_required IS NULL OR eligibility_required IN ('Y','N')),
-  CONSTRAINT `ck_qualifications_3` CHECK (schedule_type IN ('정기','상시')),
-  CONSTRAINT `ck_qualifications_4` CHECK (grade_level IS NULL OR grade_level IN ('기능사','산업기사','기사','기능장','기술사','서비스')),
-  CONSTRAINT `ck_qualifications_5` CHECK ((qualgbcd = 'T' AND grade_level IS NOT NULL) OR (qualgbcd = 'S' AND grade_level IS NULL))
+  CONSTRAINT `ck_qualifications_1` CHECK (qualgbcd IN ('T','S')),
+  CONSTRAINT `ck_qualifications_2` CHECK (summary_basis IS NULL OR summary_basis IN ('QNET_TEXT','EXAM_INFO')),
+  CONSTRAINT `ck_qualifications_3` CHECK (eligibility_required IS NULL OR eligibility_required IN ('Y','N')),
+  CONSTRAINT `ck_qualifications_4` CHECK (schedule_type IN ('정기','상시')),
+  CONSTRAINT `ck_qualifications_5` CHECK (grade_level IS NULL OR grade_level IN ('기능사','산업기사','기사','기능장','기술사','서비스')),
+  CONSTRAINT `ck_qualifications_6` CHECK ((qualgbcd = 'T' AND grade_level IS NOT NULL) OR (qualgbcd = 'S' AND grade_level IS NULL))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='자격증 Master';
 
 CREATE TABLE `qualification_statistics_yearly` (
@@ -323,14 +317,12 @@ CREATE TABLE `memos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='자격증별 메모';
 
 CREATE TABLE `daily_idioms` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '사자성어 ID',
   `idiom` varchar(10) NOT NULL COMMENT '사자성어',
   `hanja` varchar(10) NULL COMMENT '한자 표기',
   `meaning` varchar(200) NOT NULL COMMENT '뜻',
   `display_order` int NOT NULL COMMENT '순환 순서',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`display_order`),
   UNIQUE KEY `uq_daily_idioms_1` (`idiom`),
-  UNIQUE KEY `uq_daily_idioms_2` (`display_order`),
   CONSTRAINT `ck_daily_idioms_1` CHECK (display_order >= 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='오늘의 사자성어';
 
@@ -488,9 +480,11 @@ ALTER TABLE `colleges` ADD CONSTRAINT `fk_colleges_1` FOREIGN KEY (`university_i
 ALTER TABLE `majors` ADD CONSTRAINT `fk_majors_1` FOREIGN KEY (`university_id`) REFERENCES `universities` (`id`);
 ALTER TABLE `majors` ADD CONSTRAINT `fk_majors_2` FOREIGN KEY (`college_id`) REFERENCES `colleges` (`id`);
 ALTER TABLE `majors` ADD CONSTRAINT `fk_majors_3` FOREIGN KEY (`aggregate_college_id`) REFERENCES `colleges` (`id`);
-ALTER TABLE `job_categories` ADD CONSTRAINT `fk_job_categories_1` FOREIGN KEY (`interest_field_id`) REFERENCES `interest_fields` (`id`);
+ALTER TABLE `job_categories` ADD CONSTRAINT `fk_job_categories_1` FOREIGN KEY (`interest_field_code`) REFERENCES `interest_fields` (`code`);
 ALTER TABLE `major_qualification_links` ADD CONSTRAINT `fk_major_qualification_links_1` FOREIGN KEY (`major_id`) REFERENCES `majors` (`id`) ON DELETE CASCADE;
 ALTER TABLE `major_qualification_links` ADD CONSTRAINT `fk_major_qualification_links_2` FOREIGN KEY (`jmcd`) REFERENCES `qualifications` (`jmcd`);
+ALTER TABLE `qualifications` ADD CONSTRAINT `fk_qualifications_1` FOREIGN KEY (`obligfldcd`) REFERENCES `interest_fields` (`code`);
+ALTER TABLE `qualifications` ADD CONSTRAINT `fk_qualifications_2` FOREIGN KEY (`mdobligfldcd`) REFERENCES `job_categories` (`code`);
 ALTER TABLE `qualification_statistics_yearly` ADD CONSTRAINT `fk_qualification_statistics_yearly_1` FOREIGN KEY (`jmcd`) REFERENCES `qualifications` (`jmcd`) ON DELETE CASCADE;
 ALTER TABLE `qualification_exam_schedules` ADD CONSTRAINT `fk_qualification_exam_schedules_1` FOREIGN KEY (`jmcd`) REFERENCES `qualifications` (`jmcd`) ON DELETE CASCADE;
 ALTER TABLE `favorites` ADD CONSTRAINT `fk_favorites_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;

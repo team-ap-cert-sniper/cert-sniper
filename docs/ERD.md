@@ -57,9 +57,11 @@ erDiagram
     universities ||--o{ majors : "university_id"
     colleges |o--o{ majors : "college_id"
     colleges |o--o{ majors : "aggregate_college_id"
-    interest_fields ||--o{ job_categories : "interest_field_id"
+    interest_fields ||--o{ job_categories : "interest_field_code"
     majors ||--o{ major_qualification_links : "major_id"
     qualifications ||--o{ major_qualification_links : "jmcd"
+    interest_fields |o--o{ qualifications : "obligfldcd"
+    job_categories |o--o{ qualifications : "mdobligfldcd"
     qualifications ||--o{ qualification_statistics_yearly : "jmcd"
     qualifications ||--o{ qualification_exam_schedules : "jmcd"
     users ||--o{ favorites : "user_id"
@@ -172,14 +174,12 @@ erDiagram
         bigint aggregate_college_id FK "합산 대상 학부 ID"
     }
     job_categories["희망 직무 (job_categories)"] {
-        bigint id PK "직무 ID"
-        varchar code UK "직무 코드"
+        varchar code PK "직무 코드"
         varchar name "직무명"
-        bigint interest_field_id FK "관심 분야 ID"
+        varchar interest_field_code FK "관심 분야 코드"
     }
     interest_fields["관심 분야 (interest_fields)"] {
-        bigint id PK "관심 분야 ID"
-        varchar code UK "관심 분야 코드"
+        varchar code PK "관심 분야 코드"
         varchar name "관심 분야명"
     }
     major_qualification_links["학과–자격증 연결 (major_qualification_links)"] {
@@ -193,7 +193,7 @@ erDiagram
     universities ||--o{ majors : "university_id"
     colleges |o--o{ majors : "college_id"
     colleges |o--o{ majors : "aggregate_college_id"
-    interest_fields ||--o{ job_categories : "interest_field_id"
+    interest_fields ||--o{ job_categories : "interest_field_code"
     majors ||--o{ major_qualification_links : "major_id"
     qualifications ||--o{ major_qualification_links : "jmcd"
 ```
@@ -207,13 +207,9 @@ erDiagram
         varchar jmfldnm "자격 종목명"
         varchar eng_name "영문명"
         varchar qualgbcd "자격구분 코드"
-        varchar qualgbnm "자격구분명"
-        varchar seriesnm "계열·등급명"
         varchar grade_level "등급"
-        varchar obligfldcd "대직무분야 코드"
-        varchar obligfldnm "대직무분야명"
-        varchar mdobligfldcd "중직무분야 코드"
-        varchar mdobligfldnm "중직무분야명"
+        varchar obligfldcd FK "관심 분야 코드"
+        varchar mdobligfldcd FK "희망 직무 코드"
         varchar related_ministry "관련부처"
         varchar summary "한 줄 소개"
         varchar summary_basis "소개 근거"
@@ -266,6 +262,8 @@ erDiagram
         varchar condition_type "조건 구분"
         varchar condition_text "조건 내용"
     }
+    interest_fields |o--o{ qualifications : "obligfldcd"
+    job_categories |o--o{ qualifications : "mdobligfldcd"
     qualifications ||--o{ qualification_statistics_yearly : "jmcd"
     qualifications ||--o{ qualification_exam_schedules : "jmcd"
     qualification_eligibility_rules |o..o{ qualifications : "eligibility_rule_key"
@@ -330,11 +328,10 @@ erDiagram
         tinyint is_deleted "삭제 여부"
     }
     daily_idioms["오늘의 사자성어 (daily_idioms)"] {
-        bigint id PK "사자성어 ID"
         varchar idiom UK "사자성어"
         varchar hanja "한자 표기"
         varchar meaning "뜻"
-        int display_order UK "순환 순서"
+        int display_order PK "순환 순서"
     }
     users ||--o{ favorites : "user_id"
     qualifications ||--o{ favorites : "jmcd"

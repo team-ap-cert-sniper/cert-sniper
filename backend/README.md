@@ -145,8 +145,8 @@
 │  ├─ 📄 JobCategoryRepository.java
 │  └─ 📄 InterestFieldRepository.java
 └─ 📁 entity/
-   ├─ 📄 JobCategory.java                 job_categories (중직무분야 50)
-   └─ 📄 InterestField.java               interest_fields (대직무분야 23)
+   ├─ 📄 JobCategory.java                 job_categories (중직무분야 50, PK = Q-Net 코드)
+   └─ 📄 InterestField.java               interest_fields (대직무분야 23, PK = Q-Net 코드)
 
 📁 recommendation/  [이은아]               자격증 추천 (전공 맞춤 · 조건 선택)            CF-01-03~12
 ├─ 📁 controller/
@@ -182,7 +182,7 @@
 │  ├─ 📄 QualificationStatisticsYearlyRepository.java
 │  └─ 📄 QualificationEligibilityRuleRepository.java
 ├─ 📁 entity/
-│  ├─ 📄 Qualification.java               qualifications (등급 grade_level 포함)
+│  ├─ 📄 Qualification.java               qualifications (자격구분 T/S, 등급 grade_level, 직무분야는 코드만)
 │  ├─ 📄 QualificationStatisticsYearly.java qualification_statistics_yearly (접수자·응시자·합격자)
 │  └─ 📄 QualificationEligibilityRule.java qualification_eligibility_rules (응시 조건 목록)
 └─ 📁 dto/
