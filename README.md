@@ -111,7 +111,7 @@
 ├─ 📁 backend/    Spring Boot 서버
 ├─ 📁 frontend/   React 웹
 ├─ 📁 etl/        공공데이터 정리 결과 + 추천 로직 기준 구현
-├─ 📁 docs/       ERD · DDL · 기능 추적표 · 플로우차트
+├─ 📁 docs/       ERD · DDL · API 명세 · 기능 추적표 · 플로우차트
 └─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS
 ```
 
@@ -119,8 +119,9 @@
 |---|---|
 | 🖥 [backend](backend/README.md) | 패키지별 담당, 만들 파일 전체 트리, 패키지끼리 부르는 곳, 이름 규칙 |
 | 🎨 [frontend](frontend/README.md) | 화면별 담당, 만들 파일 전체 트리, 화면 경로·화면 이동 전체, 이름 규칙 |
-| 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, 테이블 정의·API 명세 |
+| 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, CSV–테이블 정의 |
 | 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). [schema.sql](docs/schema.sql)은 ERD 프로그램·MySQL용 DDL |
+| 📡 [API 명세](docs/API_CONTRACT.md) | 추천·자격증 API 경로·입출력·화면 표시 순서 |
 | 🔎 [기능 추적표](docs/TRACEABILITY.md) | 기능 ID → 담당 → 화면 → 프론트 위치 → API → 백엔드 패키지 → 테이블 |
 | 🧭 [플로우차트](docs/FLOWCHART.md) | 전체 + 파트별 화면 흐름 (Mermaid) |
 
