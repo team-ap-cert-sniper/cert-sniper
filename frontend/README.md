@@ -135,7 +135,7 @@
 │  └─ 📄 MyInquirySection.jsx             나의 문의 내역·상세 (회원)                        CS-05
 └─ 📁 Admin/ [황정규]                      VIEW-14~19  /admin/**
    ├─ 📄 AdminDashboardPage.jsx           VIEW-14                                         ADMIN-10
-   ├─ 📄 AdminUserPage.jsx                VIEW-15  목록·상세·정정·정지·등급               ADMIN-02·07~09
+   ├─ 📄 AdminUserPage.jsx                VIEW-15  목록·상세·정정·정지                    ADMIN-02·07
    ├─ 📄 AdminNoticePage.jsx              VIEW-16                                         ADMIN-03
    ├─ 📄 AdminInquiryPage.jsx             VIEW-17                                         ADMIN-04
    ├─ 📄 AdminReportPage.jsx              VIEW-18  신고 검토·재검토                        ADMIN-05·06
@@ -269,7 +269,7 @@
 | VIEW-14 | 공지 · 미답변 문의 · 미처리 신고 · 전체 회원 카드 | `/admin/notices` · `/admin/inquiries` · `/admin/reports` · `/admin/users` | ADMIN-10 |
 | VIEW-14 | 등록 자격증 카드 | 자격증 관리 화면 없음 → 숫자만 표시 또는 `/qualifications` (팀 확인) | ADMIN-10 |
 | VIEW-15 | 회원 상세 작성 글 조회 · 1:1 문의 조회 | `/admin/pass-stories?nickname=` · `/admin/inquiries?userId=` | ADMIN-02 |
-| VIEW-15 | 정지 · 해제 · 등급 보정 · 재산정 | 같은 화면 팝업 | ADMIN-07~09 |
+| VIEW-15 | 정지 · 해제 | 같은 화면 팝업 | ADMIN-07 |
 | VIEW-17 | 문의 제목 | 문의 상세 → 답변 저장 | ADMIN-04 |
 | VIEW-18 | 신고 상세 · 재검토 | 숨김 확정·해제 · 숨김 해제·삭제 | ADMIN-05·06 |
 | VIEW-19 | 게시글 | 게시글 조회 (신고·숨김 상태 표시) | ADMIN-11 |
