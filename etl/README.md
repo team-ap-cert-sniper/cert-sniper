@@ -2,7 +2,7 @@
 
 공공데이터로 만든 **서비스용 데이터(CSV 9종)** 와 팀이 정한 사자성어 목록(CSV 1종), 그 데이터를 쓰는 **추천·자격증 정보 로직(Python)** 을 담고 있습니다.
 
-* **DB 적재 원천**: `data/*.csv`를 DB 설계서 Ver.9 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
+* **DB 적재 원천**: `data/*.csv`를 DB 설계서 Ver.12 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
 * **백엔드 이식 기준**: `jeogyeokjeung/`의 함수 흐름과 `docs/API_CONTRACT.md`의 입출력을 Spring Boot로 옮깁니다
 * **결과 검증 기준**: `tests/golden_recommendations.json`과 같은 입력을 넣어 Java 결과가 같은지 비교합니다
 
@@ -26,25 +26,20 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │
 ├─ 📁 data/                             서비스용 테이블 (UTF-8 BOM CSV, DB 적재 원천)
 │  ├─ 📄 schools.csv                    학교·캠퍼스
-│  ├─ 📄 majors.csv                     학과·전공, 대·중·소계열
+│  ├─ 📄 majors.csv                     학과·전공
 │  ├─ 📄 faculties.csv                  학부
 │  ├─ 📄 faculty_majors.csv             학부 소속 학과
 │  ├─ 📄 qualifications.csv             자격증 613종 (시험정보·영문명·관련부처·수수료·응시 조건·한 줄 소개)
 │  ├─ 📄 major_qualifications.csv       학과 → 자격증 연결과 근거
 │  ├─ 📄 exam_schedules.csv             2026 시험일정 (정기·빈자리 접수)
-│  ├─ 📄 pass_rates.csv                 연도·단계별 접수자·응시자·합격자 (2001~)
+│  ├─ 📄 pass_rates.csv                 연도·단계별 접수자·응시자·합격자 (2001~2025)
 │  ├─ 📄 eligibility_rules.csv          응시 조건 목록 (등급별·종목별)
 │  ├─ 📄 daily_idioms.csv               오늘의 사자성어 50개 (팀 제공, 1~50번 하루 1개씩 순환)
 │  ├─ 📄 MANIFEST.json                  행 수·체크섬·빌드 통계
 │  └─ 📄 qualification_subject_items.csv (예정) 시험과목 과목별 분해 → qualification_subject_items
 │
-├─ 📁 tools/                            데이터 생성 스크립트와 보정표
-│  ├─ 📄 build_service_data.py          수집 파이프라인 결과 → data/ 생성
-│  ├─ 📄 load_service_data.py           빈 DB 초기 적재 SQL 생성 (CSV 10종, 실행할 때만 만들고 레포에 두지 않음)
-│  ├─ 📄 major_name_rules.csv           학과명 핵심어 보완 규칙
-│  ├─ 📄 eligibility_rules.csv          응시 조건 원본 (고친 뒤 빌드)
-│  ├─ 📄 professional_fields.csv        국가전문자격 직무분야·관련부처 매핑
-│  └─ 📄 qualification_texts.csv        자격증 한 줄 소개·개요·수행직무·진로 및 전망
+├─ 📁 tools/
+│  └─ 📄 load_service_data.py           빈 DB 초기 적재 SQL 생성 (CSV 10종, 실행할 때만 만들고 레포에 두지 않음)
 │
 ├─ 📁 tests/                            테스트
 │  ├─ 📄 __init__.py
@@ -54,8 +49,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │
 └─ 📁 docs/
    ├─ 📄 DATA_TABLES.md                 테이블 컬럼·PK·FK·출처
-   ├─ 📄 API_CONTRACT.md                API 경로·입출력 형식·화면 표시 순서
-   └─ 📄 qualification_summary_review.xlsx   한 줄 소개 검토 목록 (EXAM_INFO 224종)
+   └─ 📄 API_CONTRACT.md                API 경로·입출력 형식·화면 표시 순서
 ```
 
 ---
@@ -65,12 +59,12 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 | 파일 | 행 수 | 내용 |
 |---|---|---|
 | `schools.csv` | 539 | 학교·캠퍼스, 학제 |
-| `majors.csv` | 21,730 | 학부·전문대 학과 (폐지·개칭·대학원 제외, 동명 코드 합침), 대·중·소계열 |
+| `majors.csv` | 21,730 | 학부·전문대 학과 (폐지·개칭·대학원 제외, 동명 코드 합침) |
 | `faculties.csv` / `faculty_majors.csv` | 3,551 / 3,535 | 학부와 소속 학과 (학부 이름으로 고를 때 합산 추천에 사용) |
 | `qualifications.csv` | 613 | Q-Net 자격증 (국가기술 513 · 국가전문 100), 시험정보·영문명·관련부처·수수료·응시 조건(필요 361 · 없음 228 · 확인 필요 24)·한 줄 소개·개요·수행직무 |
 | `major_qualifications.csv` | 41,707 | 학과 → 자격증 연결과 근거 (직접 연결 · 전공 연관 · 동계열 공통) |
 | `exam_schedules.csv` | 3,041 | 2026 시험일정 (회차·단계별 정기·빈자리 접수·시험·발표일) |
-| `pass_rates.csv` | 22,333 | 연도·시험 단계별 접수자(2021~2025 국가기술)·실제 응시자·합격자, 2001년~ |
+| `pass_rates.csv` | 22,313 | 연도·시험 단계별 접수자(2021~2025 국가기술)·실제 응시자·합격자, 2001~2025년 |
 | `eligibility_rules.csv` | 124 | 응시 조건 목록 (국가기술 등급별 · 서비스 분야·국가전문 종목별) |
 
 테이블 컬럼과 PK·FK는 [docs/DATA_TABLES.md](docs/DATA_TABLES.md)에 있습니다.
@@ -87,7 +81,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 | Q-Net 응시자격별 안내 | eligibility_rules |
 | 한국산업인력공단 검정현황·통계 (Q-Net 공식 + 공공데이터 API) | pass_rates |
 | 공공데이터포털 「국가기술자격 종목별 시험정보」 | qualifications 개요·수행직무·진로 및 전망 |
-| 대학알리미 학과 계열 분류 | majors 대·중·소계열, 동계열 공통 자격 |
+| 대학알리미 학과 계열 분류 | major_qualifications 동계열 공통 자격(빌드 시) |
 
 공공데이터 API 수집과 학과 검증은 **별도 수집 파이프라인**에서 실행하고, 이 폴더에는 그 결과를 정리한 CSV만 둡니다.
 
@@ -125,13 +119,14 @@ python run.py options majors --school-id <학교 ID>   # 선택 목록
 
 ### 데이터를 다시 만들 때
 
+데이터 생성 스크립트와 보정표(`build_service_data.py`, 학과명 보완 규칙·응시 조건 원본·국가전문 직무분야 매핑·자격증 소개 문구, 한 줄 소개 검토 목록)는 원천 프로젝트(Planner-DataSchool-v2)의 `tools/`·`docs/`에 있습니다. 원천 프로젝트에서 빌드한 `data/*.csv`와 `MANIFEST.json`만 이 폴더 `data/`로 복사한 뒤 확인합니다.
+
 ```bash
-python tools/build_service_data.py --source <수집 파이프라인 경로>
 python run.py check
 ```
 
 * 골든 결과(`tests/golden_recommendations.json`)가 달라지면 의도한 변경인지 확인한 뒤 갱신합니다
-* 자격증 한 줄 소개를 고칠 때는 `tools/qualification_texts.csv`의 `summary`만 바꾸고 다시 빌드합니다
+* 자격증 한 줄 소개를 고칠 때는 원천 프로젝트 `tools/qualification_texts.csv`의 `summary`만 바꾸고 다시 빌드합니다
 
 ---
 
@@ -139,20 +134,20 @@ python run.py check
 
 * 추천의 응시 시점은 **진로 안내**이며 개인 응시자격 확정이 아닙니다 (`personal_eligibility_verified: false`)
 * 합격률은 **실제 응시자 기준**입니다 (접수자 아님)
-* 자격증 한 줄 소개(`summary`)는 서비스가 작성한 문구입니다. 공단 수행직무 근거(`QNET_TEXT`, 389종)와 시험과목·직무분야 근거(`EXAM_INFO`, 224종)로 구분하며, `EXAM_INFO`는 [docs/qualification_summary_review.xlsx](docs/qualification_summary_review.xlsx)로 검토합니다
+* 자격증 한 줄 소개(`summary`)는 서비스가 작성한 문구입니다. 공단 수행직무 근거(`QNET_TEXT`, 389종)와 시험과목·직무분야 근거(`EXAM_INFO`, 224종)로 구분하며, `EXAM_INFO`는 원천 프로젝트의 `docs/qualification_summary_review.xlsx`로 검토합니다
 * CSV는 엑셀에서 바로 열 수 있게 UTF-8 BOM으로 저장합니다
 
 ## MySQL 초기 적재
 
-`docs/schema.sql`을 적용한 **빈 DB**에서 실행합니다. 이미 데이터가 있는 DB에 합치는 용도가 아닙니다. 적재는 한 트랜잭션으로 하며 MySQL 클라이언트의 `--force`를 끕니다. 생성되는 `service-data-ver9.sql`은 실행용 임시 파일이라 커밋하지 않습니다.
+`docs/schema.sql`을 적용한 **빈 DB**에서 실행합니다. 이미 데이터가 있는 DB에 합치는 용도가 아닙니다. 적재는 한 트랜잭션으로 하며 MySQL 클라이언트의 `--force`를 끕니다. 생성되는 `service-data-ver12.sql`은 실행용 임시 파일이라 커밋하지 않습니다.
 
 ```powershell
 mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 --execute="source docs/schema.sql"
-python etl/tools/load_service_data.py --output service-data-ver9.sql
-mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 --execute="source service-data-ver9.sql"
+python etl/tools/load_service_data.py --output service-data-ver12.sql
+mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 --execute="source service-data-ver12.sql"
 ```
 
-`cert_sniper_local`은 로컬 MySQL 로그인 프로필 이름입니다. 생성 단계의 종료 코드가 0이면 적재합니다. `majors.academic_field`에는 CSV의 `category_large`를 넣고, 시행연도(`exam_year`)는 생성 컬럼이라 넣지 않습니다. 사자성어 50개(`daily_idioms.csv`)도 같은 SQL로 들어갑니다.
+`cert_sniper_local`은 로컬 MySQL 로그인 프로필 이름입니다. 생성 단계의 종료 코드가 0이면 적재합니다. CSV의 원천 ID는 DB에 넣지 않고 DB ID(1부터)로 바꿔 FK를 채웁니다. 관심 분야(23개)·희망 직무(50개)는 자격증 Master의 대·중직무분야로 채우고, 국가기술 등급(`qualifications.grade_level`)은 추천 계산과 같은 판정으로 넣습니다(국가전문은 NULL). 합격 통계는 2001년~최근 완결 연도만 넣고, 합격률(`pass_rate_pct`)은 생성 컬럼이라 넣지 않습니다. 사자성어 50개(`daily_idioms.csv`)도 같은 SQL로 들어갑니다.
 
 ## 트렌드와 시험 단계
 

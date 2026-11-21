@@ -1,8 +1,12 @@
-"""Ver.9 jg_service 빈 DB에 넣을 초기 적재 SQL을 만든다 (CSV 10종, 사자성어 포함)."""
+"""Ver.12 jg_service 빈 DB에 넣을 초기 적재 SQL을 만든다 (CSV 10종, 사자성어 포함)."""
 import argparse
 import csv
+from datetime import date
 from pathlib import Path
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from jeogyeokjeung.eligibility import level   # noqa: E402  추천 계산과 같은 등급 판정
 
 
 def read_rows(directory, name):
@@ -72,37 +76,47 @@ def write_load_sql(data, output):
     output.write("USE jg_service;\nSET NAMES utf8mb4;\n"
                  "SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';\n"
                  "START TRANSACTION;\n")
-    insert(output, 'universities', 'id,source_univ_code,name,campus_name,school_type',
-           ([school_ids[r['school_id']], *fields(r, 'school_id,school_name,campus,school_type')] for r in schools))
-    insert(output, 'colleges', 'id,university_id,source_college_code,name,is_list_item',
+    # DB ID는 CSV 순서대로 1부터 매기고, CSV 코드(school_id·faculty_scope_id·major_id)는 여기서 ID로만 바꾼다.
+    insert(output, 'universities', 'id,name,campus_name,school_type',
+           ([school_ids[r['school_id']], *fields(r, 'school_name,campus,school_type')] for r in schools))
+    insert(output, 'colleges', 'id,university_id,name,is_list_item',
            ([college_ids[r['faculty_scope_id']], school_ids[r['school_id']],
-             *fields(r, 'faculty_scope_id,faculty_name'), int(r['faculty_scope_id'] in list_items)] for r in colleges))
+             r['faculty_name'], int(r['faculty_scope_id'] in list_items)] for r in colleges))
     insert(output, 'majors',
-           'id,university_id,source_major_code,name,parent_name,degree_course,academic_field,discipline,'
-           'college_id,aggregate_college_id',
-           ([major_ids[r['major_id']], school_ids[r['school_id']],
-             *fields(r, 'major_id,major_name,parent_name,degree_course,category_large,discipline'),
+           'id,university_id,name,parent_name,college_id,aggregate_college_id',
+           ([major_ids[r['major_id']], school_ids[r['school_id']], r['major_name'],
+             r['parent_name'] or r['college_name'],          # 서비스 표시와 같은 소속명
              major_colleges.get(r['major_id']), aggregate.get(r['major_id'])] for r in majors))
-    insert(output, 'major_aliases', 'major_id,alias,alias_type',
-           ([major_ids[r['major_id']], old, 'MERGED_CODE']
-            for r in majors for old in r['merged_major_ids'].split(';') if old))
+
+    qualifications = read_rows(data, 'qualifications')
+    # 관심 분야 = 대직무분야, 희망 직무 = 중직무분야. 자격증 Master에 쓰인 코드만 넣는다.
+    interest = sorted({(r['obligfldcd'], r['obligfldnm']) for r in qualifications if r['obligfldcd']})
+    interest_ids = {code: index for index, (code, _) in enumerate(interest, 1)}
+    insert(output, 'interest_fields', 'id,code,name', ([interest_ids[c], c, n] for c, n in interest))
+    jobs = {}
+    for r in qualifications:
+        if r['mdobligfldcd']:
+            jobs.setdefault(r['mdobligfldcd'], (r['mdobligfldnm'], r['obligfldcd']))
+    insert(output, 'job_categories', 'code,name,interest_field_id',
+           ([code, name, interest_ids[parent]] for code, (name, parent) in sorted(jobs.items())))
 
     qualification_fields = (
-        'jmcd,eng_name,qualgbcd,qualgbnm,seriescd,seriesnm,obligfldcd,obligfldnm,mdobligfldcd,mdobligfldnm,'
+        'jmcd,eng_name,qualgbcd,qualgbnm,seriesnm,obligfldcd,obligfldnm,mdobligfldcd,mdobligfldnm,'
         'related_ministry,summary,summary_basis,overview,job_description,career_outlook,conducting_agency,'
         'related_majors,exam_method,exam_subjects,eligibility,eligibility_required,eligibility_summary,'
         'eligibility_rule_key,fee_written,fee_practical,fee_note,schedule_type'
     )
-    insert(output, 'qualifications', qualification_fields + ',jmfldnm,exam_standard',
-           (fields(r, qualification_fields + ',name,pass_criteria') for r in read_rows(data, 'qualifications')))
+    insert(output, 'qualifications', qualification_fields + ',jmfldnm,exam_standard,grade_level',
+           (fields(r, qualification_fields + ',name,pass_criteria')
+            + [level(r) if r['qualgbnm'] == '국가기술자격' else None] for r in qualifications))
 
-    link_fields = 'jmcd,link_rank,basis,link_basis,recommendation_type'
+    link_fields = 'jmcd,link_rank,basis'
     insert(output, 'major_qualification_links', 'major_id,' + link_fields,
            ([major_ids[r['major_id']], *fields(r, link_fields)] for r in read_rows(data, 'major_qualifications')))
 
     schedule_fields = (
         'jmcd,exam_round,exam_stage,exam_start_date,exam_end_date,registration_start_date,registration_end_date,'
-        'pass_announcement_date,source_type,source_url,source_note,vacancy_registration_start_date,'
+        'pass_announcement_date,vacancy_registration_start_date,'
         'vacancy_registration_end_date'
     )
     insert(output, 'qualification_exam_schedules', schedule_fields,
@@ -110,7 +124,8 @@ def write_load_sql(data, output):
     insert(output, 'qualification_statistics_yearly',
            'jmcd,year,exam_stage,applicants,examinees,passers,data_source,source_url',
            (fields(r, 'jmcd,exam_year,exam_stage,applicants,examinees,passed,source_type,source_url')
-            for r in read_rows(data, 'pass_rates')))
+            for r in read_rows(data, 'pass_rates')
+            if 2001 <= int(r['exam_year']) < date.today().year))   # 2001년~최근 완결 연도
     rule_fields = 'rule_key,seq,condition_type,condition_text'
     insert(output, 'qualification_eligibility_rules', rule_fields,
            (fields(r, rule_fields) for r in read_rows(data, 'eligibility_rules')))

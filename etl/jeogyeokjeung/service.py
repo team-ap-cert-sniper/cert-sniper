@@ -92,8 +92,6 @@ class JeogyeokjeungService:
         p = dict(profile)
         for key in ('school_id', 'major_id', 'grade'):
             p[key] = p.get(key) or None
-        if p['major_id'] in self.db.major_alias:   # 합쳐진 동명 학과의 예전 ID도 받아 대표 ID로 바꾼다
-            p['major_id'] = self.db.major_alias[p['major_id']]
         filled = [p[k] is not None for k in ('school_id', 'major_id', 'grade')]
         if any(filled) and not all(filled):
             raise ValidationError('대학교·전공·학년은 함께 입력하거나 모두 비워 둠')
@@ -188,7 +186,7 @@ class JeogyeokjeungService:
         current = date.fromisoformat(today) if today else date.today()
         if not p['major_id']:
             return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613', 'profile': p,
-                    'recommendation_scope': 'NONE', 'major_discipline': None, 'major_category': None,
+                    'recommendation_scope': 'NONE',
                     'recommended': [], 'owned_excluded_count': 0, 'roadmap': [], 'next_levels': [],
                     'grade_guidance': None, 'exam_window_basis': EXAM_WINDOW_SOURCE,
                     'personal_eligibility_verified': False, 'score_basis_date': current.isoformat(),
@@ -255,11 +253,8 @@ class JeogyeokjeungService:
             recommended = sorted((scored(v, share[v['jmcd']] / len(members)) for k, v in base.items() if k not in owned),
                                  key=lambda v: (-v['score'], -share[v['jmcd']], first[v['jmcd']][0], v['jmcd']))
         grade = p['grade']
-        major = self.db.majors.get(p.get('major_id') or '')
         return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613',
-                'profile': p, 'recommendation_scope': scope, 'major_discipline': major['discipline'] if major else None,
-                'major_category': ({'large': major['category_large'], 'mid': major['category_mid'],
-                                    'small': major['category_small']} if major else None),
+                'profile': p, 'recommendation_scope': scope,
                 'recommended': recommended,
                 'owned_excluded_count': len(set(base) & owned),
                 'roadmap': self._roadmap(recommended, school_type, grade, owned_rows),
@@ -407,15 +402,15 @@ class JeogyeokjeungService:
 
     @staticmethod
     def _series_label(q):
-        # Q-Net 원장은 산업기사도 seriesnm '기사' → 이름으로 구분
-        if q['seriesnm'] == '기사' and q['name'].endswith('산업기사'):
-            return '산업기사'
-        return q['seriesnm'] or q['qualgbnm']
+        # 국가기술 등급(DB qualifications.grade_level과 같은 판정). 국가전문은 등급 없음
+        return level(q) if q['qualgbnm'] == '국가기술자격' else None
 
     def trends(self, qualification_type='TECHNICAL', series=None, interest_field_id=None, year=None, limit=20, today=None):
         """최근 완결 연도 응시자 많은 순. qualification_type: TECHNICAL(국가기술) | PROFESSIONAL(국가전문)."""
         if qualification_type not in TREND_TYPES:
             raise ValidationError('qualification_type 은 TECHNICAL 또는 PROFESSIONAL')
+        if series is not None and (series not in QUAL_SERIES or qualification_type == 'PROFESSIONAL'):
+            raise ValidationError('series 는 국가기술 등급(' + ' / '.join(QUAL_SERIES) + ')')
         if interest_field_id is not None and interest_field_id not in self.interest_fields:
             raise ValidationError('interest_field_id: 유효한 관심분야 코드 필요')
         if type(limit) is not int or not 1 <= limit <= 100:
@@ -435,11 +430,8 @@ class JeogyeokjeungService:
         items.sort(key=lambda x: (-x['examinees'], x['jmcd']))
         for i, it in enumerate(items, 1):
             it['rank'] = i
-        partial = year >= (date.fromisoformat(today) if today else date.today()).year
         basis = f'{year}년 1차(필기·1차·단일시험) 실제 응시자 수'
-        if partial:   # 올해 누적: 결과가 발표된 회차만 합친 참고용(연간 확정치는 다음 해 통계연보)
-            basis += ' — 집계 중, 결과 발표된 회차만 누적한 참고용'
-        return {'year': year, 'partial': partial, 'qualification_type': qualification_type, 'series': series,
+        return {'year': year, 'qualification_type': qualification_type, 'series': series,
                 'interest_field_id': interest_field_id, 'basis': basis,
                 'total': len(items), 'items': items[:limit],
                 'trend_rule': (f'기준연도를 포함한 최근 {TREND_YEARS}개 연도 중 첫해 대비 응시자 증감률이 '
@@ -529,7 +521,8 @@ class JeogyeokjeungService:
                                 if rules else ''),
                        'source_url': 'https://www.q-net.or.kr/crf006.do?id=crf00603',
                        'personal_eligibility_verified': False}
-        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': q, 'eligibility': eligibility,
+        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': q, 'series': self._series_label(q),
+                'eligibility': eligibility,
                 'schedule_rounds': [{'exam_round': k, 'schedule_ids': v} for k, v in rounds.items()],
                 'pass_rate_years': sorted({r['exam_year'] for r in rates}, reverse=True),
                 'schedules_2026': schedules, 'schedule_status': 'AVAILABLE' if schedules else 'NOT_ACQUIRED',

@@ -8,15 +8,15 @@
     },
     "majors.csv": {
       "rows": 21730,
-      "sha256": "13d2214864c6823025f84a9a74c0187e2f4912a31ca23f5646e81b37b988a457"
+      "sha256": "79ca684b758a19fe649395b5e5d2e257c9e7aa47c32c00584b164336ffd0f4b4"
     },
     "major_qualifications.csv": {
       "rows": 41707,
-      "sha256": "fc3d6e9f57ef56844bbe5d1574e688ccde5ac96cba0ce2c2a77c579995af387d"
+      "sha256": "6a8d3a8430fc5a399b90db5a49ea279b8c99afcfc5519327c4b01c03c5d5c24d"
     },
     "faculties.csv": {
       "rows": 3551,
-      "sha256": "8aad10938169f9730b3897ef806822859df9ba19b50ed5e3ad7aa4b4cf36bce7"
+      "sha256": "23ef552a2a8f0871de0b8dc531f9c6361e9b319f325b6cff84e0598fa4a2dcca"
     },
     "faculty_majors.csv": {
       "rows": 3535,
@@ -28,15 +28,15 @@
     },
     "qualifications.csv": {
       "rows": 613,
-      "sha256": "ca1dedabb617cea007ee67fdc6349282bec3062a71c84dd48afc381732f07fd1"
+      "sha256": "ba2a17d42ab25d0c30a3f3b276eeb0c4b83cd812cb76c2add4df943af87da3dd"
     },
     "exam_schedules.csv": {
       "rows": 3041,
-      "sha256": "d82a5b16fe0b74ae0d5ba7a8c59318194d04f7390c2a912425937936d3ccd95a"
+      "sha256": "b212306b60489ce508e608d7e1b03c6ae62408eb0bbd45f28f51eb4c416266a9"
     },
     "pass_rates.csv": {
-      "rows": 22333,
-      "sha256": "91f2e9dc632e9b49e8721b0d7ea6d69d45babbd59d718fb44e355e59ca272cd9"
+      "rows": 22313,
+      "sha256": "0080c3672f9f08c232d314b1d4b2a5776d468abeaa97c66fb4e1f6dc708ba3f2"
     }
   },
   "major_merge": {
@@ -842,7 +842,7 @@
     "registration_fixed_to_qnet_page": 1396
   },
   "pass_rates_sources": {
-    "QNET_PAGE": 21345,
+    "QNET_PAGE": 21329,
     "with_applicants": 4560,
     "yearbook_examinee_mismatch": 0
   },

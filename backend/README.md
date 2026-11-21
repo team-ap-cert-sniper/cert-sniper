@@ -1,6 +1,6 @@
 # 🖥 backend (Spring Boot)
 
-기능 명세서 v1.4.0 · DB 설계서 Ver.9(40개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
+기능 명세서 v1.4.0 · DB 설계서 Ver.12(31개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
 
 * 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [docs/schema.sql](../docs/schema.sql)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
@@ -67,10 +67,8 @@
    │  ├─ 📄 ErrorResponse.java        ★ 공통 오류 본문 {code, message, timestamp}
    │  └─ 📄 GlobalExceptionHandler.java ★ 예외 → 400·401·403·404·409·500
    ├─ 📁 common/
-   │  ├─ 📄 BaseTimeEntity.java       ★ created_at · updated_at (엔티티가 상속)
-   │  ├─ 📄 PageResponse.java         ★ 목록 응답 {items, total, page, size}
-   │  ├─ 📄 CommonCode.java           ★ 엔티티 (common_codes) 문의 유형·FAQ 분류                CS-03·04
-   │  └─ 📄 CommonCodeRepository.java ★
+   │  ├─ 📄 BaseTimeEntity.java       ★ created_at (가입·작성·등록 일시가 있는 엔티티가 상속, updated_at 없음)
+   │  └─ 📄 PageResponse.java         ★ 목록 응답 {items, total, page, size}
    └─ 📁 util/
       ├─ 📄 DateUtils.java            ★ 오늘 날짜(Asia/Seoul), LocalDate 변환                   CF-03-04
       └─ 📄 HtmlSanitizer.java        ★ 메모·게시글 허용 태그만 남기기 (XSS 방지)               CF-04-17, CF-05-06
@@ -85,16 +83,13 @@
 ├─ 📁 service/
 │  ├─ 📄 AuthService.java                 가입·로그인·로그아웃·토큰 재발급
 │  ├─ 📄 EmailVerificationService.java    6자리 코드 발급·검증 (3분, 5회, 1일 제한)
+│  ├─ 📄 EmailCodeStore.java              인증코드·인증 완료·실패 제한 메모리 저장 (ConcurrentHashMap, 키 = 용도:이메일, DB 저장 없음)
 │  ├─ 📄 MailService.java                 인증 메일 발송
 │  └─ 📄 PasswordService.java             비밀번호 재설정(로그인 전)·변경(마이페이지)
 ├─ 📁 repository/
-│  ├─ 📄 UserTokenRepository.java
-│  ├─ 📄 EmailVerificationRepository.java
-│  └─ 📄 EmailAuthLimitRepository.java
+│  └─ 📄 UserTokenRepository.java
 ├─ 📁 entity/
-│  ├─ 📄 UserToken.java                   user_tokens
-│  ├─ 📄 EmailVerification.java           email_verifications
-│  └─ 📄 EmailAuthLimit.java              email_auth_limits
+│  └─ 📄 UserToken.java                   user_tokens (로그인 Refresh Token)
 └─ 📁 dto/
    ├─ 📄 RegisterRequest.java
    ├─ 📄 LoginRequest.java
@@ -139,13 +134,11 @@
 ├─ 📁 repository/
 │  ├─ 📄 UniversityRepository.java
 │  ├─ 📄 CollegeRepository.java
-│  ├─ 📄 MajorRepository.java
-│  └─ 📄 MajorAliasRepository.java
+│  └─ 📄 MajorRepository.java
 └─ 📁 entity/
-   ├─ 📄 University.java                  universities
+   ├─ 📄 University.java                  universities (학교 유형 = 학위 과정)
    ├─ 📄 College.java                     colleges
-   ├─ 📄 Major.java                       majors
-   └─ 📄 MajorAlias.java                  major_aliases (합쳐진 예전 학과 ID → 대표 ID)
+   └─ 📄 Major.java                       majors
 
 📁 job/  [이은아]                          희망 직무·관심 분야 (조회 전용, ETL 적재)       CF-01-02
 ├─ 📁 repository/
@@ -163,14 +156,12 @@
 │  ├─ 📄 ConditionRecommendationService.java 조건 선택 추천(학교·전공·학년 제외)        CF-01-09
 │  ├─ 📄 CandidateMatcher.java            후보 만들기 (전공 맞춤: 학과 연결 / 조건 선택: 직무·관심, 보유 자격 하위 제외)  CF-01-03
 │  ├─ 📄 EligibilityCalculator.java       응시 시점 판정·학년 시작 등급 (etl eligibility.py 이식)  CF-01-04
-│  ├─ 📄 ScoreCalculator.java             점수표 합산·정렬                          CF-01-04
+│  ├─ 📄 ScoreCalculator.java             점수표(상수) 합산·정렬                    CF-01-04
 │  └─ 📄 RecommendationCardAssembler.java 카드 정보 (한 줄 소개·최근 합격률·다음 접수·시험일)  CF-01-10
 ├─ 📁 repository/
-│  ├─ 📄 MajorQualificationLinkRepository.java
-│  └─ 📄 RecommendationWeightPolicyRepository.java
+│  └─ 📄 MajorQualificationLinkRepository.java
 ├─ 📁 entity/
-│  ├─ 📄 MajorQualificationLink.java      major_qualification_links
-│  └─ 📄 RecommendationWeightPolicy.java  recommendation_weight_policies (점수표 버전, MAJOR·CONDITION)
+│  └─ 📄 MajorQualificationLink.java      major_qualification_links
 └─ 📁 dto/
    ├─ 📄 RecommendationRequest.java
    ├─ 📄 ConditionRecommendationRequest.java 자격 구분·관심 분야·희망 직무
@@ -188,12 +179,10 @@
 │  └─ 📄 TrendService.java                최근 완결 연도 1차 응시자 순위·5년 증감
 ├─ 📁 repository/
 │  ├─ 📄 QualificationRepository.java
-│  ├─ 📄 QualificationSubjectItemRepository.java
 │  ├─ 📄 QualificationStatisticsYearlyRepository.java
 │  └─ 📄 QualificationEligibilityRuleRepository.java
 ├─ 📁 entity/
-│  ├─ 📄 Qualification.java               qualifications
-│  ├─ 📄 QualificationSubjectItem.java    qualification_subject_items (과목별)
+│  ├─ 📄 Qualification.java               qualifications (등급 grade_level 포함)
 │  ├─ 📄 QualificationStatisticsYearly.java qualification_statistics_yearly (접수자·응시자·합격자)
 │  └─ 📄 QualificationEligibilityRule.java qualification_eligibility_rules (응시 조건 목록)
 └─ 📁 dto/
@@ -286,12 +275,8 @@
 📁 passstory/  [최기완]                    저격왕 합격수기                                 CF-05-01~08·10·11
 ├─ 📁 controller/  📄 PassStoryController.java      /api/v1/pass-stories (?jmcds= 추천 페이지 미리보기 포함)
 ├─ 📁 service/     📄 PassStoryService.java         목록·검색·상세·등록·수정(재검토 대기)·Soft Delete
-├─ 📁 repository/
-│  ├─ 📄 PassStoryRepository.java
-│  └─ 📄 PassStorySubjectDifficultyRepository.java
-├─ 📁 entity/
-│  ├─ 📄 PassStory.java                   pass_stories
-│  └─ 📄 PassStorySubjectDifficulty.java  pass_story_subject_difficulties
+├─ 📁 repository/  📄 PassStoryRepository.java
+├─ 📁 entity/      📄 PassStory.java                   pass_stories
 └─ 📁 dto/
    ├─ 📄 PassStoryRequest.java
    ├─ 📄 PassStoryCardResponse.java
@@ -312,15 +297,9 @@
 
 📁 rank/  [최기완]                         저격 등급·승급 알림                              CF-05-04·12
 ├─ 📁 controller/  📄 RankController.java           GET /api/v1/ranks/me
-├─ 📁 service/     📄 RankService.java              재산정·승급 알림 (passstory·admin도 사용)
-├─ 📁 repository/
-│  ├─ 📄 UserRankRepository.java
-│  ├─ 📄 UserRankHistoryRepository.java
-│  └─ 📄 RankNotificationRepository.java
-├─ 📁 entity/
-│  ├─ 📄 UserRank.java                    user_ranks
-│  ├─ 📄 UserRankHistory.java             user_rank_histories
-│  └─ 📄 RankNotification.java            rank_notifications
+├─ 📁 service/     📄 RankService.java              등급 자동 계산 (passstory·admin도 사용), 승급이면 등록 응답에 이전·새 등급
+├─ 📁 repository/  📄 UserRankRepository.java
+├─ 📁 entity/      📄 UserRank.java                    user_ranks
 └─ 📁 dto/
    ├─ 📄 RankResponse.java
    └─ 📄 RankUpResponse.java
@@ -344,6 +323,7 @@
 │  ├─ 📄 Faq.java                         faqs
 │  ├─ 📄 Inquiry.java                     inquiries
 │  └─ 📄 InquiryAnswer.java               inquiry_answers
+├─ 📁 enums/       📄 InquiryType.java              문의 유형 5개(표시명 포함, DB CHECK와 같은 값)   CS-04
 └─ 📁 dto/
    ├─ 📄 NoticeResponse.java
    ├─ 📄 FaqResponse.java
@@ -353,7 +333,7 @@
 📁 admin/  [황정규]                        관리자 (/api/v1/admin/**, ADMIN 재확인)         ADMIN-02~11
 ├─ 📁 controller/
 │  ├─ 📄 AdminDashboardController.java    대시보드 건수                             ADMIN-10
-│  ├─ 📄 AdminUserController.java         회원 목록·상세·정정·정지·등급 보정·재산정  ADMIN-02·07~09
+│  ├─ 📄 AdminUserController.java         회원 목록·상세·정정·정지  ADMIN-02·07
 │  ├─ 📄 AdminNoticeController.java       공지 등록·수정·삭제                       ADMIN-03
 │  ├─ 📄 AdminInquiryController.java      문의 답변                                 ADMIN-04
 │  ├─ 📄 AdminReportController.java       신고 검토·재검토                          ADMIN-05·06
@@ -370,7 +350,6 @@
    ├─ 📄 AdminUserDetailResponse.java
    ├─ 📄 ProfileCorrectionRequest.java
    ├─ 📄 SuspendRequest.java
-   ├─ 📄 RankOverrideRequest.java
    ├─ 📄 ReviewRequest.java
    └─ 📄 InquiryAnswerRequest.java
 ```
@@ -392,7 +371,7 @@
 └─ 📁 (각 패키지)/                          담당자가 같은 구조로 추가 (예: planner/ScheduleLimitValidatorTest.java)
 ```
 
-> 엔티티 40개 = auth 3 · user 3 · university 4 · job 2 · recommendation 2 · qualification 4 · examschedule 1 · favorite 1 · targetexam 1 · planner 5 · memo 1 · passstory 2 · report 2 · rank 3 · support 4 · admin 1 · global 1 (DB 설계서 Ver.9 테이블 수와 같음)
+> 엔티티 31개 = auth 1 · user 3 · university 3 · job 2 · recommendation 1 · qualification 3 · examschedule 1 · favorite 1 · targetexam 1 · planner 5 · memo 1 · passstory 1 · report 2 · rank 1 · support 4 · admin 1 (DB 설계서 Ver.12 테이블 수와 같음)
 
 ## 🧱 global 공통을 쓰는 곳
 
@@ -400,11 +379,10 @@
 |---|---|
 | `@LoginUser`, `SecurityConfig` | 회원 전용 API 전부 (CF-00-03) |
 | `ErrorResponse`, `GlobalExceptionHandler` | 전부 (기능 명세서 10장 오류 응답) |
-| `BaseTimeEntity` | 엔티티 전부 |
+| `BaseTimeEntity` | user, favorite, targetexam, planner, passstory, report, support, admin (created_at이 있는 테이블) |
 | `PageResponse` | option, passstory, report, support, admin |
 | `DateUtils` | examschedule(D-Day·회차 상태), planner(오늘의 일정), recommendation(남은 시험) |
 | `HtmlSanitizer` | memo, passstory |
-| `CommonCode` | support, admin |
 | `MailConfig` | auth |
 | `AiClientConfig` | aiplanner |
 
@@ -427,8 +405,8 @@
 | targetexam (박준성) | option `OptionService` (이은아) | 목표 자격증 종목명 검색 | CF-04-09 |
 | aiplanner (박준성) | planner `ScheduleLimitValidator`, targetexam `TargetExamService` (박준성) | 6개 제한, 플랜 저장 | CF-06-01·05 |
 | aiplanner (박준성) | qualification `QualificationService` · examschedule (이은아) | 시험과목, 시험일 회차 | CF-06-02·03 |
-| passstory (최기완) | rank `RankService` (최기완) | 등록 후 등급 재산정·승급 알림 | CF-05-06·12 |
-| passstory (최기완) | qualification `QualificationService` (이은아) | 자격증 검색·과목별 체감 난이도의 과목 | CF-05-06 |
+| passstory (최기완) | rank `RankService` (최기완) | 등록·삭제·숨김 확정·재검토 후 등급 자동 계산·승급 알림 | CF-05-06·12 |
+| passstory (최기완) | qualification `QualificationService` (이은아) | 합격수기 등록 시 자격증 검색 | CF-05-06 |
 | report (최기완) | passstory `PassStoryService` (최기완) | 신고 즉시 숨김 | CF-05-09 |
 | admin (황정규) | user · report · rank · passstory (최기완), support (황정규) | 관리자 화면 | ADMIN-02~11 |
 | admin (황정규) | qualification `QualificationService` (이은아) | 대시보드 등록 자격증 수 | ADMIN-10 |

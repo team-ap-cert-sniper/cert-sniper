@@ -55,11 +55,10 @@ class Service(unittest.TestCase):
         codes = [x['jmcd'] for x in r['recommended']]
         self.assertEqual(codes, ['1320', '9521', '2290'])  # 학과 연결 점수순: 정보처리기사 → 사회조사분석사2급 → 동계열 정보처리산업기사
         self.assertEqual(r['recommended'][2]['basis'], 'same_subfield')
-        self.assertEqual(r['major_discipline'], '빅데이터·AI')
 
     def test_output_contract_keys(self):
         r = self.s.recommend(EXAMPLE)
-        self.assertEqual(set(r), {'schema_version', 'qualification_scope', 'profile', 'recommendation_scope', 'major_discipline', 'major_category', 'recommended',
+        self.assertEqual(set(r), {'schema_version', 'qualification_scope', 'profile', 'recommendation_scope', 'recommended',
                                   'owned_excluded_count', 'grade_guidance', 'exam_window_basis',
                                   'personal_eligibility_verified', 'needs_school_info', 'score_basis_date',
                                   'roadmap', 'next_levels', 'items', 'result_limit'})
@@ -108,7 +107,7 @@ class Service(unittest.TestCase):
         self.assertEqual(grade_exam_window(Q['9510'], '대학교', '4')['status'], 'AFTER_GRADUATION_EXPERIENCE')
         self.assertEqual(level(Q['2900']), '산업기사')                                                  # 소방설비산업기사(기계분야)
         # 국가전문 직무분야 보완: 관심분야 필터에 잡힘(영업·판매 → 공인중개사)
-        self.assertEqual(Q['9630']['field_source'], 'MAPPED')
+        self.assertEqual((Q['9630']['obligfldcd'], Q['9630']['qualgbnm']), ('10', '국가전문자격'))
         # 관련부처(Q-Net crf005): 613종 전부. 영문명·수수료·응시 조건
         self.assertEqual(self.s.qualification_detail('9630')['qualification']['related_ministry'], '국토교통부')
         self.assertEqual(sum(1 for q in Q.values() if q['related_ministry']), 613)
@@ -140,29 +139,14 @@ class Service(unittest.TestCase):
             with self.assertRaises(ValidationError, msg=str(p)):
                 self.s.recommend(p)
 
-    def test_merged_major_id_is_accepted(self):
-        rep = next(r for r in self.s.db.majors.values() if r['merged_major_ids'])
-        old = rep['merged_major_ids'].split(';')[0]
-        r = self.s.recommend({'school_id': rep['school_id'], 'major_id': old, 'grade': '3'})
-        self.assertEqual(r['profile']['major_id'], rep['major_id'])
-        names = [i['name'] for i in self.s.options('majors', school_id=rep['school_id'], limit=100)['items']]
-        self.assertLessEqual(names.count(rep['major_name']), len({(m['college_name'], m['parent_name']) for m in self.s.db.majors.values() if m['school_id'] == rep['school_id'] and m['major_name'] == rep['major_name']}))
-
     def test_same_subfield_bundle(self):
-        # 같은 소계열 학과는 동계열 묶음 자격증을 모두 가진다
-        import json
-        from pathlib import Path
+        # 동계열 공통 연결은 MANIFEST의 소계열 묶음 자격증에서만 나온다
         sets = json.loads((ROOT / 'data/MANIFEST.json').read_text(encoding='utf-8'))['same_subfield']['sets']
-        key = '공학계열/건설/토목공학'
-        members = [m for m in self.s.db.majors.values()
-                   if (m['category_large'], m['category_mid'], m['category_small']) == tuple(key.split('/'))]
-        self.assertGreater(len(members), 5)
-        for m in members[:50]:
-            codes = {l['jmcd'] for l in self.s.db.major_links[m['major_id']]}
-            self.assertTrue(set(sets[key]) <= codes, m['major_name'])
+        bundle = {c for codes in sets.values() for c in codes}
+        links = [l for ls in self.s.db.major_links.values() for l in ls if l['basis'] == 'same_subfield']
+        self.assertGreater(len(links), 0)
+        self.assertTrue(all(l['jmcd'] in bundle for l in links))
         self.assertNotIn('인문사회계열/사회과학/군사・국방・안보', sets)
-        r = self.s.recommend({'school_id': members[0]['school_id'], 'major_id': members[0]['major_id'], 'grade': '3'})
-        self.assertEqual(r['major_category']['small'], '토목공학')
 
     def test_faculty_name_major_aggregates_members(self):
         # 대학교 → 전공 흐름: 전공 목록의 학부 이름 항목(백석대 첨단IT학부)을 고르면 소속 전공 5개 합산
@@ -265,10 +249,15 @@ class Service(unittest.TestCase):
         self.assertIn('최근 5개 연도 중 첫해', r['trend_rule'])
         d = self.s.qualification_detail('1320', today='2026-11-11')['trend']
         self.assertEqual((d['rank_in_type'], d['examinees'], d['trend']), (4, 66308, 'UP'))
-        self.assertFalse(r['partial'])
-        cur = self.s.trends('PROFESSIONAL', year=2026, today='2026-11-11')   # 올해 누적(참고용)
-        self.assertTrue(cur['partial'])
-        self.assertTrue(all(x['year'] == 2026 for x in cur['items']))
+        self.assertEqual(r['year'], 2025)
+        fire = [x['name'] for x in self.s.trends('TECHNICAL', series='산업기사', limit=100, today='2026-11-11')['items']]
+        self.assertIn('소방설비산업기사(기계분야)', fire)          # 괄호 분야명이 붙은 산업기사도 산업기사
+        counsel = self.s.trends('TECHNICAL', series='서비스', limit=100, today='2026-11-11')['items']
+        self.assertIn('직업상담사2급', [x['name'] for x in counsel])
+        self.assertEqual(self.s.qualification_detail('9511', today='2026-11-11')['series'], '서비스')
+        self.assertIsNone(self.s.qualification_detail('9630', today='2026-11-11')['series'])   # 국가전문은 등급 없음
+        with self.assertRaises(ValidationError):
+            self.s.trends('PROFESSIONAL', series='기사')
         with self.assertRaises(ValidationError):
             self.s.trends('OTHER')
 

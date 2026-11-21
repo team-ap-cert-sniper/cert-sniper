@@ -22,8 +22,6 @@ class DataStore:
             raise FileNotFoundError(f'데이터 테이블 누락: {missing} (위치: {d})')
         self.schools = {r['school_id']: r for r in _read(d / 'schools.csv')}
         self.majors = {r['major_id']: r for r in _read(d / 'majors.csv')}
-        # 합쳐진 동명 학과의 예전 ID → 대표 ID
-        self.major_alias = {old: mid for mid, r in self.majors.items() for old in r.get('merged_major_ids', '').split(';') if old}
         self.faculties = {r['faculty_scope_id']: r for r in _read(d / 'faculties.csv')}
         self.faculty_members = defaultdict(set)
         for r in _read(d / 'faculty_majors.csv'):

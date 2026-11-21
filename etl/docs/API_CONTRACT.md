@@ -65,7 +65,6 @@
 - **화면 표시**: `items` = 학과 연결 추천(`recommended`) 점수순 **최대 5개**(`result_limit`). 학과 연결이 5개보다 적으면 그 수만큼만 나옵니다.
 - **결과 0개 구분**: `needs_school_info: true` → 학교 정보 없음 안내 / `needs_school_info: false`이고 `items`가 빈 목록 → 학과 연결 없음 안내(관심 분야·희망 직무로 찾아보기). 두 경우 모두 화면은 조건 검색창을 펼칩니다.
 - `major_id`는 `options majors`의 `id`(전공 ID 또는 '(학부 전체)' 항목의 학부 ID). 같은 학교여야 함. `scope`가 `FACULTY`인 항목이면 `recommendation_scope = FACULTY`(소속 전공 합산, `faculty_share` 포함).
-- 합쳐진 동명 학과의 예전 `major_id`를 보내도 대표 ID로 바꿔 처리하고, 응답 `profile.major_id`에 대표 ID를 돌려줌.
 
 출력:
 ```json
@@ -74,7 +73,6 @@
   "qualification_scope": "QNET_MASTER_613",
   "profile": { ...검증된 입력... },
   "recommendation_scope": "MAJOR",
-  "major_discipline": "빅데이터·AI",
   "recommended": [
     {
       "jmcd": "1320", "qualification_id": "QNET:1320", "name": "정보처리기사",
@@ -96,7 +94,6 @@
 ```
 - `recommendation_scope`: `MAJOR`(전공 기준) | `FACULTY`(학부 이름 항목 선택 — 소속 전공 추천 합산) | `NONE`(학교 정보 없음).
 - `FACULTY`: `recommended[].basis = faculty_aggregate`, 각 항목에 `faculty_share {majors, of}`(학부 소속 전공 of개 중 majors개에 연결). 정렬: 점수 → 겹침 많은 순.
-- `major_category`: `{large, mid, small}` 대·중·소계열(학과 선택 시만, 아니면 null).
 - **순위 점수**: 각 항목에 `score`(합계)와 `score_breakdown[] {factor, points, reason}`. 정렬은 `score` 내림차순. 점수표(`jeogyeokjeung/service.py`의 `SCORE`):
   학과 연결(직접 +40 / 전공연관 +35 / 동계열 +30 / 학부 합산 40×겹침비율) ·
   응시 시점(지금 가능·제한 없음 +20 / 다음 학년부터 +10 / 그 뒤 +5 / 개별 확인 +5 / 졸업·경력 후 0) ·
@@ -111,7 +108,7 @@
 - `roadmap[]`: 학년별 로드맵. `{stage, label, count, items[{jmcd, name, score}]}` — `stage`는 지금 학년~최종 학년('1'~'4'), `GRADUATED`(졸업 후·실무경력), `CHECK`(개별 확인). 추천 종목을 처음 응시 가능한 학년에 배치, 단계마다 점수 상위 5개. 학년이 숫자가 아니면 `[]`.
 - `next_levels[]`: 보유 자격의 상위 등급(같은 이름 계열). `{from_jmcd, from_name, jmcd, name, exam_window, experience_route}` — 국가기술 기능사→산업기사→기사→기능장/기술사, 서비스·국가전문 3급→2급→1급. `experience_route`는 보유 자격+실무경력으로 응시하는 경로 문구(학과 경로는 `exam_window`).
 - `needs_school_info`: 대학교·전공·학년이 비어 있으면 true(결과 없음) → 화면은 조건 선택 추천 안내.
-- `card`(항목마다): 추천 카드 표시값. `{qualification_type_name, series, field, summary, pass_rate_latest{exam_year, items[]}, next_registration, nearest_exam}`. 기준은 자격증 상세(3장)와 같고, 값이 없으면 null(미제공 표시).
+- `card`(항목마다): 추천 카드 표시값. `{qualification_type_name, series, field, summary, pass_rate_latest{exam_year, items[]}, next_registration, nearest_exam}`. 기준은 자격증 상세(3장)와 같고, 값이 없으면 null(미제공 표시). `series`는 국가기술 등급(기능사~기술사·서비스), 국가전문은 null.
 - `roadmap`·`next_levels`는 기능 명세서 v1.4.0에서 화면 반영 미정이다(응답에는 계속 포함).
 
 ## 2-2. 조건 선택 추천 — `service.recommend_by_condition(conditions, today=None)`
@@ -139,10 +136,11 @@
 {
   "jmcd": "1320", "qualification_id": "QNET:1320",
   "qualification": { ...qualifications.csv 한 행... },
+  "series": "기사",
   "schedules_2026": [ { "schedule_id": "1320:0", "exam_round": "1회", "exam_stage": "필기",
                         "exam_start_date": "2026-01-30", "exam_end_date": "2026-03-03",
                         "registration_start_date": "...", "registration_end_date": "...",
-                        "pass_announcement_date": "", "source_type": "OFFICIAL_ROUNDS", ... } ],
+                        "pass_announcement_date": "", ... } ],
   "schedule_status": "AVAILABLE",
   "pass_rates": [ { "exam_year": 2024, "exam_stage": "필기", "examinees": 0, "passed": 0,
                     "pass_rate_percent": 0.0, "source_type": "QNET_OFFICIAL", "source_url": "..." } ],
@@ -151,7 +149,7 @@
 }
 ```
 - `pass_rates`는 연도 오름차순, 같은 해 안에서는 필기→1차→2차→3차→실기→면접→시험 순.
-- `qualification`에는 conducting_agency·related_majors·exam_subjects·exam_method·pass_criteria·eligibility가 나뉘어 들어 있음(없으면 빈 문자열, 원문은 acquisition_method). 국가전문자격은 `related_ministry`(관련부처, Q-Net 공식 분류)와 `field_source`(직무분야 출처: QNET/MAPPED)도 표시. 자격증 소개는 `summary`(화면용 한 줄, 613종 모두 있음, 자체 작성)·`overview`(개요)·`job_description`(수행직무)·`career_outlook`(진로 및 전망), 원천에 없으면 빈 문자열.
+- `qualification`에는 conducting_agency·related_majors·exam_subjects·exam_method·pass_criteria·eligibility가 나뉘어 들어 있음(없으면 빈 문자열). 국가전문자격은 `related_ministry`(관련부처, Q-Net 공식 분류)도 표시. 자격증 소개는 `summary`(화면용 한 줄, 613종 모두 있음, 자체 작성)·`overview`(개요)·`job_description`(수행직무)·`career_outlook`(진로 및 전망), 원천에 없으면 빈 문자열.
 - 일정마다 기준일(`today`, 없으면 서버 날짜) 대비 `exam_status`(ENDED 종료 / IN_PROGRESS 시험 기간 중 / UPCOMING 예정), `registration_status`(NOT_OPEN 접수 전 / OPEN 접수 중 / VACANCY_NOT_OPEN 빈자리 접수 전 / VACANCY_OPEN 빈자리 접수 중 / CLOSED 마감), `dday_label`(예정만 D-n, 지난 시험은 '종료'). 응답에 `next_schedule_id`(아직 접수할 수 있는 가장 가까운 예정 회차, 없으면 null), `remaining_2026_count`(종료 안 된 회차), `applicable_2026_count`(접수 가능 회차), `remaining_2026_note`, `schedule_basis_date`.
 - **화면 표시 순서**
   - `next_registration`: 다음 접수 회차(접수 중·접수 전 회차 중 가장 가까운 것). `nearest_exam`: 가장 가까운 시험(진행 중 포함). 카드·상세 상단에 먼저 보여 주고, 없으면 null(올해 남은 회차 없음 → `remaining_2026_note` 안내).
@@ -170,9 +168,9 @@
 경로: `GET /api/v1/trends?type=TECHNICAL&series=기사&interest_field_id=21&limit=20`
 
 - 기준: 최근 완결 연도(`today` 연도 이전 중 자료가 있는 마지막 해, 2026-11 기준 2025)의 **1차 실제 응시자 수**(필기 → 1차 → 단일시험 중 그 종목의 첫 단계). 2026 국가기술자격 통계연보 상위 종목 수치와 일치 확인.
-- `year`에 올해(예: 2026)를 주면 **올해 누적(참고용)**: 결과가 발표된 회차만 합친 값, 응답 `partial: true`. 기본값(최근 완결 연도)은 `partial: false`.
+- 통계는 2001년부터 최근 완결 연도까지만 있어 올해 값은 없다.
 - `qualification_type`: `TECHNICAL`(국가기술자격) | `PROFESSIONAL`(국가전문자격) — 따로 순위.
-- `series`: 기능사 / 산업기사 / 기사 / 기술사 / 기능장(국가기술). `interest_field_id`: 관심분야(직무분야 대분류) 코드.
+- `series`: 기능사 / 산업기사 / 기사 / 기능장 / 기술사 / 서비스(국가기술만, `PROFESSIONAL`과 함께 주면 400). 판정은 DB `qualifications.grade_level`과 같다(괄호 분야명 제외, 서비스 분야 구분). `interest_field_id`: 관심분야(직무분야 대분류) 코드.
 - 응답: `{year, qualification_type, basis, total, trend_rule, items[]}`, `items[]` = `{rank, jmcd, name, qualification_type, series, interest_field_id, interest_field, year, stage, examinees, passed, pass_rate_percent, five_year[{year, examinees}], five_year_change_percent, trend}`.
 - **추천 페이지 '지금 주목받는 자격증'**: 같은 규칙에서 `limit=3`으로 불러 1~3위만 표시(`type` 기본 TECHNICAL, 화면에서 국가전문으로 바꾸면 `type=PROFESSIONAL`). 초기 메인 트렌드는 개수 별도.
 - `five_year`는 기준연도를 포함한 최근 5개 연도 중 자료가 있는 해를 오래된 순으로 반환한다. 결측 연도는 건너뛴다.
@@ -191,7 +189,7 @@
 ## 5. 오늘의 사자성어 — `service.daily_idiom(today=None)`
 경로: `GET /api/v1/daily-idiom` (메인 사이드바 CF-00-04, 플래너 CF-04-19 공통)
 
-- 기준일 2026-01-01에 1번, 그다음 날 2번 … 50번 다음 날 다시 1번. `display_order` 순서로 하루 1개씩, 목록 길이(50)를 주기로 돈다.
+- 기준일(설정값, 현재 2026-01-01)에 1번, 그다음 날 2번 … 50번 다음 날 다시 1번. `display_order` 순서로 하루 1개씩, 목록 길이(50)를 주기로 돈다.
 - 날짜만으로 정해지므로 로그인 여부·회원·화면과 관계없이 같은 날짜면 같은 결과다. 날짜별 저장 테이블은 없다.
 - DB에서는 `is_active = 1`인 항목만 `display_order` 순으로 순환한다(50개 모두 활성이면 1~50번·50일 주기).
 - 응답: `{date, display_order, idiom, hanja, meaning, cycle_days}`. 목록이 비면 `null`(화면은 빈 상태).
