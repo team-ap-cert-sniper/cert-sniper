@@ -19,7 +19,7 @@
 
 ## 🚀 프로젝트 목표 및 필요성
 
-* **흩어진 자격증 정보 통합**: Q-Net·공공데이터에 흩어진 자격증 정보, 시험 일정, 합격률을 한 화면에서 확인
+* **자격증 정보 통합**: Q-Net·공공데이터에 흩어진 자격증 정보, 시험 일정, 합격률을 한 화면에서 확인
 * **전공 맞춤 추천**: 같은 계열이라도 학교마다 다른 학과 이름을 학과 단위로 연결해, 내 전공에 실제로 맞는 자격증을 추천
 * **지금 응시할 수 있는지까지 안내**: 학년·학제와 Q-Net 응시자격 기준으로 "지금 가능 / N학년부터 / 졸업 후"를 함께 표시
 * **추천에서 합격까지**: 추천받은 자격증으로 학습 계획을 세우고, 합격 후기를 공유하는 흐름을 하나로 연결
@@ -66,8 +66,8 @@
 
 ### **Backend**
 
-* **Framework**: Java · Spring Boot · Gradle
-* **Database**: MySQL (Docker Compose로 팀 공통 실행)
+* **Framework**: Java 21c · Spring Boot 3.5.X · Gradle
+* **Database**: MySQL 8.0.4X (Docker Compose로 팀 공통 실행)
 * **JPA/ORM**: Spring Data JPA
 * **DB 변경 관리**: 팀 공통 SQL 변경 이력 (Flyway 선택 도입)
 * **인증**: Spring Security · JWT
@@ -89,7 +89,7 @@
 
 * **VCS**: Git · GitHub (Organization)
 * **Container**: Docker · Docker Compose
-* **Docs / Design**: Notion · Figma
+* **Docs / Design / ERD**: Notion · Figma · ERDCloud
 
 ---
 
