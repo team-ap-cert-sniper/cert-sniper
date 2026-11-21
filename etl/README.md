@@ -35,8 +35,8 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │  ├─ 📄 pass_rates.csv                 연도·단계별 접수자·응시자·합격자 (2001~2025)
 │  ├─ 📄 eligibility_rules.csv          응시 조건 목록 (등급별·종목별)
 │  ├─ 📄 daily_idioms.csv               오늘의 사자성어 50개 (팀 제공, 1~50번 하루 1개씩 순환)
-│  ├─ 📄 MANIFEST.json                  행 수·체크섬·빌드 통계
-│  └─ 📄 qualification_subject_items.csv (예정) 시험과목 과목별 분해 → qualification_subject_items
+│  └─ 📄 MANIFEST.json                  행 수·체크섬·빌드 통계
+│  
 │
 ├─ 📁 tools/
 │  └─ 📄 load_service_data.py           빈 DB 초기 적재 SQL 생성 (CSV 10종, 실행할 때만 만들고 레포에 두지 않음)
