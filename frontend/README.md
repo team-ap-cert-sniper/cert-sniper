@@ -17,8 +17,6 @@
 | 황정규 | `Support/` VIEW-12·13, `Admin/` VIEW-14~19 | — | `supportApi.js` · `adminApi.js` |
 | 공통 (담당 미정) | `App.jsx` · `router/` · `store/` · `hooks/` · `utils/` · `constants/` · `styles/` | `common/` | `client.js` |
 
-> 담당은 임시 배정입니다. 바뀌면 이 표와 [CODEOWNERS](../.github/CODEOWNERS)를 같이 고칩니다.
-
 ## 📁 파일 트리
 
 ### 1. 프로젝트 설정 + 공통
