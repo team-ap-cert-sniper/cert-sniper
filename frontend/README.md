@@ -1,6 +1,6 @@
 # 🎨 frontend (React + Vite)
 
-기능 명세서 v1.4.0의 화면 ID(VIEW-01~19) 기준 구조와 **만들 파일 전체**입니다. 화면 하나가 `pages/` 폴더 하나입니다. [← 처음으로](../README.md)
+기능 명세서 v1.4.0의 화면 ID(VIEW-01~19) 기준 구조와 **만들 파일 전체**입니다. 화면 하나가 `pages/` 폴더 하나이고, 그 화면에서만 쓰는 부품도 그 폴더 안에 둡니다. [← 처음으로](../README.md)
 
 * 기능 ID → 화면 → API → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
@@ -11,9 +11,9 @@
 | 담당 | 화면 (`pages/`) | 부품 (`components/`) | API 파일 (`api/`) |
 |---|---|---|---|
 | 유다연 | `Main/` VIEW-01, `Auth/` VIEW-02~04 | — | `authApi.js` |
-| 이은아 | `Recommend/` VIEW-05, `QualificationDetail/` VIEW-06 | `qualification/` | `optionApi.js` · `recommendationApi.js` · `qualificationApi.js` · `examScheduleApi.js` |
-| 박준성 | `Planner/` VIEW-07, `AiPlanner/` VIEW-08 | `planner/` | `targetExamApi.js` · `plannerApi.js` · `memoApi.js` · `aiPlannerApi.js` |
-| 최기완 | `PassStory/` VIEW-09·10, `MyPage/` VIEW-11 | `passstory/` | `userApi.js` · `favoriteApi.js` · `passStoryApi.js` · `reportApi.js` · `rankApi.js` |
+| 이은아 | `Recommend/` VIEW-05, `QualificationDetail/` VIEW-06 | `qualification/` (공용만) | `optionApi.js` · `recommendationApi.js` · `qualificationApi.js` · `examScheduleApi.js` |
+| 박준성 | `Planner/` VIEW-07, `AiPlanner/` VIEW-08 | `planner/` (공용만) | `targetExamApi.js` · `plannerApi.js` · `memoApi.js` · `aiPlannerApi.js` |
+| 최기완 | `PassStory/` VIEW-09·10, `MyPage/` VIEW-11 | `passstory/` (공용만) | `userApi.js` · `favoriteApi.js` · `passStoryApi.js` · `reportApi.js` · `rankApi.js` |
 | 황정규 | `Support/` VIEW-12·13, `Admin/` VIEW-14~19 | — | `supportApi.js` · `adminApi.js` |
 | 공통 (담당 미정) | `App.jsx` · `router/` · `store/` · `hooks/` · `utils/` · `constants/` · `styles/` | `common/` | `client.js` |
 
@@ -25,7 +25,7 @@
 📁 frontend/
 ├─ 📄 README.md                         (있음) 화면 구조·경로·이름 규칙
 ├─ 📄 package.json                    ★ react, react-router-dom, axios, chart.js, react-chartjs-2
-├─ 📄 vite.config.js                  ★ 개발 서버 프록시 (/api → 백엔드)
+├─ 📄 vite.config.js                  ★ 개발 서버 프록시 (/api → 백엔드), 경로 별칭 `@` = `src/`
 ├─ 📄 index.html                      ★
 ├─ 📄 .env.example                    ★ VITE_API_BASE_URL
 ├─ 📄 .eslintrc.cjs                     (선택) 코드 규칙
@@ -96,41 +96,74 @@
 
 ### 3. 화면 (pages)
 
+화면 진입 파일은 `pages/화면/` 바로 아래, **그 화면에서만 쓰는 부품은 `pages/화면/components/`** 에 둡니다. 담당자는 자기 화면 폴더 하나만 보면 됩니다.
+
 ```
 📁 src/pages/
 ├─ 📁 Main/ [유다연]                       VIEW-01  /
 │  └─ 📄 MainPage.jsx                     슬로건·바로가기·트렌드·오늘의 일정 패널          CF-00-02·04
 ├─ 📁 Auth/ [유다연]                       VIEW-02~04
-│  ├─ 📄 RegisterPage.jsx                   /Register  ① 이메일·인증·비밀번호 → ② 이름·닉네임 → ③ 학력(없으면 비활성)·보유 자격증(선택)  AUTH-01
+│  ├─ 📄 RegisterPage.jsx                 /register  ① 이메일·인증·비밀번호 → ② 이름·닉네임 → ③ 학력(없으면 비활성)·보유 자격증(선택)  AUTH-01
 │  ├─ 📄 LoginPage.jsx                    /login                                        AUTH-02
 │  └─ 📄 PasswordResetPage.jsx            /password-reset                               AUTH-05
 ├─ 📁 Recommend/ [이은아]                  VIEW-05  /recommend
-│  └─ 📄 RecommendPage.jsx                조건 바·추천 캐러셀(최대 5개)·트렌드 1~3위·합격수기 최신순, 새로고침 시 전공 맞춤  CF-01-01~12
+│  ├─ 📄 RecommendPage.jsx                조건 바·추천 캐러셀(최대 5개)·트렌드 1~3위·합격수기 최신순, 새로고침 시 전공 맞춤  CF-01-01~12
+│  └─ 📁 components/
+│     ├─ 📄 ConditionBar.jsx              현재 선택 조건 바(회원정보 표시 + 조건 선택)       CF-01-09
+│     ├─ 📄 RecommendCarousel.jsx         추천 카드 캐러셀(최대 5개, 후보가 적으면 그 수만큼, 1개면 화살표 숨김)  CF-01-05
+│     ├─ 📄 RecommendCard.jsx             카드 (찜·상세·AI 플래너 버튼)                    CF-01-10·11
+│     └─ 📄 ScoreReason.jsx               추천 근거·항목별 점수                            CF-01-08
 ├─ 📁 QualificationDetail/ [이은아]        VIEW-06  /qualifications · /qualifications/:jmcd
-│  └─ 📄 QualificationDetailPage.jsx      검색 첫 화면 / 선택 자격증 상세                  CF-02-01~10
+│  ├─ 📄 QualificationDetailPage.jsx      검색 첫 화면 / 선택 자격증 상세                  CF-02-01~10
+│  └─ 📁 components/
+│     ├─ 📄 QualificationSearchModal.jsx  검색 결과 팝업·필터                              CF-02-09
+│     ├─ 📄 QualificationBrowser.jsx      자격구분 → 직무분야 → 분류 → 종목 탐색             CF-02-09
+│     ├─ 📄 QualificationInfo.jsx         기본정보(영문명·관련부처·수수료)·시험과목         CF-02-01~02
+│     ├─ 📄 EligibilityInfo.jsx           응시 조건 필요/없음 · 조건 목록                   CF-02-03
+│     ├─ 📄 PassRateChart.jsx             연도 선택 차트(접수자·응시자·합격자)·합격률 추이   CF-02-05
+│     ├─ 📄 PassRateTable.jsx             연도별 상세·종목별 검정현황 표                     CF-02-06
+│     ├─ 📄 ExamScheduleTable.jsx         회차별 한 줄(정기·빈자리 접수)·상태·D-n            CF-02-10
+│     └─ 📄 DifficultyInfo.jsx            난이도 (유지 여부 미정, 확정되면 생성)               CF-02-07
 ├─ 📁 Planner/ [박준성]                    VIEW-07  /planner
-│  └─ 📄 PlannerPage.jsx                  드롭다운·타임라인·작은 캘린더·메모·모드          CF-04-01~19
+│  ├─ 📄 PlannerPage.jsx                  드롭다운·타임라인·작은 캘린더·메모·모드          CF-04-01~19
+│  └─ 📁 components/
+│     ├─ 📄 TargetExamDropdown.jsx        목표 자격증 토글                                 CF-04-04
+│     ├─ 📄 DdayBadge.jsx                 시험일·D-Day 표시                                CF-04-05·06
+│     ├─ 📄 Timeline.jsx                  타임라인 눈금·세로줄                             CF-04-19
+│     ├─ 📄 TimelineBar.jsx               일정바                                           CF-04-13
+│     ├─ 📄 Milestone.jsx                 당일 일정 원형                                   CF-04-15
+│     ├─ 📄 ScheduleModal.jsx             자격증 일정 등록·수정                            CF-04-14
+│     ├─ 📄 PersonalScheduleModal.jsx     개인 일정                                        CF-04-18
+│     ├─ 📄 TargetExamSearchModal.jsx     목표 자격증 검색 추가                            CF-04-09
+│     └─ 📄 MemoModal.jsx                 메모 편집·서식·축소·확장                         CF-04-01·08·17
 ├─ 📁 AiPlanner/ [박준성]                  VIEW-08  /ai-planner?jmcd=
 │  ├─ 📄 AiPlannerPage.jsx                진입 검사·단계 이동·로딩·저장 후 이동            CF-06-01~05
-│  └─ 📄 SurveyStep.jsx                   설문 한 단계 (7단계 공통 틀)                     CF-06-02
+│  └─ 📁 components/
+│     └─ 📄 SurveyStep.jsx                설문 한 단계 (7단계 공통 틀)                     CF-06-02
 ├─ 📁 PassStory/ [최기완]                  VIEW-09~10
 │  ├─ 📄 PassStoryListPage.jsx            /pass-stories  등급 대시보드·목록·검색·내 글      CF-05-01~04·11·12
 │  ├─ 📄 PassStoryDetailPage.jsx          /pass-stories/:id  상세·신고·수정·삭제           CF-05-05·08·09
-│  └─ 📄 PassStoryFormPage.jsx            /pass-stories/new · /:id/edit                  CF-05-06·07
+│  ├─ 📄 PassStoryFormPage.jsx            /pass-stories/new · /:id/edit                  CF-05-06·07
+│  └─ 📁 components/
+│     ├─ 📄 RankDashboard.jsx             등급 대시보드                                    CF-05-04
+│     ├─ 📄 RankUpModal.jsx               승급 팝업                                        CF-05-12
+│     └─ 📄 ReportModal.jsx               신고 팝업                                        CF-05-09
 ├─ 📁 MyPage/ [최기완]                     VIEW-11  /mypage?tab=
 │  ├─ 📄 MyPage.jsx                       탭 틀
-│  ├─ 📄 ProfileTab.jsx                   회원정보 조회·수정(학력·보유 자격증, 직무·관심 없음)  AUTH-03
-│  ├─ 📄 PasswordTab.jsx                  비밀번호 변경 (이메일 인증)                       AUTH-06
-│  ├─ 📄 FavoriteTab.jsx                  관심 자격증·AI 플래너 만들기                      CF-03-02·09
-│  ├─ 📄 MyPostTab.jsx                    내 작성글·숨김 안내                               CF-05-03·10
-│  ├─ 📄 MyReportTab.jsx                  신고당한 내역                                     CF-05-13
-│  └─ 📄 WithdrawTab.jsx                  탈퇴·철회                                         AUTH-04
+│  └─ 📁 components/
+│     ├─ 📄 ProfileTab.jsx                회원정보 조회·수정(학력·보유 자격증, 직무·관심 없음)  AUTH-03
+│     ├─ 📄 PasswordTab.jsx               비밀번호 변경 (이메일 인증)                       AUTH-06
+│     ├─ 📄 FavoriteTab.jsx               관심 자격증·AI 플래너 만들기                      CF-03-02·09
+│     ├─ 📄 MyPostTab.jsx                 내 작성글·숨김 안내                               CF-05-03·10
+│     ├─ 📄 MyReportTab.jsx               신고당한 내역                                     CF-05-13
+│     └─ 📄 WithdrawTab.jsx               탈퇴·철회                                         AUTH-04
 ├─ 📁 Support/ [황정규]                    VIEW-12~13  /support?menu=
 │  ├─ 📄 SupportPage.jsx                  왼쪽 메뉴 틀                                      CS-01
-│  ├─ 📄 NoticeSection.jsx                공지 목록·상세                                    CS-02
-│  ├─ 📄 FaqSection.jsx                   질문·답변 펼치기                                  CS-03
-│  ├─ 📄 InquiryFormSection.jsx           1:1 문의 (회원)                                   CS-04
-│  └─ 📄 MyInquirySection.jsx             나의 문의 내역·상세 (회원)                        CS-05
+│  └─ 📁 components/
+│     ├─ 📄 NoticeSection.jsx             공지 목록·상세                                    CS-02
+│     ├─ 📄 FaqSection.jsx                질문·답변 펼치기                                  CS-03
+│     ├─ 📄 InquiryFormSection.jsx        1:1 문의 (회원)                                   CS-04
+│     └─ 📄 MyInquirySection.jsx          나의 문의 내역·상세 (회원)                        CS-05
 └─ 📁 Admin/ [황정규]                      VIEW-14~19  /admin/**
    ├─ 📄 AdminDashboardPage.jsx           VIEW-14                                         ADMIN-10
    ├─ 📄 AdminUserPage.jsx                VIEW-15  목록·상세·정정·정지                    ADMIN-02·07
@@ -140,44 +173,23 @@
    └─ 📄 AdminPassStoryPage.jsx           VIEW-19                                         ADMIN-11
 ```
 
-### 4. 기능별 부품 (components)
+### 4. 여러 화면이 같이 쓰는 부품 (components)
+
+두 화면 이상에서 쓰는 부품만 둡니다. 화면 하나에서만 쓰면 3번의 `pages/화면/components/`에 둡니다. 담당자가 만들고, 다른 화면은 가져다 쓰기만 합니다.
 
 ```
 📁 src/components/
+├─ 📁 common/                          [공통 · 담당 미정]  → 1번 트리 참고
 ├─ 📁 qualification/ [이은아]
-│  ├─ 📄 ConditionBar.jsx                 현재 선택 조건 바(회원정보 표시 + 조건 선택)       CF-01-09
-│  ├─ 📄 RecommendCarousel.jsx            추천 카드 캐러셀(최대 5개, 후보가 적으면 그 수만큼, 1개면 화살표 숨김)  CF-01-05
-│  ├─ 📄 RecommendCard.jsx                카드 (찜·상세·AI 플래너 버튼)                    CF-01-10·11
-│  ├─ 📄 ScoreReason.jsx                  추천 근거·항목별 점수                            CF-01-08
-│  ├─ 📄 TrendList.jsx                    주목받는 자격증 (메인 · 추천 페이지는 1~3위)      CF-02-08
-│  ├─ 📄 QualificationSearchModal.jsx     검색 결과 팝업·필터                              CF-02-09
-│  ├─ 📄 QualificationBrowser.jsx         자격구분 → 직무분야 → 분류 → 종목 탐색             CF-02-09
-│  ├─ 📄 QualificationInfo.jsx            기본정보(영문명·관련부처·수수료)·시험과목         CF-02-01~02
-│  ├─ 📄 EligibilityInfo.jsx              응시 조건 필요/없음 · 조건 목록                   CF-02-03
-│  ├─ 📄 PassRateChart.jsx                연도 선택 차트(접수자·응시자·합격자)·합격률 추이   CF-02-05
-│  ├─ 📄 PassRateTable.jsx                연도별 상세·종목별 검정현황 표                     CF-02-06
-│  ├─ 📄 ExamScheduleTable.jsx            회차별 한 줄(정기·빈자리 접수)·상태·D-n            CF-02-10
-│  └─ 📄 DifficultyInfo.jsx               난이도 (유지 여부 미정, 확정되면 생성)               CF-02-07
+│  └─ 📄 TrendList.jsx                    주목받는 자격증 (메인 · 추천 1~3위 · 상세 첫 화면)  CF-02-08
 ├─ 📁 planner/ [박준성]
 │  ├─ 📄 TodaySchedulePanel.jsx           메인 작은 달력·오늘의 일정                       CF-00-04
-│  ├─ 📄 TargetExamDropdown.jsx           목표 자격증 토글                                 CF-04-04
-│  ├─ 📄 DdayBadge.jsx                    시험일·D-Day 표시                                CF-04-05·06
-│  ├─ 📄 MiniCalendar.jsx                 작은 캘린더                                      CF-04-03
-│  ├─ 📄 Timeline.jsx                     타임라인 눈금·세로줄                             CF-04-19
-│  ├─ 📄 TimelineBar.jsx                  일정바                                           CF-04-13
-│  ├─ 📄 Milestone.jsx                    당일 일정 원형                                   CF-04-15
-│  ├─ 📄 ScheduleModal.jsx                자격증 일정 등록·수정                            CF-04-14
-│  ├─ 📄 PersonalScheduleModal.jsx        개인 일정                                        CF-04-18
-│  ├─ 📄 TargetExamSearchModal.jsx        목표 자격증 검색 추가                            CF-04-09
-│  ├─ 📄 MemoModal.jsx                    메모 편집·서식·축소·확장                         CF-04-01·08·17
+│  ├─ 📄 MiniCalendar.jsx                 작은 캘린더 (메인 패널 · 플래너)                 CF-04-03
 │  └─ 📄 DailyQuote.jsx                   오늘의 사자성어 (GET /api/v1/daily-idiom, 한국시간 기준 공통)          CF-00-04, CF-04-19
 └─ 📁 passstory/ [최기완]
-   ├─ 📄 PassStoryCard.jsx                카드 (추천 페이지 미리보기에서도 사용)           CF-05-05, CF-01-12
-   ├─ 📄 RankDashboard.jsx                등급 대시보드                                    CF-05-04
-   ├─ 📄 RankBadge.jsx                    닉네임 옆 등급 아이콘                            CF-05-04
-   ├─ 📄 RankUpModal.jsx                  승급 팝업                                        CF-05-12
-   ├─ 📄 ReportModal.jsx                  신고 팝업                                        CF-05-09
-   └─ 📄 HiddenNotice.jsx                 숨김 안내                                        CF-05-10
+   ├─ 📄 PassStoryCard.jsx                카드 (저격왕 목록 · 추천 페이지 미리보기)         CF-05-05, CF-01-12
+   ├─ 📄 RankBadge.jsx                    닉네임 옆 등급 아이콘 (저격왕 · 관리자)          CF-05-04
+   └─ 📄 HiddenNotice.jsx                 숨김 안내 (저격왕 · 마이페이지 · 관리자)         CF-05-10
 ```
 
 ## 🧩 다른 담당의 부품·API를 쓰는 곳
@@ -186,7 +198,7 @@
 
 | 쓰는 화면 (담당) | 가져다 쓰는 것 (담당) | 기능 ID |
 |---|---|---|
-| Main (유다연) | `qualification/TrendList` (이은아), `planner/TodaySchedulePanel` (박준성) | CF-00-02·04, CF-02-08 |
+| Main (유다연) | `qualification/TrendList` (이은아), `planner/TodaySchedulePanel`·`DailyQuote` (박준성) | CF-00-02·04, CF-02-08 |
 | Auth 회원가입 (유다연) | `optionApi` 대학교·전공·자격증 목록 (이은아), `common/SearchSelect`·`EmailVerifyField` | AUTH-01, CF-01-01·07 |
 | Recommend (이은아) | `passstory/PassStoryCard` (최기완), `favoriteApi` 찜 (최기완), `passStoryApi` 미리보기 (최기완) | CF-01-10·12, CF-03-01·02 |
 | QualificationDetail (이은아) | — | |
@@ -202,7 +214,7 @@
 | 경로 | 화면 | 접근 | 담당 |
 |---|---|---|---|
 | `/` | VIEW-01 초기 메인 (로그인 전·후) | 전체 | 유다연 |
-| `/Register` · `/login` · `/password-reset` | VIEW-02 · 03 · 04 | 비회원 | 유다연 |
+| `/register` · `/login` · `/password-reset` | VIEW-02 · 03 · 04 | 비회원 | 유다연 |
 | `/recommend` | VIEW-05 자격증 추천 | 회원 | 이은아 |
 | `/qualifications` · `/qualifications/:jmcd` | VIEW-06 상세 첫 화면 · 특정 자격증 상세 | 회원 | 이은아 |
 | `/planner` | VIEW-07 플래너 다이어리 | 회원 | 박준성 |
@@ -220,7 +232,7 @@
 |---|---|---|---|
 | 공통 헤더 | 로고 | `/` | CF-00-01 |
 | 공통 헤더 | 자격증 상세 · 자격증 추천 · 플래너 다이어리 · 저격왕 | `/qualifications` · `/recommend` · `/planner` · `/pass-stories` | CF-00-01 |
-| 공통 헤더 | 로그인 · 회원가입 (비회원) | `/login` · `/Register` | CF-00-01 |
+| 공통 헤더 | 로그인 · 회원가입 (비회원) | `/login` · `/register` | CF-00-01 |
 | 공통 헤더 | 마이페이지 (회원) | `/mypage` | CF-00-01 |
 | 공통 헤더 | 로그아웃 → 확인 팝업 | `/` | CF-00-01, AUTH-02 |
 | 공통 헤더 | 관리자 버튼 (ADMIN) | `/admin` (버튼 위치 팀 확인) | ADMIN-10 |
@@ -279,6 +291,8 @@
 | 화면 폴더 | 대문자로 시작 | `Recommend/`, `PassStory/` |
 | 화면 파일 | `~Page.jsx` | `RecommendPage.jsx` |
 | 부품 파일 | 대문자로 시작, 역할이 보이게 | `PassRateChart.jsx` |
+| 부품 위치 | 한 화면 전용은 `pages/화면/components/`, 두 화면 이상이면 `components/담당영역/`, 디자인 공통은 `components/common/` | `pages/Recommend/components/RecommendCard.jsx` |
+| import 경로 | `@/`로 시작 (`../../` 대신) | `import TrendList from '@/components/qualification/TrendList'` |
 | API 파일 | 소문자로 시작, `~Api.js` | `qualificationApi.js` |
 | 훅 | `use`로 시작 | `useAuth.js` |
 | 경로 | 소문자, 단어 사이 `-` | `/pass-stories`, `/ai-planner` |
@@ -286,5 +300,7 @@
 ## 지켜 주세요
 
 * 다른 기능의 화면·부품을 고치지 않습니다. 공통 부품이 필요하면 `components/common/`에 새로 만들고 PR에 적어 주세요
+* 내 화면 전용 부품을 다른 화면에서도 쓰게 되면 `components/담당영역/`으로 옮기고 PR에 적어 주세요
+* 폴더마다 `index.js`로 다시 내보내기(re-export)는 하지 않습니다 (순환 참조·빌드 속도 문제)
 * 백엔드 주소 같은 설정은 `.env`에 두고, 공유할 예시는 `.env.example`로 올립니다
 * 디자인 시안은 임시입니다. 화면 배치보다 기능·이동을 먼저 맞춥니다

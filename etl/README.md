@@ -3,7 +3,7 @@
 공공데이터로 만든 **서비스용 데이터(CSV 9종)** 와 팀이 정한 사자성어 목록(CSV 1종), 그 데이터를 쓰는 **추천·자격증 정보 로직(Python)** 을 담고 있습니다.
 
 * **DB 적재 원천**: `data/*.csv`를 DB 설계서 Ver.12 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
-* **백엔드 이식 기준**: `jeogyeokjeung/`의 함수 흐름과 `docs/API_CONTRACT.md`의 입출력을 Spring Boot로 옮깁니다
+* **백엔드 이식 기준**: `jeogyeokjeung/`의 함수 흐름과 [docs/API_CONTRACT.md](../docs/API_CONTRACT.md)의 입출력을 Spring Boot로 옮깁니다
 * **결과 검증 기준**: `tests/golden_recommendations.json`과 같은 입력을 넣어 Java 결과가 같은지 비교합니다
 
 Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
@@ -36,7 +36,6 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │  ├─ 📄 eligibility_rules.csv          응시 조건 목록 (등급별·종목별)
 │  ├─ 📄 daily_idioms.csv               오늘의 사자성어 50개 (팀 제공, 1~50번 하루 1개씩 순환)
 │  └─ 📄 MANIFEST.json                  행 수·체크섬·빌드 통계
-│  
 │
 ├─ 📁 tools/
 │  └─ 📄 load_service_data.py           빈 DB 초기 적재 SQL 생성 (CSV 10종, 실행할 때만 만들고 레포에 두지 않음)
@@ -48,8 +47,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │  └─ 📄 golden_recommendations.json    기준 추천 결과 (Java 이식 결과 비교용)
 │
 └─ 📁 docs/
-   ├─ 📄 DATA_TABLES.md                 테이블 컬럼·PK·FK·출처
-   └─ 📄 API_CONTRACT.md                API 경로·입출력 형식·화면 표시 순서
+   └─ 📄 DATA_TABLES.md                 테이블 컬럼·PK·FK·출처 (API 명세는 루트 docs/API_CONTRACT.md)
 ```
 
 ---
@@ -104,7 +102,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 
 **지금 주목받는 자격증**: `trends(limit=3)` — 최근 완결 연도 1차 응시자 순위 1~3위
 
-자세한 입출력은 [docs/API_CONTRACT.md](docs/API_CONTRACT.md)에 있습니다.
+자세한 입출력은 [docs/API_CONTRACT.md](../docs/API_CONTRACT.md)에 있습니다.
 
 ---
 
@@ -112,7 +110,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 
 ```bash
 python run.py check                                  # 데이터 무결성 + 전체 테스트
-python run.py recommend profile.json                 # 추천 결과 JSON (입력 형식: docs/API_CONTRACT.md 2장)
+python run.py recommend profile.json                 # 추천 결과 JSON (입력 형식: ../docs/API_CONTRACT.md 2장)
 python run.py qualification 1320                     # 자격증 상세
 python run.py options majors --school-id <학교 ID>   # 선택 목록
 ```

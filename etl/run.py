@@ -2,7 +2,7 @@
 """저격증 서비스 로직 실행 도구 (Python 3.9+, 외부 라이브러리 없음).
 
   python run.py check                                   # 데이터 무결성 + 전체 테스트 실행
-  python run.py recommend profile.json --today 2026-11-11  # 전공 맞춤 추천(JSON). profile.json 형식은 docs/API_CONTRACT.md
+  python run.py recommend profile.json --today 2026-11-11  # 전공 맞춤 추천(JSON). profile.json 형식은 ../docs/API_CONTRACT.md
   python run.py recommend conditions.json --mode condition  # 조건 선택 추천(관심 분야·희망 직무·자격구분만)
   python run.py options schools --query 백석             # 선택 목록(대학교·전공·학년·관심분야·희망직무·자격증)
   python run.py options majors --school-id 084d0e1ab9bcfde8 --query 데이터
