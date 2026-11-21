@@ -66,7 +66,7 @@
 
 ### **Backend**
 
-* **Framework**: Java 21c · Spring Boot 3.5.X · Gradle
+* **Framework**: Java 21 · Spring Boot 3.5.X · Gradle
 * **Database**: MySQL 8.0.4X (Docker Compose로 팀 공통 실행)
 * **JPA/ORM**: Spring Data JPA
 * **DB 변경 관리**: 팀 공통 SQL 변경 이력 (Flyway 선택 도입)
