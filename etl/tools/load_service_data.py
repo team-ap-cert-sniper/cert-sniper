@@ -69,9 +69,6 @@ def write_load_sql(data, output):
             aggregate.setdefault(same_name, college_ids[scope])
         elif not same_name and members.get(scope):
             list_items.add(scope)
-    oversized = [row['major_id'] for row in majors if len(row['category_large']) > 30]
-    if oversized:
-        raise ValueError(f'{len(oversized)} category_large values exceed academic_field VARCHAR(30).')
 
     output.write("USE jg_service;\nSET NAMES utf8mb4;\n"
                  "SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';\n"
@@ -91,17 +88,16 @@ def write_load_sql(data, output):
     qualifications = read_rows(data, 'qualifications')
     # 관심 분야 = 대직무분야, 희망 직무 = 중직무분야. 자격증 Master에 쓰인 코드만 넣는다.
     interest = sorted({(r['obligfldcd'], r['obligfldnm']) for r in qualifications if r['obligfldcd']})
-    interest_ids = {code: index for index, (code, _) in enumerate(interest, 1)}
-    insert(output, 'interest_fields', 'id,code,name', ([interest_ids[c], c, n] for c, n in interest))
+    insert(output, 'interest_fields', 'code,name', ([c, n] for c, n in interest))
     jobs = {}
     for r in qualifications:
         if r['mdobligfldcd']:
             jobs.setdefault(r['mdobligfldcd'], (r['mdobligfldnm'], r['obligfldcd']))
-    insert(output, 'job_categories', 'code,name,interest_field_id',
-           ([code, name, interest_ids[parent]] for code, (name, parent) in sorted(jobs.items())))
+    insert(output, 'job_categories', 'code,name,interest_field_code',
+           ([code, name, parent] for code, (name, parent) in sorted(jobs.items())))
 
     qualification_fields = (
-        'jmcd,eng_name,qualgbcd,qualgbnm,seriesnm,obligfldcd,obligfldnm,mdobligfldcd,mdobligfldnm,'
+        'jmcd,eng_name,qualgbcd,obligfldcd,mdobligfldcd,'
         'related_ministry,summary,summary_basis,overview,job_description,career_outlook,conducting_agency,'
         'related_majors,exam_method,exam_subjects,eligibility,eligibility_required,eligibility_summary,'
         'eligibility_rule_key,fee_written,fee_practical,fee_note,schedule_type'

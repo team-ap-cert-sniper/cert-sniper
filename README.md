@@ -99,7 +99,7 @@
 
 * **Client**: 화면별 페이지와 API 호출 모듈로 사용자 요청 처리
 * **Server**: 기능별 패키지(Controller → Service → Repository)로 비즈니스 로직 수행
-* **Storage**: MySQL `jg_service` (서비스 데이터 31개 테이블, [DB 설계서](docs/DB_DESIGN_V12.xlsx), [ERD](docs/ERD.md), [사자성어·합격수기 변경 안내](docs/DB_UPDATE_DAILY_IDIOM.md))
+* **Storage**: MySQL `jg_service` (서비스 데이터 31개 테이블, [ERD](docs/ERD.md), [schema.sql](docs/schema.sql))
 * **Data Pipeline**: Python으로 공공데이터를 수집·정제해 CSV로 만들고 DB에 적재. 추천 로직의 기준 구현과 테스트도 함께 보관
 
 ---
