@@ -10,11 +10,11 @@
 
 | 이름 | 담당 화면 | 백엔드 패키지 | 비고 |
 |---|---|---|---|
-| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git 관리자 (`main` 병합·브랜치 보호), Docker Compose |
+| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git 관리자, Docker Compose |
 | **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` | 추천 알고리즘, ETL 작업(`etl/`), 설계 문서(`docs/`), DB 관리자 |
-| **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 디자인 |
-| **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | DB 명세서 |
-| **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 디자인 |
+| **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인 |
+| **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인|
+| **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 기능 흐름, 디자인 |
 | 공통 (담당 미정) | 공통 헤더·푸터·로그인 필요 팝업 | `global` | |
 
 ---
