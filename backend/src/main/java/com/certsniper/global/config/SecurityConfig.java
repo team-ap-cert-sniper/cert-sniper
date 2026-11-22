@@ -1,0 +1,83 @@
+package com.certsniper.global.config;
+
+import com.certsniper.global.security.SecurityErrorHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+/**
+ * URL별 접근 권한 설정.
+ *
+ *  /api/v1/auth/**          전체 허용
+ *  GET /api/v1/options/**   전체 허용
+ *  GET /api/v1/daily-idiom  전체 허용
+ *  GET /api/v1/trends/**    전체 허용
+ *  GET /api/v1/health       전체 허용
+ *  Swagger                  전체 허용
+ *  /api/v1/admin/**         ADMIN (403)
+ *  그 밖의 /api/v1/**       로그인 회원 (401)
+ */
+@Configuration
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private static final String[] PUBLIC_ANY = {
+            "/api/v1/auth/**",
+            "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
+    };
+
+    private static final String[] PUBLIC_GET = {
+            "/api/v1/health",
+            "/api/v1/options/**",
+            "/api/v1/daily-idiom",
+            "/api/v1/trends/**"
+    };
+
+    private final SecurityErrorHandler securityErrorHandler;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(Customizer.withDefaults())
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // CORS preflight
+                        .requestMatchers(PUBLIC_ANY).permitAll()
+                        .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/**").authenticated()
+                        .anyRequest().denyAll()
+                )
+
+                // 401·403 응답
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(securityErrorHandler)
+                        .accessDeniedHandler(securityErrorHandler)
+                );
+
+        // TODO: JwtAuthenticationFilter 구현 후 등록
+        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /** 비밀번호 BCrypt 해시 (AUTH-01) */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}

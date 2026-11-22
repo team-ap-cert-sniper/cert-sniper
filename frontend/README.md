@@ -39,7 +39,7 @@
    ├─ 📁 router/
    │  ├─ 📄 index.jsx                 ★ 전체 경로
    │  ├─ 📄 ProtectedRoute.jsx        ★ 비회원이면 로그인 필요 팝업                      CF-00-03
-   │  └─ 📄 AdminRoute.jsx            ★ ADMIN이 아니면 접근 불가
+   │  └─ 📄 AdminRoute.jsx            ★ /admin/** 보호: 비회원은 로그인 필요 팝업, 일반 회원은 권한 없음 안내 후 메인
    ├─ 📁 store/
    │  └─ 📄 authStore.js              ★ 로그인 회원 정보·토큰
    ├─ 📁 hooks/
@@ -58,7 +58,7 @@
    │  ├─ 📄 global.css                ★
    │  └─ 📄 variables.css             ★ 색·글꼴·간격
    └─ 📁 components/common/           [공통 · 담당 미정]
-      ├─ 📄 Header.jsx                ★ 로고·메뉴·로그인/마이페이지·로그아웃 확인 (ADMIN은 관리자 버튼, 위치 팀 확인)        CF-00-01
+      ├─ 📄 Header.jsx                ★ 로고·메뉴·로그인/마이페이지·로그아웃 확인, ADMIN이면 마이페이지 옆 관리자 페이지 버튼        CF-00-01
       ├─ 📄 Footer.jsx                ★ 고객센터·1:1 문의 바로가기
       ├─ 📄 LoginRequiredModal.jsx    ★ 로그인 필요 팝업                                 CF-00-03
       ├─ 📄 ConfirmModal.jsx          ★ 로그아웃·삭제·작성 취소 확인
@@ -165,6 +165,7 @@
 │     ├─ 📄 InquiryFormSection.jsx        1:1 문의 (회원)                                   CS-04
 │     └─ 📄 MyInquirySection.jsx          나의 문의 내역·상세 (회원)                        CS-05
 └─ 📁 Admin/ [황정규]                      VIEW-14~19  /admin/**
+   ├─ 📄 AdminLayout.jsx                  관리자 전용 레이아웃: 왼쪽 메뉴 · 사이트로 이동 · 로그아웃
    ├─ 📄 AdminDashboardPage.jsx           VIEW-14                                         ADMIN-10
    ├─ 📄 AdminUserPage.jsx                VIEW-15  목록·상세·정정·정지                    ADMIN-02·07
    ├─ 📄 AdminNoticePage.jsx              VIEW-16                                         ADMIN-03

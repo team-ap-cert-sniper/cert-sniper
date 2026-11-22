@@ -112,7 +112,7 @@
 ├─ 📁 frontend/   React 웹
 ├─ 📁 etl/        공공데이터 정리 결과 + 추천 로직 기준 구현
 ├─ 📁 docs/       ERD · API 명세 · 기능 추적표 · 플로우차트
-├─ 📁 db/         Docker DB 계정 생성
+├─ 📁 db/         Docker DB 계정 생성 · 관리자 계정 시드
 ├─ 📄 docker-compose.yml
 ├─ 📄 .env.example
 └─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS
@@ -136,7 +136,7 @@
 2. 레포 루트에서 `.env.example`을 `.env`로 복사하고 비밀번호 세 칸 채우기 (영문·숫자)
 3. `docker compose up -d`
 
-처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
+처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종), 관리자 계정 1개(`euna@certsniper.admin`, 초기 비밀번호는 팀 안에서 공유)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
 
 | 접속 | 값 |
 |---|---|
