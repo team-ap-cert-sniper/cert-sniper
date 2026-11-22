@@ -3,7 +3,7 @@
  "cases": [
   {
    "profile": {
-    "school_id": "8cc0ac74cb3e1374",
+    "university_id": "8cc0ac74cb3e1374",
     "major_id": "00019a987752dd41",
     "grade": "1"
    },
@@ -18,7 +18,7 @@
   },
   {
    "profile": {
-    "school_id": "ca86cf5302c9168c",
+    "university_id": "ca86cf5302c9168c",
     "major_id": "0734b37b3c1fc772",
     "grade": "2"
    },
@@ -33,7 +33,7 @@
   },
   {
    "profile": {
-    "school_id": "9edbf4745649a073",
+    "university_id": "9edbf4745649a073",
     "major_id": "0e15335d1022d45a",
     "grade": "3"
    },
@@ -66,7 +66,7 @@
   },
   {
    "profile": {
-    "school_id": "d5d18e3810df57e0",
+    "university_id": "d5d18e3810df57e0",
     "major_id": "1512e2562628e012",
     "grade": "4"
    },
@@ -105,7 +105,7 @@
   },
   {
    "profile": {
-    "school_id": "880cb49a7c6d8110",
+    "university_id": "880cb49a7c6d8110",
     "major_id": "1c17e524cc0d69c4",
     "grade": "GRADUATED"
    },
@@ -126,7 +126,7 @@
   },
   {
    "profile": {
-    "school_id": "f404407030117951",
+    "university_id": "f404407030117951",
     "major_id": "234dc7170657b26d",
     "grade": "NOT_ENROLLED"
    },
@@ -141,7 +141,7 @@
   },
   {
    "profile": {
-    "school_id": "f404407030117951",
+    "university_id": "f404407030117951",
     "major_id": "2ad52e2dee40ddce",
     "grade": "1"
    },
@@ -162,7 +162,7 @@
   },
   {
    "profile": {
-    "school_id": "08b8f8346790dde8",
+    "university_id": "08b8f8346790dde8",
     "major_id": "327367f9a883ab59",
     "grade": "2"
    },
@@ -177,7 +177,7 @@
   },
   {
    "profile": {
-    "school_id": "1d6c2f1c9b88977c",
+    "university_id": "1d6c2f1c9b88977c",
     "major_id": "3a831fd6b002a7df",
     "grade": "3"
    },
@@ -198,7 +198,7 @@
   },
   {
    "profile": {
-    "school_id": "0b31d33d19b8cba0",
+    "university_id": "0b31d33d19b8cba0",
     "major_id": "423d97d1abe1af1e",
     "grade": "4"
    },
@@ -219,7 +219,7 @@
   },
   {
    "profile": {
-    "school_id": "9e81a166ef5fc28b",
+    "university_id": "9e81a166ef5fc28b",
     "major_id": "4a3317da93e397c4",
     "grade": "GRADUATED"
    },
@@ -227,7 +227,7 @@
   },
   {
    "profile": {
-    "school_id": "e96bed9aab7d9724",
+    "university_id": "e96bed9aab7d9724",
     "major_id": "52294b8fc2e3d6bb",
     "grade": "NOT_ENROLLED"
    },
@@ -235,7 +235,7 @@
   },
   {
    "profile": {
-    "school_id": "ad33acf9eb7fc49f",
+    "university_id": "ad33acf9eb7fc49f",
     "major_id": "5a214196816ccbb4",
     "grade": "1"
    },
@@ -274,7 +274,7 @@
   },
   {
    "profile": {
-    "school_id": "88257459a43077d2",
+    "university_id": "88257459a43077d2",
     "major_id": "62784bc04d53026f",
     "grade": "2"
    },
@@ -282,7 +282,7 @@
   },
   {
    "profile": {
-    "school_id": "35a9d682fd81c6f2",
+    "university_id": "35a9d682fd81c6f2",
     "major_id": "6a8639063016baa4",
     "grade": "3"
    },
@@ -309,7 +309,7 @@
   },
   {
    "profile": {
-    "school_id": "91f004c9148c3f1e",
+    "university_id": "91f004c9148c3f1e",
     "major_id": "732de5955b8da54f",
     "grade": "4"
    },
@@ -317,7 +317,7 @@
   },
   {
    "profile": {
-    "school_id": "b6f1e55435c92398",
+    "university_id": "b6f1e55435c92398",
     "major_id": "7be76b406473957a",
     "grade": "GRADUATED"
    },
@@ -410,7 +410,7 @@
   },
   {
    "profile": {
-    "school_id": "076907071358c3c4",
+    "university_id": "076907071358c3c4",
     "major_id": "84419d78f6300b47",
     "grade": "NOT_ENROLLED"
    },
@@ -418,7 +418,7 @@
   },
   {
    "profile": {
-    "school_id": "954180748e6e45fe",
+    "university_id": "954180748e6e45fe",
     "major_id": "8d037b9e5b25e832",
     "grade": "1"
    },
@@ -487,7 +487,7 @@
   },
   {
    "profile": {
-    "school_id": "954180748e6e45fe",
+    "university_id": "954180748e6e45fe",
     "major_id": "964771a46e63279d",
     "grade": "2"
    },
@@ -502,7 +502,7 @@
   },
   {
    "profile": {
-    "school_id": "e011cf0762c58b2b",
+    "university_id": "e011cf0762c58b2b",
     "major_id": "9eca26a5c95cbd35",
     "grade": "3"
    },
@@ -517,7 +517,7 @@
   },
   {
    "profile": {
-    "school_id": "1dbb09cd150d72d6",
+    "university_id": "1dbb09cd150d72d6",
     "major_id": "a7a00428b8ba0b6d",
     "grade": "4"
    },
@@ -544,7 +544,7 @@
   },
   {
    "profile": {
-    "school_id": "84ac3debe58089e6",
+    "university_id": "84ac3debe58089e6",
     "major_id": "b101dc46db428f44",
     "grade": "GRADUATED"
    },
@@ -552,7 +552,7 @@
   },
   {
    "profile": {
-    "school_id": "c51fbe81cacfaed4",
+    "university_id": "c51fbe81cacfaed4",
     "major_id": "bb277fff65bd68e8",
     "grade": "NOT_ENROLLED"
    },
@@ -573,7 +573,7 @@
   },
   {
    "profile": {
-    "school_id": "08f1a7464193f2bc",
+    "university_id": "08f1a7464193f2bc",
     "major_id": "c4e946e18d74ae29",
     "grade": "1"
    },
@@ -581,7 +581,7 @@
   },
   {
    "profile": {
-    "school_id": "d5d18e3810df57e0",
+    "university_id": "d5d18e3810df57e0",
     "major_id": "cec5947ab235187d",
     "grade": "2"
    },
@@ -620,7 +620,7 @@
   },
   {
    "profile": {
-    "school_id": "0266536c1b620e41",
+    "university_id": "0266536c1b620e41",
     "major_id": "d89710fa10e6996a",
     "grade": "3"
    },
@@ -647,7 +647,7 @@
   },
   {
    "profile": {
-    "school_id": "e011cf0762c58b2b",
+    "university_id": "e011cf0762c58b2b",
     "major_id": "e21f0eb9aa35442b",
     "grade": "4"
    },
@@ -655,7 +655,7 @@
   },
   {
    "profile": {
-    "school_id": "c51fbe81cacfaed4",
+    "university_id": "c51fbe81cacfaed4",
     "major_id": "ec0983b4a5f039c5",
     "grade": "GRADUATED"
    },
@@ -670,7 +670,7 @@
   },
   {
    "profile": {
-    "school_id": "e5f5258a02bb9a8b",
+    "university_id": "e5f5258a02bb9a8b",
     "major_id": "f615e561e0f97de2",
     "grade": "NOT_ENROLLED"
    },

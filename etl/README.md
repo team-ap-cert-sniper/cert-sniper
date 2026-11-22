@@ -112,7 +112,7 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 python run.py check                                  # 데이터 무결성 + 전체 테스트
 python run.py recommend profile.json                 # 추천 결과 JSON (입력 형식: ../docs/API_CONTRACT.md 2장)
 python run.py qualification 1320                     # 자격증 상세
-python run.py options majors --school-id <학교 ID>   # 선택 목록
+python run.py options majors --university-id <대학교 ID>   # 선택 목록
 ```
 
 ### 데이터를 다시 만들 때

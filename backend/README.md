@@ -123,7 +123,7 @@
 
 📁 option/  [이은아]                       드롭다운·검색 목록 (엔티티 없음)                CF-01-01·02·07, CF-02-09
 ├─ 📁 controller/
-│  └─ 📄 OptionController.java            GET /api/v1/options/{kind} (schools, majors, job_fields, interest_fields, qualifications, grades)
+│  └─ 📄 OptionController.java            GET /api/v1/options/{kind} (universities, majors, job_categories, interest_fields, qualifications, grades)
 ├─ 📁 service/
 │  └─ 📄 OptionService.java               university·job·qualification 리포지토리 조회, 부분 일치·가나다순·페이지
 └─ 📁 dto/
