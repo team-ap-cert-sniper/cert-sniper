@@ -14,7 +14,7 @@
 | **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인 |
 | **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 기능 흐름, 디자인 |
 
-* 여러 화면이 같이 쓰는 부품은 그 부품을 쓰는 화면 담당이 만듭니다. 부품별 담당은 [frontend](frontend/README.md#-화면-담당), 공통 백엔드(`global`)는 이은아가 관리합니다
+* 여러 화면이 같이 쓰는 컴포넌트은 그 컴포넌트을 쓰는 화면 담당이 만듭니다. 컴포넌트별 담당은 [frontend](frontend/README.md#-화면-담당), 공통 백엔드(`global`)는 이은아가 관리합니다
 
 ---
 
@@ -145,7 +145,7 @@ React ↔ Spring Boot **REST API (JSON, `/api/v1`)**
 DB·백엔드·프론트·Swagger는 각자 노트북에서 실행합니다. 다른 팀원 노트북과 관계없습니다.
 
 1. Docker Desktop 실행
-2. 레포 루트에서 `.env.example`을 `.env`로 복사하고 비밀번호 세 칸 채우기 (영문·숫자)
+2. 레포 루트에서 `cp .env.example .env` (개발용 값이 이미 채워져 있음, 메일 칸만 팀에서 받아 채움). 백엔드도 이 `.env`를 그대로 읽습니다
 3. `docker compose up -d`
 
 처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종: 공공데이터 9종 + 사자성어 50개), 관리자 계정 1개(`euna@certsniper.admin`, 초기 비밀번호는 팀 안에서 공유)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
@@ -163,7 +163,7 @@ DB·백엔드·프론트·Swagger는 각자 노트북에서 실행합니다. 다
 
 | | 처음 한 번 | 실행 | 주소 |
 |---|---|---|---|
-| 백엔드 | JDK 21 설치, `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 복사 후 값 채우기 ([방법](backend/README.md#뼈대-사용법)) | `cd backend` → `./gradlew bootRun` (Windows `gradlew.bat bootRun`) | http://localhost:8080/swagger-ui.html |
+| 백엔드 | JDK 21 설치 (설정은 위 `.env` 하나로 끝) | `cd backend` → `./gradlew bootRun` (Windows `gradlew.bat bootRun`) | http://localhost:8080/swagger-ui.html |
 | 프론트 | Node.js 24 설치 (`node -v`로 확인) | `cd frontend` → `npm install` → `npm run dev` | http://localhost:5173 (`/api`는 8080으로 전달) |
 
 * 터미널 대신 에디터 버튼으로도 실행됩니다: 백엔드는 `CertSniperApplication.java`의 ▶ Run, 프론트는 탐색기 아래 **NPM 스크립트**의 `dev` ▶ (`npm install`은 처음 한 번)

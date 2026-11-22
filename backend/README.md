@@ -35,8 +35,7 @@
    ├─ 📁 main/
    │  ├─ 📁 java/com/certsniper/        → 2 ~ 4번
    │  └─ 📁 resources/
-   │     ├─ 📄 application.yml        ★ 공통 설정 (DB 주소는 환경변수로)
-   │     └─ 📄 application-local.yml.example ★ 내 설정 예시 → `application-local.yml`로 복사해 값 채움 (복사본은 커밋 금지)
+   │     └─ 📄 application.yml        ★ 공통 설정. 비밀값은 레포 루트 `.env`에서 읽음
    └─ 📁 test/java/com/certsniper/      → 5번
 ```
 
@@ -440,13 +439,12 @@
 ## 뼈대 사용법
 
 1. 루트에서 `docker compose up -d` (DB·데이터 자동 적재)
-2. `src/main/resources/application-local.yml.example`을 `application-local.yml`로 복사하고 아래 칸을 채웁니다
+2. 백엔드 설정은 레포 루트 `.env`를 그대로 읽습니다. 따로 만들 설정 파일은 없습니다
 
-   | 칸 | 넣을 값 |
+   | `.env` 칸 | 넣을 값 |
    |---|---|
-   | `DB_APP_PASSWORD` | 내 `.env`의 `DB_APP_PASSWORD` |
-   | `JWT_SECRET_32_CHARS_OR_MORE` | 32자 이상 아무 문자열 (Git Bash `openssl rand -base64 48`) |
-   | 메일 `username`·`password` | 인증 메일을 보낼 Gmail 계정·앱 비밀번호. 비워 두면 인증 메일만 안 가고 나머지는 실행됩니다 |
+   | `DB_ROOT_PASSWORD` · `DB_MIGRATOR_PASSWORD` · `DB_APP_PASSWORD` · `JWT_SECRET` | 개발용 값이 채워져 있어 그대로 씁니다 (내 노트북 DB 전용) |
+   | `MAIL_USERNAME` · `MAIL_PASSWORD` | 팀 프로젝트용 Gmail 계정·앱 비밀번호 (카톡으로 받음). 비워 두면 인증 메일만 안 가고 나머지는 실행됩니다 |
 3. `./gradlew bootRun` (Windows `gradlew.bat bootRun`) → http://localhost:8080/swagger-ui.html 에서 전체 API 확인
 4. 각자 `feature/{파트}/{작업}` 브랜치에서 자기 서비스 메서드의 `throw new BusinessException(ErrorCode.NOT_IMPLEMENTED)`를 지우고 구현합니다. 구현 전 API는 501 `NOT_IMPLEMENTED`로 응답합니다
 
@@ -464,5 +462,5 @@
 
 * 다른 기능 패키지의 클래스를 고치지 않습니다. 여러 기능이 같이 쓰는 것은 `global/`에 둡니다
 * DB 구조는 루트 `db/migration`의 SQL 파일로만 바꾸고, DB 관리자(이은아)만 추가합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
-* DB 계정·SMTP 앱 비밀번호·AI API 키는 환경변수(`.env`)나 `application-local.yml`에 둡니다 (커밋 금지)
+* DB 비밀번호·JWT 키·SMTP 앱 비밀번호·AI API 키는 루트 `.env`에 둡니다 (커밋 금지)
 * 추천·자격증 로직(`recommendation`, `qualification`, `examschedule`)의 기준 구현은 [etl/](../etl/README.md)에 있습니다. 같은 입력에 같은 결과가 나와야 합니다

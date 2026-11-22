@@ -1,6 +1,6 @@
 # 🎨 frontend (React + Vite)
 
-화면 하나가 `pages/` 폴더 하나입니다. 공통 파일(★)은 동작하고, 화면은 자기 부품을 불러 둔 빈 틀, API 파일은 함수 이름·경로까지 만들어져 있습니다. [← 처음으로](../README.md)
+화면 하나가 `pages/` 폴더 하나입니다. 공통 파일(★)은 동작하고, 화면은 자기 컴포넌트을 불러 둔 빈 틀, API 파일은 함수 이름·경로까지 만들어져 있습니다. [← 처음으로](../README.md)
 
 * 기능 ID → 화면 → API → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
@@ -8,7 +8,7 @@
 
 ## 👤 화면 담당
 
-| 담당 | 화면 (`pages/`) | 부품 (`components/`) | API 파일 (`api/`) |
+| 담당 | 화면 (`pages/`) | 컴포넌트 (`components/`) | API 파일 (`api/`) |
 |---|---|---|---|
 | 유다연 | `Main/` VIEW-01, `Auth/` VIEW-02~04 | `common/` Header · Footer · LoginRequiredModal · ConfirmModal · AlertModal · EmailVerifyField · FieldError, `styles/` | `authApi.js` |
 | 이은아 | `Recommend/` VIEW-05, `QualificationDetail/` VIEW-06 | `qualification/`, `common/` SearchSelect · ChipSelect · EmptyState | `optionApi.js` · `recommendationApi.js` · `qualificationApi.js` · `examScheduleApi.js` |
@@ -17,7 +17,7 @@
 | 황정규 | `Support/` VIEW-12·13, `Admin/` VIEW-14~19 (`AdminLayout` 포함) | — | `supportApi.js` · `adminApi.js` |
 | 이은아 (뼈대) | `main.jsx` · `App.jsx` · `router/` · `store/` · `hooks/` · `utils/` · `constants/` | — | `client.js` |
 
-* 여러 화면이 같이 쓰는 부품은 그 부품을 쓰는 화면 담당이 만들고 고칩니다. 다른 사람 부품은 가져다 쓰기만 하고, 바꿀 일이 있으면 담당에게 요청합니다
+* 여러 화면이 같이 쓰는 컴포넌트은 그 컴포넌트을 쓰는 화면 담당이 만들고 고칩니다. 다른 사람 컴포넌트은 가져다 쓰기만 하고, 바꿀 일이 있으면 담당에게 요청합니다
 * `router/index.jsx`에 경로를 더하거나 `constants/`에 값을 더할 때는 자기 화면 것만 추가하고 PR에 적습니다
 
 ## 📁 파일 트리
@@ -63,7 +63,7 @@
    ├─ 📁 styles/                      [유다연]
    │  ├─ 📄 global.css                ★
    │  └─ 📄 variables.css             ★ 색·글꼴·간격
-   └─ 📁 components/common/           [부품마다 담당]
+   └─ 📁 components/common/           [컴포넌트마다 담당]
       ├─ 📄 Header.jsx             [유다연] ★ 로고·메뉴·로그인/마이페이지·로그아웃 확인, ADMIN이면 마이페이지 옆 관리자 페이지 버튼        CF-00-01
       ├─ 📄 Footer.jsx             [유다연] ★ 고객센터·1:1 문의 바로가기
       ├─ 📄 LoginRequiredModal.jsx [유다연] ★ 로그인 필요 팝업                                 CF-00-03
@@ -102,7 +102,7 @@
 
 ### 3. 화면 (pages)
 
-화면 파일은 `pages/화면/`, 그 화면에서만 쓰는 부품은 `pages/화면/components/`에 둡니다.
+화면 파일은 `pages/화면/`, 그 화면에서만 쓰는 컴포넌트은 `pages/화면/components/`에 둡니다.
 
 ```
 📁 src/pages/
@@ -179,13 +179,13 @@
    └─ 📄 AdminPassStoryPage.jsx           VIEW-19                                         ADMIN-11
 ```
 
-### 4. 여러 화면이 같이 쓰는 부품 (components)
+### 4. 여러 화면이 같이 쓰는 컴포넌트 (components)
 
-두 화면 이상에서 쓰는 부품만 둡니다.
+두 화면 이상에서 쓰는 컴포넌트만 둡니다.
 
 ```
 📁 src/components/
-├─ 📁 common/                          [부품마다 담당]  → 1번 트리 참고
+├─ 📁 common/                          [컴포넌트마다 담당]  → 1번 트리 참고
 ├─ 📁 qualification/ [이은아]
 │  └─ 📄 TrendList.jsx                    주목받는 자격증 (메인 · 추천 1~3위 · 상세 첫 화면)  CF-02-08
 ├─ 📁 planner/ [박준성]
@@ -198,7 +198,7 @@
    └─ 📄 HiddenNotice.jsx                 숨김 안내 (저격왕 · 마이페이지 · 관리자)         CF-05-10
 ```
 
-## 🧩 다른 담당의 부품·API를 쓰는 곳
+## 🧩 다른 담당의 컴포넌트·API를 쓰는 곳
 
 | 쓰는 화면 (담당) | 가져다 쓰는 것 (담당) | 기능 ID |
 |---|---|---|
@@ -309,8 +309,8 @@
 |---|---|---|
 | 화면 폴더 | 대문자로 시작 | `Recommend/`, `PassStory/` |
 | 화면 파일 | `~Page.jsx` | `RecommendPage.jsx` |
-| 부품 파일 | 대문자로 시작, 역할이 보이게 | `PassRateChart.jsx` |
-| 부품 위치 | 한 화면 전용은 `pages/화면/components/`, 두 화면 이상이면 `components/담당영역/`, 디자인 공통은 `components/common/` | `pages/Recommend/components/RecommendCard.jsx` |
+| 컴포넌트 파일 | 대문자로 시작, 역할이 보이게 | `PassRateChart.jsx` |
+| 컴포넌트 위치 | 한 화면 전용은 `pages/화면/components/`, 두 화면 이상이면 `components/담당영역/`, 디자인 공통은 `components/common/` | `pages/Recommend/components/RecommendCard.jsx` |
 | import 경로 | `@/`로 시작 (`../../` 대신) | `import TrendList from '@/components/qualification/TrendList'` |
 | API 파일 | 소문자로 시작, `~Api.js` | `qualificationApi.js` |
 | 훅 | `use`로 시작 | `useAuth.js` |
@@ -318,7 +318,7 @@
 
 ## 지켜 주세요
 
-* 다른 기능의 화면·부품을 고치지 않습니다. 공통 부품이 필요하면 `components/common/`에 새로 만들고 PR에 적어 주세요
-* 내 화면 전용 부품을 다른 화면에서도 쓰게 되면 `components/담당영역/`으로 옮기고 PR에 적어 주세요
+* 다른 기능의 화면·컴포넌트을 고치지 않습니다. 공통 컴포넌트이 필요하면 `components/common/`에 새로 만들고 PR에 적어 주세요
+* 내 화면 전용 컴포넌트을 다른 화면에서도 쓰게 되면 `components/담당영역/`으로 옮기고 PR에 적어 주세요
 * 폴더마다 `index.js`로 다시 내보내기(re-export)는 하지 않습니다 (순환 참조·빌드 속도 문제)
 * 백엔드 주소 같은 설정은 `.env`에 두고, 공유할 예시는 `.env.example`로 올립니다
