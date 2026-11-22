@@ -1,6 +1,6 @@
 # 🖥 backend (Spring Boot)
 
-기능 명세서 v1.4.0 · DB 설계서 Ver.12(31개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
+기능 명세서 v1.4.0 · DB 설계서 Ver.12(31개 테이블) 기준 패키지 구조와 파일 전체입니다. 아래 파일은 모두 만들어져 있고(엔티티·리포지토리·DTO·컨트롤러 URL·서비스 메서드 이름), 담당자는 자기 패키지의 서비스 메서드 안을 채웁니다. 패키지 하나가 기능 하나입니다. [← 처음으로](../README.md)
 
 * 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](src/main/resources/db/migration)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
@@ -52,9 +52,9 @@
    ├─ 📁 config/
    │  ├─ 📄 SecurityConfig.java       ★ URL별 권한 (GUEST·USER·ADMIN), JWT 필터 등록          CF-00-03
    │  ├─ 📄 WebConfig.java            ★ CORS (프론트 주소 허용)
+   │  ├─ 📄 SwaggerConfig.java        ★ Swagger 문서 (/swagger-ui.html), JWT 인증 버튼
    │  ├─ 📄 JpaConfig.java            ★ 생성·수정 시각 자동 기록 (@EnableJpaAuditing)
-   │  ├─ 📄 MailConfig.java           ★ Google SMTP (JavaMailSender, 587·STARTTLS)              AUTH-01·05·06
-   │  └─ 📄 AiClientConfig.java       ★ Qwen2.5 API 주소·키·타임아웃(60초)                     CF-06-03
+   │  └─ 📄 AiClientConfig.java       ★ Qwen2.5(Ollama) 호출 RestClient, 읽기 타임아웃 60초      CF-06-03
    ├─ 📁 security/
    │  ├─ 📄 JwtTokenProvider.java     ★ Access·Refresh 토큰 발급·검증                           AUTH-02
    │  ├─ 📄 JwtAuthenticationFilter.java ★ 요청마다 토큰 확인, 정지 계정 차단                  AUTH-02, ADMIN-07
@@ -65,8 +65,9 @@
    │  ├─ 📄 ErrorCode.java            ★ VALIDATION_ERROR · NOT_FOUND · DUPLICATE · LIMIT_EXCEEDED · FORBIDDEN …
    │  ├─ 📄 BusinessException.java    ★ 서비스에서 던지는 예외 (ErrorCode 포함)
    │  ├─ 📄 ErrorResponse.java        ★ 공통 오류 본문 {code, message, timestamp}
-   │  └─ 📄 GlobalExceptionHandler.java ★ 예외 → 400·401·403·404·409·500
+   │  └─ 📄 GlobalExceptionHandler.java ★ 예외 → 400·401·403·404·409·500, 구현 전 501
    ├─ 📁 common/
+   │  ├─ 📄 HealthController.java     ★ GET /api/v1/health 서버 상태 확인
    │  ├─ 📄 BaseTimeEntity.java       ★ created_at (가입·작성·등록 일시가 있는 엔티티가 상속, updated_at 없음)
    │  └─ 📄 PageResponse.java         ★ 목록 응답 {items, total, page, size}
    └─ 📁 util/
@@ -79,7 +80,7 @@
 ```
 📁 auth/  [유다연]                         회원가입·로그인·이메일 인증·비밀번호            AUTH-01·02·05·06
 ├─ 📁 controller/
-│  └─ 📄 AuthController.java              /api/v1/auth/** (signup, login, logout, email-code, email-verify, password-reset)
+│  └─ 📄 AuthController.java              /api/v1/auth/** (register, nickname-check, email-code, email-verify, login, token-refresh, logout, password-reset, password)
 ├─ 📁 service/
 │  ├─ 📄 AuthService.java                 가입·로그인·로그아웃·토큰 재발급
 │  ├─ 📄 EmailVerificationService.java    6자리 코드 발급·검증 (3분, 5회, 1일 제한)
@@ -98,11 +99,12 @@
    ├─ 📄 EmailCodeRequest.java
    ├─ 📄 EmailVerifyRequest.java
    ├─ 📄 PasswordResetRequest.java
-   └─ 📄 PasswordChangeRequest.java
+   ├─ 📄 PasswordChangeRequest.java
+   └─ 📄 NicknameCheckResponse.java
 
 📁 user/  [최기완]                         회원정보 조회·변경, 탈퇴                           AUTH-03·04
 ├─ 📁 controller/
-│  └─ 📄 UserController.java              /api/v1/users/me (조회·수정·탈퇴·철회), 닉네임 중복 확인
+│  └─ 📄 UserController.java              /api/v1/users/me (조회·수정·탈퇴 신청·철회)
 ├─ 📁 service/
 │  ├─ 📄 UserService.java                 회원정보 조회·수정·재검증
 │  └─ 📄 WithdrawalService.java           탈퇴 대기·철회
@@ -128,7 +130,8 @@
 │  └─ 📄 OptionService.java               university·job·qualification 리포지토리 조회, 부분 일치·가나다순·페이지
 └─ 📁 dto/
    ├─ 📄 OptionItem.java
-   └─ 📄 OptionResponse.java
+   ├─ 📄 OptionResponse.java
+   └─ 📄 SchoolInfoResponse.java
 
 📁 university/  [이은아]                   대학·학부·전공 (조회 전용, ETL 적재)           CF-01-01·07
 ├─ 📁 repository/
@@ -170,7 +173,7 @@
    ├─ 📄 ScoreBreakdown.java              {factor, points, reason}                  CF-01-08
    └─ 📄 CardInfo.java
 
-📁 qualification/  [이은아]                자격증 상세·합격률·트렌드                      CF-02-01~09, CF-00-02
+📁 qualification/  [이은아]                자격증 상세·합격률·트렌드                      CF-02-01~06·08·09, CF-00-02
 ├─ 📁 controller/
 │  ├─ 📄 QualificationController.java     GET /api/v1/qualifications/{jmcd}
 │  └─ 📄 TrendController.java             GET /api/v1/trends
@@ -251,7 +254,8 @@
    ├─ 📄 BarRequest.java
    ├─ 📄 MilestoneRequest.java
    ├─ 📄 PersonalScheduleRequest.java
-   └─ 📄 TodayScheduleResponse.java
+   ├─ 📄 TodayScheduleResponse.java
+   └─ 📄 DailyIdiomResponse.java
 
 📁 memo/  [박준성]                         자격증별 메모                                   CF-04-01·08·17
 ├─ 📁 controller/  📄 MemoController.java           /api/v1/target-exams/{id}/memo
@@ -351,7 +355,9 @@
    ├─ 📄 ProfileCorrectionRequest.java
    ├─ 📄 SuspendRequest.java
    ├─ 📄 ReviewRequest.java
-   └─ 📄 InquiryAnswerRequest.java
+   ├─ 📄 InquiryAnswerRequest.java
+   ├─ 📄 NoticeRequest.java
+   └─ 📄 AdminReportResponse.java
 ```
 
 ### 5. 테스트
@@ -383,33 +389,44 @@
 | `PageResponse` | option, passstory, report, support, admin |
 | `DateUtils` | examschedule(D-Day·회차 상태), planner(오늘의 일정), recommendation(남은 시험) |
 | `HtmlSanitizer` | memo, passstory |
-| `MailConfig` | auth |
+| `spring.mail` (application.yml, JavaMailSender 자동 설정) | auth |
 | `AiClientConfig` | aiplanner |
 
 ## 🔗 패키지끼리 부르는 곳
 
-다른 패키지의 클래스는 고치지 않고 **서비스 메서드만 호출**합니다. 필요한 메서드가 없으면 그 패키지 담당자에게 이슈로 요청합니다.
+다른 패키지의 클래스는 고치지 않고 **아래 메서드만 호출**합니다. 메서드는 뼈대에 이름·입력·반환이 정해져 있고, 구현은 그 패키지 담당자가 합니다. 필요한 메서드가 더 있으면 담당자에게 이슈로 요청합니다.
 
-| 부르는 쪽 (담당) | 부르는 대상 (담당) | 이유 | 기능 ID |
+| 부르는 쪽 | 부르는 메서드 (담당) | 이유 | 기능 ID |
 |---|---|---|---|
-| auth (유다연) | user `UserService` (최기완) | 가입 시 회원·학력·보유 자격 저장, 로그인·비밀번호 변경 시 회원 조회 | AUTH-01·02·05·06 |
-| auth, user | option·university (이은아) | 대학교·전공 코드 검증, 학력 묶음(셋 다 입력 또는 셋 다 비움) | CF-01-01 |
-| global/security (공통) | user `UserService` (최기완) | 정지·탈퇴 대기 계정 차단 | AUTH-02, ADMIN-07 |
-| user (최기완) | rank `RankService` (최기완) | 회원정보의 저격 등급 | AUTH-03 |
-| recommendation (이은아) | user `UserService` (최기완) | 전공 맞춤 추천에 회원정보 불러오기 | CF-01-03 |
-| recommendation (이은아) | qualification · examschedule (이은아) | 카드의 한 줄 소개·최근 합격률·다음 접수·가까운 시험일 | CF-01-10 |
-| recommendation (이은아) | favorite `FavoriteService` (최기완) | 카드의 찜 상태 | CF-03-01·02 |
-| qualification (이은아) | examschedule `ExamScheduleService` (이은아) | 상세의 시험일정 | CF-02-10 |
-| favorite (최기완) | qualification `QualificationService` (이은아) | 관심 자격증 카드 정보 | CF-03-09 |
-| targetexam, planner (박준성) | examschedule `ExamScheduleService`·`DdayCalculator` (이은아) | 시험일 회차 선택·D-Day | CF-03-03·04, CF-04-05·06 |
-| targetexam (박준성) | option `OptionService` (이은아) | 목표 자격증 종목명 검색 | CF-04-09 |
-| aiplanner (박준성) | planner `ScheduleLimitValidator`, targetexam `TargetExamService` (박준성) | 6개 제한, 플랜 저장 | CF-06-01·05 |
-| aiplanner (박준성) | qualification `QualificationService` · examschedule (이은아) | 시험과목, 시험일 회차 | CF-06-02·03 |
-| passstory (최기완) | rank `RankService` (최기완) | 등록·삭제·숨김 확정·재검토 후 등급 자동 계산·승급 알림 | CF-05-06·12 |
-| passstory (최기완) | qualification `QualificationService` (이은아) | 합격수기 등록 시 자격증 검색 | CF-05-06 |
-| report (최기완) | passstory `PassStoryService` (최기완) | 신고 즉시 숨김 | CF-05-09 |
-| admin (황정규) | user · report · rank · passstory (최기완), support (황정규) | 관리자 화면 | ADMIN-02~11 |
-| admin (황정규) | qualification `QualificationService` (이은아) | 대시보드 등록 자격증 수 | ADMIN-10 |
+| auth | `UserService.createUser` · `findByEmail` · `updatePassword` · `isNicknameAvailable` (최기완) | 가입 저장, 로그인·재설정 회원 조회, 비밀번호 저장, 닉네임 중복 | AUTH-01·02·05·06 |
+| auth | `EmailVerificationService.checkVerified` (유다연) | 가입·재설정·변경 전 이메일 인증 완료 확인 | AUTH-01·05·06 |
+| auth, user | `OptionService.validateSchoolInfo` (이은아) | 대학·학부·전공·학년 묶음 검증 | CF-01-01 |
+| global/security | `UserRepository` (공통) | 정지·탈퇴 계정 차단 (필터에서 직접 조회) | AUTH-02, ADMIN-07 |
+| user | `RankService.getCurrentRank` (최기완) | 회원정보의 저격 등급 | AUTH-03 |
+| recommendation | `UserService.getRecommendationProfile` (최기완) | 전공 맞춤 추천에 회원 학력·보유 자격 | CF-01-03 |
+| recommendation | `QualificationService` · `ExamScheduleService.getSchedules` (이은아) | 카드의 한 줄 소개·최근 합격률·다음 접수·가까운 시험일 | CF-01-10 |
+| recommendation | `FavoriteService.getFavoriteJmcds` (최기완) | 카드의 찜 상태 | CF-03-01·02 |
+| qualification | `ExamScheduleService.getSchedules` (이은아) | 상세의 시험일정 | CF-02-10 |
+| favorite, passstory, aiplanner | `QualificationService.getInfo` (이은아) | 자격증 이름·등급·한 줄 소개·시험과목 | CF-03-09, CF-05-06, CF-06-02 |
+| targetexam, planner, aiplanner | `ExamScheduleService.getSchedules`, `DdayCalculator.daysRemaining` · `label` (이은아) | 시험일 회차 선택·D-Day | CF-03-03·04, CF-04-05·06, CF-06-02 |
+| targetexam | `OptionService.getOptions("qualifications", …)` (이은아) | 목표 자격증 종목명 검색 | CF-04-09 |
+| targetexam, planner, aiplanner | `ScheduleLimitValidator.validateCanAdd` (박준성) | 일정 6개 제한 | CF-04-16, CF-06-01 |
+| aiplanner | `TargetExamService.getOrCreateTargetExam`, `PlannerService.replaceAiSchedule` (박준성) | 플랜 저장, 기존 AI 일정 교체 | CF-06-05 |
+| auth | `MailService.sendVerificationCode` (유다연) | 인증 메일 발송 | AUTH-01·05·06 |
+| passstory, admin | `RankService.recalculate` (최기완) | 등록·삭제·숨김 확정·재검토 후 등급 계산·승급 알림 | CF-05-06·12 |
+| report | `PassStoryService.hideByReport` (최기완) | 신고 즉시 숨김 | CF-05-09 |
+| admin | `PassStoryService.changeStatus`, `UserService.getUser` (최기완) | 신고 검토·재검토, 회원 상세 | ADMIN-02·05·06·07 |
+| admin | `UserService.countUsers`, `ReportService.countPending` (최기완), `NoticeService.countNotices`, `InquiryService.countUnanswered` (황정규), `QualificationService.countQualifications` (이은아) | 대시보드 건수 | ADMIN-10 |
+| admin | `AuditLogService.record` (황정규) | 관리자 변경 이력 | ADMIN-02~07 |
+| auth 로그인 | `UserService.releaseExpiredSuspension` (최기완) | 정지 기간이 끝난 계정 되돌리기 | AUTH-02, ADMIN-07 |
+| user 탈퇴·비밀번호 변경, admin 정지 | `AuthService.revokeAllTokens` (유다연) | 로그인 토큰 전체 폐기 | AUTH-04·05·06, ADMIN-07 |
+| user 탈퇴 확정 | `FavoriteService.deleteAllByUser` (최기완), `TargetExamService.deleteAllByUser` · `PlannerService.deleteAllByUser` (박준성) | 개인 데이터 삭제 (회원 행은 비식별 처리, 글·문의는 남음) | AUTH-04 |
+| user 회원정보 | `OptionService.getSchoolNames` (이은아) | 대학·학부·학과 표시명 | AUTH-03 |
+| planner, memo | `TargetExamService.validateOwner` (박준성) | 내 목표 자격증인지 확인 | CF-04-01·07·14 |
+| planner | `TargetExamService.countByUser` (박준성) | 일정 6개 제한 계산 | CF-04-16 |
+| passstory, support, admin 목록 | `UserService.getNicknames` (최기완), `RankService.getCurrentRanks` (최기완) | 작성자 닉네임·등급 한 번에 조회 | CF-05-01·05, ADMIN-02·04·11 |
+| passstory, admin | `ReportService.recordModeration` (최기완) | 수정·삭제·숨김·재검토 상태 변경 이력 | CF-05-07·08·10, ADMIN-05·06 |
+| admin | `ReportService.getReportsForAdmin` · `resolve` (최기완), `UserService.addConfirmedHidden` · `searchUsers` · `correctProfile` · `suspend` · `unsuspend` (최기완) | 신고 목록·처리, 누적 숨김 자동 정지, 회원 관리 | ADMIN-02·05·07 |
 
 ## 이름 규칙
 
@@ -421,12 +438,22 @@
 | DTO | 요청 `~Request`, 응답 `~Response` | `RegisterRequest`, `RecommendationResponse` |
 | API 경로 | `/api/v1/` + 복수형 소문자, 단어 사이 `-` | `/api/v1/pass-stories`, `/api/v1/exam-schedules` |
 
-## 만드는 순서
+## 뼈대 사용법
 
-1. **공통(★)**: 루트에서 `docker compose up -d` → `build.gradle`·`application.yml` → `global/` → `user/entity/User.java`·`UserRepository.java`
-   * `users`는 auth(가입·로그인)와 user(마이페이지)가 같이 쓰므로 공통 단계에서 엔티티만 먼저 만듭니다
-2. **데이터 적재**: `docker compose up -d` 때 자동 (CSV 10종, 사자성어 50개 포함)
-3. **기능별**: 각자 `feature/{파트}/{작업}` 브랜치에서 엔티티 → 리포지토리 → 서비스 → 컨트롤러 → DTO 순
+1. 루트에서 `docker compose up -d` (DB·데이터 자동 적재)
+2. `src/main/resources/application-local.yml.example`을 `application-local.yml`로 복사하고 `DB_APP_PASSWORD`·`JWT_SECRET_32_CHARS_OR_MORE` 자리를 채웁니다
+3. `./gradlew bootRun` (Windows `gradlew.bat bootRun`) → http://localhost:8080/swagger-ui.html 에서 전체 API 확인
+4. 각자 `feature/{파트}/{작업}` 브랜치에서 자기 서비스 메서드의 `throw new BusinessException(ErrorCode.NOT_IMPLEMENTED)`를 지우고 구현합니다. 구현 전 API는 501 `NOT_IMPLEMENTED`로 응답합니다
+
+| 정해진 것 | 내용 |
+|---|---|
+| 엔티티 | 테이블과 1:1, 컬럼 이름·타입 그대로 (`ddl-auto: validate`). 다른 테이블은 객체 대신 ID(`Long userId`)로 가집니다. 생성자·변경 메서드는 담당자가 엔티티 안에 추가합니다 |
+| 로그인 회원 | 컨트롤러 파라미터 `@LoginUser Long userId` (비로그인이면 401). 정지 계정은 필터에서 403 `ACCOUNT_SUSPENDED` |
+| JSON 이름 | 요청·응답 모두 snake_case (`spring.jackson.property-naming-strategy`). DTO는 camelCase로 쓰면 자동 변환됩니다 |
+| 목록 응답 | `PageResponse.of(page)` → `{items, total, page, size}` |
+| 오류 | `throw new BusinessException(ErrorCode.XXX)` → `{code, message, timestamp}`. 코드가 더 필요하면 `ErrorCode`에 추가하고 PR에 적습니다 |
+| 날짜 | 오늘·지금은 `DateUtils.today()`·`DateUtils.now()` (Asia/Seoul) |
+| 상태 코드 | 조회·수정 결과 반환 200, 등록 201, 반환값 없는 수정·삭제 204 |
 
 ## 지켜 주세요
 

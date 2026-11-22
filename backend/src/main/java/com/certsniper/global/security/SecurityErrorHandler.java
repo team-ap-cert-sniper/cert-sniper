@@ -24,7 +24,8 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
-        write(response, ErrorCode.UNAUTHORIZED);
+        boolean invalidToken = request.getAttribute(JwtAuthenticationFilter.INVALID_TOKEN_ATTRIBUTE) != null;
+        write(response, invalidToken ? ErrorCode.INVALID_TOKEN : ErrorCode.UNAUTHORIZED);
     }
 
     @Override
@@ -33,7 +34,7 @@ public class SecurityErrorHandler implements AuthenticationEntryPoint, AccessDen
         write(response, ErrorCode.FORBIDDEN);
     }
 
-    private void write(HttpServletResponse response, ErrorCode code) throws IOException {
+    public void write(HttpServletResponse response, ErrorCode code) throws IOException {
         response.setStatus(code.getStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");

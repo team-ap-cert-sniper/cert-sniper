@@ -1,6 +1,6 @@
 # 🎨 frontend (React + Vite)
 
-기능 명세서 v1.4.0의 화면 ID(VIEW-01~19) 기준 구조와 **만들 파일 전체**입니다. 화면 하나가 `pages/` 폴더 하나이고, 그 화면에서만 쓰는 부품도 그 폴더 안에 둡니다. [← 처음으로](../README.md)
+기능 명세서 v1.4.0의 화면 ID(VIEW-01~19) 기준 구조와 파일 전체입니다. 공통 파일(★)은 동작하고, 화면·부품은 빈 틀, API 파일은 함수 이름·경로까지 만들어져 있습니다. 화면 하나가 `pages/` 폴더 하나이고, 그 화면에서만 쓰는 부품도 그 폴더 안에 둡니다. [← 처음으로](../README.md)
 
 * 기능 ID → 화면 → API → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
@@ -24,11 +24,12 @@
 ```
 📁 frontend/
 ├─ 📄 README.md                         (있음) 화면 구조·경로·이름 규칙
-├─ 📄 package.json                    ★ react, react-router-dom, axios, chart.js, react-chartjs-2
+├─ 📄 package.json                    ★ react, react-router-dom, axios, chart.js, react-chartjs-2 (Node 24)
+├─ 📄 package-lock.json               ★ 설치 버전 고정 (npm install이 갱신)
+├─ 📄 .nvmrc                          ★ Node 24
 ├─ 📄 vite.config.js                  ★ 개발 서버 프록시 (/api → 백엔드), 경로 별칭 `@` = `src/`
 ├─ 📄 index.html                      ★
 ├─ 📄 .env.example                    ★ VITE_API_BASE_URL
-├─ 📄 .eslintrc.cjs                     (선택) 코드 규칙
 ├─ 📁 public/
 │  └─ 📁 images/                        로고·등급 아이콘·조준경 아이콘
 └─ 📁 src/
@@ -114,7 +115,7 @@
 │     ├─ 📄 RecommendCard.jsx             카드 (찜·상세·AI 플래너 버튼)                    CF-01-10·11
 │     └─ 📄 ScoreReason.jsx               추천 근거·항목별 점수                            CF-01-08
 ├─ 📁 QualificationDetail/ [이은아]        VIEW-06  /qualifications · /qualifications/:jmcd
-│  ├─ 📄 QualificationDetailPage.jsx      검색 첫 화면 / 선택 자격증 상세                  CF-02-01~10
+│  ├─ 📄 QualificationDetailPage.jsx      검색 첫 화면 / 선택 자격증 상세                  CF-02-01~06·08~10
 │  └─ 📁 components/
 │     ├─ 📄 QualificationSearchModal.jsx  검색 결과 팝업·필터                              CF-02-09
 │     ├─ 📄 QualificationBrowser.jsx      자격구분 → 직무분야 → 분류 → 종목 탐색             CF-02-09
@@ -122,8 +123,7 @@
 │     ├─ 📄 EligibilityInfo.jsx           응시 조건 필요/없음 · 조건 목록                   CF-02-03
 │     ├─ 📄 PassRateChart.jsx             연도 선택 차트(접수자·응시자·합격자)·합격률 추이   CF-02-05
 │     ├─ 📄 PassRateTable.jsx             연도별 상세·종목별 검정현황 표                     CF-02-06
-│     ├─ 📄 ExamScheduleTable.jsx         회차별 한 줄(정기·빈자리 접수)·상태·D-n            CF-02-10
-│     └─ 📄 DifficultyInfo.jsx            난이도 (유지 여부 미정, 확정되면 생성)               CF-02-07
+│     └─ 📄 ExamScheduleTable.jsx         회차별 한 줄(정기·빈자리 접수)·상태·D-n            CF-02-10
 ├─ 📁 Planner/ [박준성]                    VIEW-07  /planner
 │  ├─ 📄 PlannerPage.jsx                  드롭다운·타임라인·작은 캘린더·메모·모드          CF-04-01~19
 │  └─ 📁 components/
@@ -222,7 +222,7 @@
 | `/ai-planner?jmcd=` | VIEW-08 AI 플래너 설문 | 회원 | 박준성 |
 | `/pass-stories` · `/pass-stories/:id` · `/pass-stories/new` · `/pass-stories/:id/edit` | VIEW-09 · 10 | 회원 | 최기완 |
 | `/mypage?tab=profile·password·favorites·posts·reports·withdraw` | VIEW-11 마이페이지 탭 6개 | 회원 | 최기완 |
-| `/support?menu=notices·faq` · `/support?menu=inquiry·my-inquiries` | VIEW-12 · 13 | 공지·FAQ 전체 / 문의 회원 | 황정규 |
+| `/support?menu=notices·faq` · `/support?menu=inquiry·my-inquiries` (상세는 `&id=`) | VIEW-12 · 13 | 회원 | 황정규 |
 | `/admin` · `/admin/users` · `/admin/notices` · `/admin/inquiries` · `/admin/reports` · `/admin/pass-stories` | VIEW-14~19 | 관리자 | 황정규 |
 
 ## 🔀 화면 이동 (전체)
@@ -236,7 +236,7 @@
 | 공통 헤더 | 로그인 · 회원가입 (비회원) | `/login` · `/register` | CF-00-01 |
 | 공통 헤더 | 마이페이지 (회원) | `/mypage` | CF-00-01 |
 | 공통 헤더 | 로그아웃 → 확인 팝업 | `/` | CF-00-01, AUTH-02 |
-| 공통 헤더 | 관리자 버튼 (ADMIN) | `/admin` (버튼 위치 팀 확인) | ADMIN-10 |
+| 공통 헤더 | 관리자 버튼 (ADMIN) | `/admin` (헤더 마이페이지 옆, ADMIN만 보임) | ADMIN-10 |
 | 공통 | 비회원이 회원 전용 메뉴·버튼·URL | 로그인 필요 팝업 → 로그인하러 가기 `/login` · 취소하기 제자리 | CF-00-03 |
 | 공통 푸터 | 고객센터 바로가기 · 1:1 문의하기 | `/support` · `/support?menu=inquiry` (비회원은 로그인 필요 팝업) | CF-00-02, CS-04 |
 | VIEW-01 | 맞춤 자격증 추천하기 · 플래너 다이어리 · 합격수기 | `/recommend` · `/planner` · `/pass-stories` | CF-00-02 |
@@ -244,7 +244,7 @@
 | VIEW-01 | 오늘의 일정 패널 열기·닫기 | 이동 없음 (수정은 `/planner`에서만) | CF-00-04 |
 | VIEW-02 | 회원가입 완료 팝업 로그인하러 가기 | `/login` | AUTH-01 |
 | VIEW-03 | 비밀번호 재설정 | `/password-reset` | AUTH-05 |
-| VIEW-03 | 로그인 성공 | `/` 또는 로그인 필요 팝업을 띄운 화면 (팀 확인) | AUTH-02 |
+| VIEW-03 | 로그인 성공 | `/` | AUTH-02 |
 | VIEW-04 | 비밀번호 변경 완료 팝업 로그인하러 가기 | `/login` | AUTH-05 |
 | VIEW-05 | 카드 자격증 상세보기 | `/qualifications/:jmcd` | CF-01-06 |
 | VIEW-05 | 카드 찜하기 (조준경) | 이동 없음, 찜 등록·해제 → 마이페이지 관심 자격증 | CF-03-01·02 |
@@ -274,9 +274,10 @@
 | VIEW-11 | 내 작성글 · 숨김 글 수정 | `/pass-stories/:id` · `/pass-stories/:id/edit` | CF-05-03·10 |
 | VIEW-11 | 회원 탈퇴 완료 팝업 | `/` (로그아웃, 팀 확인) | AUTH-04 |
 | VIEW-12 | 왼쪽 메뉴 공지사항 · FAQ · 1:1 문의하기 · 나의 문의 내역 | 같은 화면 내용 전환 (문의 메뉴는 비회원이면 로그인 필요 팝업) | CS-01 |
-| VIEW-12 | 공지 제목 · FAQ 질문 | 공지 상세 · 답변 펼침 | CS-02·03 |
+| VIEW-12 | 공지 제목 · FAQ 질문 | 공지 상세(`?menu=notices&id=`) · 답변 펼침 | CS-02·03 |
+| VIEW-12 | 공지 상세 목록으로 | 공지 목록 (보던 페이지 번호 유지, 브라우저 뒤로가기 아님) | CS-02 |
 | VIEW-13 | 문의 접수 | 나의 문의 내역 (팀 확인) | CS-04 |
-| VIEW-13 | 문의 제목 · 목록으로 | 문의 상세 · 목록 | CS-05 |
+| VIEW-13 | 문의 제목 · 목록으로 | 문의 상세(`?menu=my-inquiries&id=`) · 나의 문의 목록 (보던 페이지 번호 유지, 브라우저 뒤로가기 아님) | CS-05 |
 | VIEW-14 | 공지 · 미답변 문의 · 미처리 신고 · 전체 회원 카드 | `/admin/notices` · `/admin/inquiries` · `/admin/reports` · `/admin/users` | ADMIN-10 |
 | VIEW-14 | 등록 자격증 카드 | 자격증 관리 화면 없음 → 숫자만 표시 또는 `/qualifications` (팀 확인) | ADMIN-10 |
 | VIEW-15 | 회원 상세 작성 글 조회 · 1:1 문의 조회 | `/admin/pass-stories?nickname=` · `/admin/inquiries?userId=` | ADMIN-02 |
@@ -284,6 +285,14 @@
 | VIEW-17 | 문의 제목 | 문의 상세 → 답변 저장 | ADMIN-04 |
 | VIEW-18 | 신고 상세 · 재검토 | 숨김 확정·해제 · 숨김 해제·삭제 | ADMIN-05·06 |
 | VIEW-19 | 게시글 | 게시글 조회 (신고·숨김 상태 표시) | ADMIN-11 |
+
+## 뼈대 사용법
+
+* 실행: Node 24 → `npm install` → `npm run dev` (http://localhost:5173, `/api`는 백엔드 8080으로 전달)
+* API는 `src/api/○○Api.js`의 함수를 부릅니다. 요청·응답 JSON 이름은 snake_case(`university_id`)입니다
+* 토큰 첨부·재발급, 401이면 로그인 필요 팝업은 `api/client.js`가 처리합니다. 화면에서 따로 처리하지 않습니다
+* 로그인 회원 정보는 `useAuth()` (`user`, `isLoggedIn`, `isAdmin`)로 읽습니다
+* 회원 전용 경로는 `router/index.jsx`의 `ProtectedRoute` 아래, 관리자 경로는 `AdminRoute` 아래에 둡니다
 
 ## 이름 규칙
 

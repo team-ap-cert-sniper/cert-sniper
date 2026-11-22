@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -29,16 +30,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
         List<ErrorResponse.FieldError> errors = e.getBindingResult().getFieldErrors().stream()
-                .map(fe -> new ErrorResponse.FieldError(fe.getField(), fe.getDefaultMessage()))
+                .map(fe -> new ErrorResponse.FieldError(toSnakeCase(fe.getField()), fe.getDefaultMessage()))
                 .toList();
         ErrorCode code = ErrorCode.VALIDATION_ERROR;
         return ResponseEntity.status(code.getStatus())
                 .body(ErrorResponse.of(code, code.getMessage(), errors));
     }
 
-    /** 요청 형식 오류 (본문 파싱 실패, 타입 불일치, 필수 파라미터 누락) → 400 */
+    /** 요청 형식 오류 (본문 파싱 실패, JSON 아닌 본문, 타입 불일치, 필수 파라미터 누락) → 400 */
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
+            HttpMediaTypeNotSupportedException.class,
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class
     })
@@ -79,5 +81,10 @@ public class GlobalExceptionHandler {
         ErrorCode code = ErrorCode.INTERNAL_ERROR;
         return ResponseEntity.status(code.getStatus())
                 .body(ErrorResponse.of(code, code.getMessage()));
+    }
+
+    /** 응답 JSON 이름(snake_case)과 같게 맞춘다 */
+    private static String toSnakeCase(String field) {
+        return field.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase();
     }
 }

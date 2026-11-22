@@ -76,7 +76,8 @@
 
 ### **Frontend**
 
-* **Library**: React · Vite
+* **Runtime**: Node.js 24 LTS (`frontend/.nvmrc`)
+* **Library**: React 19 · Vite
 * **Routing / HTTP**: React Router · Axios
 * **Chart**: Chart.js, react-chartjs-2
 
@@ -120,8 +121,8 @@
 
 | 구조 문서 | 내용 |
 |---|---|
-| 🖥 [backend](backend/README.md) | 패키지별 담당, 만들 파일 전체 트리, 패키지끼리 부르는 곳, 이름 규칙 |
-| 🎨 [frontend](frontend/README.md) | 화면별 담당, 만들 파일 전체 트리, 화면 경로·화면 이동 전체, 이름 규칙 |
+| 🖥 [backend](backend/README.md) | 패키지별 담당, 파일 전체 트리(뼈대 있음), 뼈대 사용법, 패키지끼리 부르는 곳, 이름 규칙 |
+| 🎨 [frontend](frontend/README.md) | 화면별 담당, 파일 전체 트리(뼈대 있음), 화면 경로·화면 이동 전체, 이름 규칙 |
 | 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, CSV–테이블 정의 |
 | 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). DDL은 [마이그레이션](backend/src/main/resources/db/migration) |
 | 📡 [API 명세](docs/API_CONTRACT.md) | 추천·자격증 API 경로·입출력·화면 표시 순서 |
@@ -146,6 +147,13 @@
 
 * DB 구조는 DB 관리자(이은아)만 바꿉니다. 컬럼·테이블이 필요하면 이슈로 요청합니다
 * 마이그레이션 파일은 병합된 뒤 고치지 않고 다음 번호(`V2__...sql`)로 추가합니다
+
+## ▶ 백엔드 · 프론트 실행
+
+| | 처음 한 번 | 실행 | 주소 |
+|---|---|---|---|
+| 백엔드 | `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 복사 후 값 채우기 | `cd backend` → `./gradlew bootRun` | http://localhost:8080/swagger-ui.html |
+| 프론트 | Node.js 24 설치 (`node -v`로 확인) | `cd frontend` → `npm install` → `npm run dev` | http://localhost:5173 (`/api`는 8080으로 전달) |
 
 ## 🌿 브랜치 전략
 

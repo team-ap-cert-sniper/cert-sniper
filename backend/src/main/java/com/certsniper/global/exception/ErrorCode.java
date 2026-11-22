@@ -26,7 +26,9 @@ public enum ErrorCode {
     // 429
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해 주세요."),
     // 500
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    // 501
+    NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "준비 중인 기능입니다.");
 
     private final HttpStatus status;
     private final String message;

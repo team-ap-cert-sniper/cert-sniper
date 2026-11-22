@@ -25,6 +25,7 @@
 - 인증은 팀 공통 규칙(JWT)을 따릅니다. 이 문서의 함수는 인증과 무관하게 입력만으로 결과를 계산합니다.
 - 화면 쪽 정해진 것: 대학교·전공은 검색+선택 드롭다운(검색어 없이 열면 전체 목록), 관심분야·희망직무는 최대 5개 칩, 합격률 그래프는 점에 마우스를 올리면 응시자·합격자 수(`pass_rates[].examinees`·`passers`) 표시.
 - 이름 규칙: 요청·응답 필드 이름은 DB 컬럼 이름을 따른다(`university_id`, `jmcd`·`jmfldnm`, `qualgbcd`(T/S), `grade_level`, `interest_field_code`, `job_category_code`, `year`·`examinees`·`passers`·`pass_rate_pct`·`data_source`). 화면 표시용 이름은 `qualgbnm`·`interest_field_name`·`job_category_name`.
+- 백엔드(Java) 응답: 연도가 붙은 필드는 연도를 뺀 이름(`schedules_2026` → `schedules`), 종목은 `qualification_id`(`QNET:1320`) 없이 `jmcd`만, ID는 DB의 BIGINT를 씁니다. CSV 내부 이름(`school_id`·`exam_year`·`passed`·`seriesnm` 등)은 쓰지 않습니다.
 
 아래 1~4장은 각 함수의 입력·출력 상세입니다.
 
