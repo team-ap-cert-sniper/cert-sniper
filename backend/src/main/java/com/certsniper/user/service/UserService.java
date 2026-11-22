@@ -83,7 +83,7 @@ public class UserService {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
-    /** admin 신고 숨김 확정: 누적 숨김 횟수 +1, 횟수별 자동 정지 */
+    /** admin 신고 숨김 확정: 누적 숨김 횟수 +1 (정지는 관리자가 suspend로 직접 실행) */
     @Transactional
     public void addConfirmedHidden(Long userId) {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);

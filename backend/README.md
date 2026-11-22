@@ -426,7 +426,7 @@
 | planner | `TargetExamService.countByUser` (박준성) | 일정 6개 제한 계산 | CF-04-16 |
 | passstory, support, admin 목록 | `UserService.getNicknames` (최기완), `RankService.getCurrentRanks` (최기완) | 작성자 닉네임·등급 한 번에 조회 | CF-05-01·05, ADMIN-02·04·11 |
 | passstory, admin | `ReportService.recordModeration` (최기완) | 수정·삭제·숨김·재검토 상태 변경 이력 | CF-05-07·08·10, ADMIN-05·06 |
-| admin | `ReportService.getReportsForAdmin` · `resolve` (최기완), `UserService.addConfirmedHidden` · `searchUsers` · `correctProfile` · `suspend` · `unsuspend` (최기완) | 신고 목록·처리, 누적 숨김 자동 정지, 회원 관리 | ADMIN-02·05·07 |
+| admin | `ReportService.getReportsForAdmin` · `resolve` (최기완), `UserService.addConfirmedHidden` · `searchUsers` · `correctProfile` · `suspend` · `unsuspend` (최기완) | 신고 목록·처리, 누적 숨김 횟수 증가(정지는 관리자가 직접), 회원 관리 | ADMIN-02·05·07 |
 
 ## 이름 규칙
 

@@ -4,8 +4,12 @@ export default function ConfirmModal({ message, confirmText = '확인', cancelTe
       <div className="modal">
         <p>{message}</p>
         <div className="modal__actions">
-          <button type="button" className="btn" onClick={onCancel}>{cancelText}</button>
-          <button type="button" className="btn btn--primary" onClick={onConfirm}>{confirmText}</button>
+          <button type="button" className="btn" onClick={onCancel}>
+            {cancelText}
+          </button>
+          <button type="button" className="btn btn--primary" onClick={onConfirm}>
+            {confirmText}
+          </button>
         </div>
       </div>
     </div>

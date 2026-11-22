@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import useDebounce from '@/hooks/useDebounce';
 
-export default function SearchSelect({ placeholder, fetchOptions, getLabel = (item) => item.name, onSelect, disabled }) {
+export default function SearchSelect({
+  placeholder,
+  fetchOptions,
+  getLabel = (item) => item.name,
+  onSelect,
+  disabled,
+}) {
   const [query, setQuery] = useState('');
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
@@ -36,7 +42,9 @@ export default function SearchSelect({ placeholder, fetchOptions, getLabel = (it
       {open && items.length > 0 && (
         <ul className="search-select__list">
           {items.map((item) => (
-            <li key={item.id ?? item.code ?? item.jmcd} onMouseDown={() => select(item)}>{getLabel(item)}</li>
+            <li key={item.id ?? item.code ?? item.jmcd} onMouseDown={() => select(item)}>
+              {getLabel(item)}
+            </li>
           ))}
         </ul>
       )}
