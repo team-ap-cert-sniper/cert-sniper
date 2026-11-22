@@ -10,7 +10,9 @@ export default function Pagination({ page, total, size, onChange }) {
 
   return (
     <nav className="pagination">
-      <button type="button" className="btn--link" disabled={start === 0} onClick={() => onChange(start - 1)}>이전</button>
+      <button type="button" className="btn--link" disabled={start === 0} onClick={() => onChange(start - 1)}>
+        이전
+      </button>
       {pages.map((p) => (
         <button
           key={p}
@@ -21,7 +23,9 @@ export default function Pagination({ page, total, size, onChange }) {
           {p + 1}
         </button>
       ))}
-      <button type="button" className="btn--link" disabled={end >= totalPages} onClick={() => onChange(end)}>다음</button>
+      <button type="button" className="btn--link" disabled={end >= totalPages} onClick={() => onChange(end)}>
+        다음
+      </button>
     </nav>
   );
 }

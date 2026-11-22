@@ -45,12 +45,18 @@ export default function EmailVerifyField({ purpose, email, onEmailChange, onVeri
   return (
     <div>
       <input type="email" value={email} disabled={verified} onChange={(e) => onEmailChange(e.target.value)} />
-      <button type="button" className="btn" disabled={!email || verified} onClick={send}>인증코드 받기</button>
+      <button type="button" className="btn" disabled={!email || verified} onClick={send}>
+        인증코드 받기
+      </button>
       {remaining > 0 && (
         <>
           <input value={code} maxLength={6} onChange={(e) => setCode(e.target.value)} />
-          <span>{mm}:{ss}</span>
-          <button type="button" className="btn" disabled={code.length !== 6} onClick={verify}>확인</button>
+          <span>
+            {mm}:{ss}
+          </span>
+          <button type="button" className="btn" disabled={code.length !== 6} onClick={verify}>
+            확인
+          </button>
         </>
       )}
       {verified && <p>인증되었습니다.</p>}

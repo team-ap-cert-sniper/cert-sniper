@@ -116,7 +116,7 @@
 ├─ 📁 db/         Docker DB 계정 생성 · 관리자 계정 시드
 ├─ 📄 docker-compose.yml
 ├─ 📄 .env.example
-└─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS
+└─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS, 자동 검사(workflows)
 ```
 
 | 구조 문서 | 내용 |
@@ -229,5 +229,6 @@ main        ← 최종(배포). Git 관리자만 병합
 | `develop` | 직접 push 금지, PR 필수, 승인 1명 이상, CODEOWNERS 승인 필수, 자동 검사 통과 |
 | `feature/*` | 담당자 자유롭게 push |
 
-* 파트별 리뷰어는 `.github/CODEOWNERS`에 적습니다
+* 승인자는 `.github/CODEOWNERS`에 있습니다: 모든 PR은 이은아·박준성 중 1명, DB·마이그레이션·ETL·Docker 변경은 이은아
+* 자동 검사: PR을 올리면 GitHub Actions(`.github/workflows/ci.yml`)가 backend 컴파일, frontend 코드 모양·규칙(`npm run format` · `npm run lint`)·빌드, etl 테스트를 실행합니다. 실패하면 병합하지 않습니다
 * API 키·비밀번호는 **절대 커밋하지 않습니다** (`.env`, `application-local.yml`은 `.gitignore` 대상)

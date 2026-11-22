@@ -31,10 +31,14 @@ export default function AdminLayout() {
     <div className="admin">
       <aside className="admin__menu">
         {MENUS.map((menu) => (
-          <Link key={menu.to} to={menu.to}>{menu.label}</Link>
+          <Link key={menu.to} to={menu.to}>
+            {menu.label}
+          </Link>
         ))}
         <Link to="/">사이트로 이동</Link>
-        <button type="button" className="btn--link" onClick={() => setConfirmLogout(true)}>로그아웃</button>
+        <button type="button" className="btn--link" onClick={() => setConfirmLogout(true)}>
+          로그아웃
+        </button>
       </aside>
       <main className="admin__content">
         <Outlet />

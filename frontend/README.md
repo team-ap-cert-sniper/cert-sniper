@@ -27,6 +27,8 @@
 ├─ 📄 package.json                    ★ react, react-router-dom, axios, chart.js, react-chartjs-2 (Node 24)
 ├─ 📄 package-lock.json               ★ 설치 버전 고정 (npm install이 갱신)
 ├─ 📄 .nvmrc                          ★ Node 24
+├─ 📄 eslint.config.js                ★ 코드 규칙 (`npm run lint`)
+├─ 📄 .prettierrc                     ★ 코드 모양 (`npm run format`)
 ├─ 📄 vite.config.js                  ★ 개발 서버 프록시 (/api → 백엔드), 경로 별칭 `@` = `src/`
 ├─ 📄 index.html                      ★
 ├─ 📄 .env.example                    ★ VITE_API_BASE_URL
@@ -227,7 +229,7 @@
 
 ## 🔀 화면 이동 (전체)
 
-`팀 확인`은 명세서에 이동할 곳이 적혀 있지 않아 정해야 하는 연결입니다.
+완료·저장 뒤 이동까지 모두 정해진 연결입니다. 바꾸면 이 표와 [플로우차트](../docs/FLOWCHART.md)를 같이 고칩니다.
 
 | 화면 | 누르는 곳 | 가는 곳 | 기능 ID |
 |---|---|---|---|
@@ -260,35 +262,41 @@
 | VIEW-07 | 목표 자격증 추가 · 일정 연필 · 개인 일정 연필 · 메모 | 같은 화면 팝업 | CF-04-01·07·09·14·17·18 |
 | VIEW-07 | 플래너 직접 수정하기 | 같은 화면 직접 수정 상태 | CF-04-12 |
 | VIEW-08 | 일정 6개 초과 (새 자격증) | 설문 시작 전 안내 | CF-06-01 |
+| VIEW-08 | 설문 중 나가기 | 확인 팝업 → 이전 화면 (입력 내용 저장 안 함) | CF-06-02 |
 | VIEW-08 | 플랜 저장 완료 | `/planner` (AI 렌더링 상태) | CF-06-05 |
 | VIEW-09 | 카드 | `/pass-stories/:id` | CF-05-05 |
-| VIEW-09 | 글쓰기 | `/pass-stories/new` (버튼 위치 팀 확인) | CF-05-06 |
+| VIEW-09 | 글쓰기 | `/pass-stories/new` (목록 오른쪽 위 버튼) | CF-05-06 |
 | VIEW-09 | 전체보기 · 내가 쓴 글 보기 | 같은 화면 목록 전환 | CF-05-03 |
 | VIEW-09 | 등록 후 등급이 오르면 | 승급 팝업 → 확인 | CF-05-12 |
 | VIEW-10 | 상세 수정 · 삭제 (본인) | `/pass-stories/:id/edit` · 확인 팝업 → `/pass-stories` | CF-05-07·08 |
 | VIEW-10 | 상세 신고하기 (타인) | 신고 팝업 → 즉시 숨김 | CF-05-09 |
 | VIEW-10 | 목록으로 돌아가기 · 작성 취소 확인 | `/pass-stories` · 이전 화면 | CF-05-05·06·07 |
 | VIEW-10 | 등록 완료 | `/pass-stories` | CF-05-06·12 |
+| VIEW-10 | 수정 완료 | 그 글 상세 `/pass-stories/:id` | CF-05-07 |
 | VIEW-11 | 회원정보 보유 자격증 | `/qualifications/:jmcd` | AUTH-03 |
 | VIEW-11 | 관심 자격증 상세보기 · AI 플래너 만들기 | `/qualifications/:jmcd` · `/ai-planner?jmcd=` | CF-03-09 |
 | VIEW-11 | 내 작성글 · 숨김 글 수정 | `/pass-stories/:id` · `/pass-stories/:id/edit` | CF-05-03·10 |
-| VIEW-11 | 회원 탈퇴 완료 팝업 | `/` (로그아웃, 팀 확인) | AUTH-04 |
+| VIEW-11 | 회원정보 수정 저장 · 탈퇴 철회 | 같은 화면 + 완료 안내 | AUTH-03·04 |
+| VIEW-11 | 비밀번호 변경 완료 팝업 | 로그아웃 → `/login` (모든 기기 로그인 해제) | AUTH-06 |
+| VIEW-11 | 회원 탈퇴 완료 팝업 | 로그아웃 → `/` | AUTH-04 |
 | VIEW-12 | 왼쪽 메뉴 공지사항 · FAQ · 1:1 문의하기 · 나의 문의 내역 | 같은 화면 내용 전환 (문의 메뉴는 비회원이면 로그인 필요 팝업) | CS-01 |
 | VIEW-12 | 공지 제목 · FAQ 질문 | 공지 상세(`?menu=notices&id=`) · 답변 펼침 | CS-02·03 |
 | VIEW-12 | 공지 상세 목록으로 | 공지 목록 (보던 페이지 번호 유지, 브라우저 뒤로가기 아님) | CS-02 |
-| VIEW-13 | 문의 접수 | 나의 문의 내역 (팀 확인) | CS-04 |
+| VIEW-13 | 문의 접수 | 고객센터 공지사항 `/support?menu=notices` | CS-04 |
 | VIEW-13 | 문의 제목 · 목록으로 | 문의 상세(`?menu=my-inquiries&id=`) · 나의 문의 목록 (보던 페이지 번호 유지, 브라우저 뒤로가기 아님) | CS-05 |
 | VIEW-14 | 공지 · 미답변 문의 · 미처리 신고 · 전체 회원 카드 | `/admin/notices` · `/admin/inquiries` · `/admin/reports` · `/admin/users` | ADMIN-10 |
-| VIEW-14 | 등록 자격증 카드 | 자격증 관리 화면 없음 → 숫자만 표시 또는 `/qualifications` (팀 확인) | ADMIN-10 |
-| VIEW-15 | 회원 상세 작성 글 조회 · 1:1 문의 조회 | `/admin/pass-stories?nickname=` · `/admin/inquiries?userId=` | ADMIN-02 |
-| VIEW-15 | 정지 · 해제 | 같은 화면 팝업 | ADMIN-07 |
-| VIEW-17 | 문의 제목 | 문의 상세 → 답변 저장 | ADMIN-04 |
-| VIEW-18 | 신고 상세 · 재검토 | 숨김 확정·해제 · 숨김 해제·삭제 | ADMIN-05·06 |
-| VIEW-19 | 게시글 | 게시글 조회 (신고·숨김 상태 표시) | ADMIN-11 |
+| VIEW-14 | 등록 자격증 카드 | 이동 없음 (숫자만 표시) | ADMIN-10 |
+| VIEW-15 | 회원 상세 작성 글 조회 · 1:1 문의 조회 | `/admin/pass-stories?nickname=` · `/admin/inquiries?user_id=` | ADMIN-02 |
+| VIEW-15 | 정지 · 해제 · 정보 정정 저장 | 같은 화면 팝업 → 같은 회원 상세 | ADMIN-02·07 |
+| VIEW-16 | 공지 등록 · 수정 · 삭제 완료 | 공지 관리 목록 `/admin/notices` | ADMIN-03 |
+| VIEW-17 | 문의 제목 · 답변 저장 | 문의 상세 → 저장 후 같은 상세 (답변완료) | ADMIN-04 |
+| VIEW-18 | 신고 상세 · 재검토 | 숨김 확정·해제 · 숨김 해제·삭제 → 신고 목록 (보던 페이지 유지) | ADMIN-05·06 |
+| VIEW-19 | 게시글 | 관리자 화면 안 상세 (숨김 글 본문·신고·숨김 상태 표시, 일반 상세 페이지로 이동 안 함) | ADMIN-11 |
 
 ## 뼈대 사용법
 
 * 실행: Node 24 → `npm install` → `npm run dev` (http://localhost:5173, `/api`는 백엔드 8080으로 전달)
+* PR 올리기 전: `npm run format`으로 코드 모양을 맞추고 `npm run lint`가 오류 없이 끝나는지 확인합니다 (PR에서 자동 검사)
 * API는 `src/api/○○Api.js`의 함수를 부릅니다. 요청·응답 JSON 이름은 snake_case(`university_id`)입니다
 * 토큰 첨부·재발급, 401이면 로그인 필요 팝업은 `api/client.js`가 처리합니다. 화면에서 따로 처리하지 않습니다
 * 로그인 회원 정보는 `useAuth()` (`user`, `isLoggedIn`, `isAdmin`)로 읽습니다

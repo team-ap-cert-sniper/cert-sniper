@@ -31,10 +31,14 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header__inner">
-        <Link to="/" className="header__logo">저격증</Link>
+        <Link to="/" className="header__logo">
+          저격증
+        </Link>
         <nav className="header__menu">
           {MENUS.map((menu) => (
-            <Link key={menu.to} to={menu.to}>{menu.label}</Link>
+            <Link key={menu.to} to={menu.to}>
+              {menu.label}
+            </Link>
           ))}
         </nav>
         <div className="header__user">
@@ -42,7 +46,9 @@ export default function Header() {
             <>
               <Link to="/mypage">마이페이지</Link>
               {isAdmin && <Link to="/admin">관리자 페이지</Link>}
-              <button type="button" className="btn--link" onClick={() => setConfirmLogout(true)}>로그아웃</button>
+              <button type="button" className="btn--link" onClick={() => setConfirmLogout(true)}>
+                로그아웃
+              </button>
             </>
           ) : (
             <>
