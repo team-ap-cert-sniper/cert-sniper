@@ -58,12 +58,16 @@ services:
       MYSQL_PWD: ${DB_MIGRATOR_PASSWORD}
     volumes:
       - service-data:/out:ro
+      - ./db/seed:/seed:ro
     entrypoint:
       - sh
       - -c
       - |
         if [ "$$(mysql -h db -u cert_migrator -N -e 'SELECT COUNT(*) FROM jg_service.qualifications')" = "0" ]; then
           mysql -h db -u cert_migrator --default-character-set=utf8mb4 < /out/service-data.sql
+        fi
+        if [ "$$(mysql -h db -u cert_migrator -N -e "SELECT COUNT(*) FROM jg_service.users WHERE role = 'ADMIN'")" = "0" ]; then
+          mysql -h db -u cert_migrator --default-character-set=utf8mb4 < /seed/admin_accounts.sql
         fi
 
 volumes:
