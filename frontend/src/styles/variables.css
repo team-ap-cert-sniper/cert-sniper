@@ -1,0 +1,25 @@
+:root {
+  --color-primary: #e5484d;
+  --color-primary-dark: #c43a3f;
+  --color-text: #1f2328;
+  --color-text-sub: #6b7280;
+  --color-border: #e5e7eb;
+  --color-bg: #ffffff;
+  --color-bg-sub: #f7f7f8;
+  --color-error: #d92d20;
+
+  --font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+
+  --radius: 8px;
+  --content-width: 1200px;
+}

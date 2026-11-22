@@ -1,6 +1,9 @@
 package com.certsniper.global.config;
 
+import com.certsniper.global.security.JwtAuthenticationFilter;
+import com.certsniper.global.security.JwtTokenProvider;
 import com.certsniper.global.security.SecurityErrorHandler;
+import com.certsniper.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * URL별 접근 권한 설정.
@@ -44,6 +48,8 @@ public class SecurityConfig {
     };
 
     private final SecurityErrorHandler securityErrorHandler;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -69,8 +75,9 @@ public class SecurityConfig {
                         .accessDeniedHandler(securityErrorHandler)
                 );
 
-        // TODO: JwtAuthenticationFilter 구현 후 등록
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(
+                new JwtAuthenticationFilter(jwtTokenProvider, userRepository, securityErrorHandler),
+                UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
