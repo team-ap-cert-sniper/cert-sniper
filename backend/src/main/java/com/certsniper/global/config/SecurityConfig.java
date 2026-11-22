@@ -21,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 /**
  * URL별 접근 권한 설정.
  *
+ *  PATCH /api/v1/auth/password  로그인 회원 (마이페이지 비밀번호 변경)
  *  /api/v1/auth/**          전체 허용
  *  GET /api/v1/options/**   전체 허용
  *  GET /api/v1/daily-idiom  전체 허용
@@ -35,12 +36,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_ANY = {
+    static final String[] LOGIN_REQUIRED_PATCH = {
+            "/api/v1/auth/password"
+    };
+
+    static final String[] PUBLIC_ANY = {
             "/api/v1/auth/**",
             "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**"
     };
 
-    private static final String[] PUBLIC_GET = {
+    static final String[] PUBLIC_GET = {
             "/api/v1/health",
             "/api/v1/options/**",
             "/api/v1/daily-idiom",
@@ -62,6 +67,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()   // CORS preflight
+                        .requestMatchers(HttpMethod.PATCH, LOGIN_REQUIRED_PATCH).authenticated()
                         .requestMatchers(PUBLIC_ANY).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
