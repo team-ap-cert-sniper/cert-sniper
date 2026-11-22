@@ -8,12 +8,13 @@
 
 | 이름 | 담당 화면 | 백엔드 패키지 | 비고 |
 |---|---|---|---|
-| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git 관리자 |
-| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` | 추천 알고리즘, ETL 작업(`etl/`), 설계 문서(`docs/`), DB 관리자, Docker Compose |
-| **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인 |
-| **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인|
+| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | 일정 관리, GitHub 저장소·백엔드 초기 설정, PR 승인·병합 |
+| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` `global` | 개발 뼈대(백엔드 공통·API 틀, 프론트 공통·라우터), 자동 검사·코드 규칙, 설계 문서(`docs/`, DB 설계서·ERD), DB 관리자(Flyway·Docker Compose), 추천 알고리즘·ETL(`etl/`), PR 승인·병합 |
+| **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인, 공통 헤더·푸터·팝업 |
+| **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인 |
 | **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 기능 흐름, 디자인 |
-| 공통 (담당 미정) | 공통 헤더·푸터·로그인 필요 팝업 | `global` | |
+
+* 여러 화면이 같이 쓰는 부품은 그 부품을 쓰는 화면 담당이 만듭니다. 부품별 담당은 [frontend](frontend/README.md#-화면-담당), 공통 백엔드(`global`)는 이은아가 관리합니다
 
 ---
 
@@ -66,20 +67,23 @@
 
 ### **Backend**
 
-* **Framework**: Java 21 · Spring Boot 3.5.X · Gradle
+* **Framework**: Java 21 · Spring Boot 3.5.16 · Gradle 8.14.3 (래퍼 포함)
 * **Database**: MySQL 8.0 (Docker Compose로 팀원 각자 실행)
 * **JPA/ORM**: Spring Data JPA
-* **DB 변경 관리**: Flyway (DB 관리자만 마이그레이션 추가)
-* **인증**: Spring Security · JWT
+* **DB 변경 관리**: Flyway 11 (DB 관리자만 마이그레이션 추가)
+* **인증**: Spring Security · JWT (jjwt 0.12.6)
+* **API 문서**: springdoc-openapi 2.8.9 (Swagger UI)
+* **코드 생성**: Lombok
 * **메일**: JavaMailSender (Google SMTP)
 * **AI**: Qwen2.5 API (설문 기반 학습 플랜 생성)
 
 ### **Frontend**
 
 * **Runtime**: Node.js 24 LTS (`frontend/.nvmrc`)
-* **Library**: React 19 · Vite
+* **Library**: React 19 · Vite 8
 * **Routing / HTTP**: React Router · Axios
 * **Chart**: Chart.js, react-chartjs-2
+* **코드 규칙**: ESLint · Prettier
 
 ### **Data Pipeline**
 
@@ -89,6 +93,7 @@
 ### **Collaboration & Tools**
 
 * **VCS**: Git · GitHub (Organization)
+* **CI**: GitHub Actions (PR 자동 검사)
 * **Container**: Docker · Docker Compose
 * **Docs / Design / ERD**: Notion · Figma · ERDCloud
 
@@ -133,6 +138,8 @@
 
 ## 🐳 로컬 DB 실행
 
+DB·백엔드·프론트는 모두 **내 노트북에서** 실행합니다. 다른 팀원 노트북이 꺼져 있어도 레포만 받으면 똑같이 실행되고, Swagger도 내 백엔드를 켠 상태에서 내 주소로 봅니다.
+
 1. Docker Desktop 실행
 2. 레포 루트에서 `.env.example`을 `.env`로 복사하고 비밀번호 세 칸 채우기 (영문·숫자)
 3. `docker compose up -d`
@@ -152,13 +159,13 @@
 
 | | 처음 한 번 | 실행 | 주소 |
 |---|---|---|---|
-| 백엔드 | `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 복사 후 값 채우기 | `cd backend` → `./gradlew bootRun` | http://localhost:8080/swagger-ui.html |
+| 백엔드 | JDK 21 설치, `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 복사 후 값 채우기 ([방법](backend/README.md#뼈대-사용법)) | `cd backend` → `./gradlew bootRun` (Windows `gradlew.bat bootRun`) | http://localhost:8080/swagger-ui.html |
 | 프론트 | Node.js 24 설치 (`node -v`로 확인) | `cd frontend` → `npm install` → `npm run dev` | http://localhost:5173 (`/api`는 8080으로 전달) |
 
 ## 🌿 브랜치 전략
 
 ```
-main        ← 최종(배포). Git 관리자만 병합
+main        ← 최종(배포). 이은아·박준성만 병합
 └─ develop  ← 통합. PR로만 병합
    └─ feature/{파트}/{작업내용}
 ```
@@ -203,7 +210,7 @@ main        ← 최종(배포). Git 관리자만 병합
 3. **작업·커밋**: 화면·API·DB를 한 브랜치에서
 4. **PR**: `feature/...` → `develop`, 템플릿 작성, `Closes #이슈번호`
 5. **리뷰·병합**: 승인 1명 이상 + 자동 검사 통과 후 병합, 병합한 브랜치 삭제
-6. **배포**: Git 관리자가 `develop` → `main` 병합
+6. **배포**: 이은아·박준성이 `develop` → `main` 병합
 
 ### 커밋 메시지
 
@@ -225,10 +232,10 @@ main        ← 최종(배포). Git 관리자만 병합
 
 | 브랜치 | 규칙 |
 |---|---|
-| `main` | 직접 push 금지, PR 필수, Git 관리자만 병합, CODEOWNERS 승인 필수 |
+| `main` | 직접 push 금지, PR 필수, 이은아·박준성만 병합, CODEOWNERS 승인 필수 |
 | `develop` | 직접 push 금지, PR 필수, 승인 1명 이상, CODEOWNERS 승인 필수, 자동 검사 통과 |
 | `feature/*` | 담당자 자유롭게 push |
 
-* 승인자는 `.github/CODEOWNERS`에 있습니다: 모든 PR은 이은아·박준성 중 1명, DB·마이그레이션·ETL·Docker 변경은 이은아
+* 승인자는 `.github/CODEOWNERS`에 있습니다: 모든 PR은 이은아·박준성 중 1명, DB·마이그레이션·ETL·Docker·백엔드 `global` 변경은 이은아
 * 자동 검사: PR을 올리면 GitHub Actions(`.github/workflows/ci.yml`)가 backend 컴파일, frontend 코드 모양·규칙(`npm run format` · `npm run lint`)·빌드, etl 테스트를 실행합니다. 실패하면 병합하지 않습니다
 * API 키·비밀번호는 **절대 커밋하지 않습니다** (`.env`, `application-local.yml`은 `.gitignore` 대상)

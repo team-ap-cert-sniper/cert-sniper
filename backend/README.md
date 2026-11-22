@@ -5,7 +5,7 @@
 * 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](src/main/resources/db/migration)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
-* 표시: `★` 기능 개발 전에 먼저 만들 공통 파일 (`feature/common/...`), `[이름]` 패키지 담당, 오른쪽 끝은 기능 ID / 테이블
+* 표시: `★` 뼈대에서 동작하게 만들어 둔 공통 파일, `[이름]` 패키지 담당, 오른쪽 끝은 기능 ID / 테이블
 
 ## 👤 패키지 담당
 
@@ -13,12 +13,12 @@
 |---|---|---|
 | 유다연 | `auth` | 초기 메인(VIEW-01), 회원가입·로그인·비밀번호 재설정(VIEW-02~04) |
 | 이은아 | `option` · `university` · `job` · `recommendation` · `qualification` · `examschedule` | 자격증 추천(VIEW-05), 자격증 상세(VIEW-06) |
+| 이은아 | `global` · `CertSniperApplication` · `resources` | 모든 화면 (공통 설정·보안·오류 응답) |
 | 박준성 | `targetexam` · `planner` · `memo` · `aiplanner` | 플래너 다이어리(VIEW-07), AI 플래너(VIEW-08) |
 | 최기완 | `user` · `favorite` · `passstory` · `report` · `rank` | 저격왕(VIEW-09·10), 마이페이지(VIEW-11) |
 | 황정규 | `support` · `admin` | 고객센터(VIEW-12·13), 관리자(VIEW-14~19) |
-| 공통 (담당 미정) | `global` · `CertSniperApplication` · `resources` | 모든 화면 |
 
-> 담당은 임시 배정입니다. 바뀌면 이 표와 [CODEOWNERS](../.github/CODEOWNERS)를 같이 고칩니다.
+> `global`을 고쳐야 하면 이슈로 요청합니다. 담당이 바뀌면 이 표와 [CODEOWNERS](../.github/CODEOWNERS)를 같이 고칩니다.
 
 ## 📁 파일 트리
 
@@ -27,17 +27,16 @@
 ```
 📁 backend/
 ├─ 📄 README.md                         (있음) 패키지 구조·이름 규칙
-├─ 📄 build.gradle                    ★ 의존성: web, data-jpa, security, validation, mail, mysql, jjwt, lombok
+├─ 📄 build.gradle                    ★ Spring Boot 3.5.16 · Java 21. 의존성: web, data-jpa, security, validation, mail, mysql, jjwt, springdoc, jsoup, lombok
 ├─ 📄 settings.gradle                 ★ rootProject.name = 'cert-sniper'
 ├─ 📄 gradlew · gradlew.bat           ★ Gradle 래퍼 (Spring Initializr가 만들어 줌)
 ├─ 📁 gradle/wrapper/                 ★ gradle-wrapper.jar · gradle-wrapper.properties
-├─ 📄 Dockerfile                        (선택) docker-compose로 백엔드까지 띄울 때
 └─ 📁 src/
    ├─ 📁 main/
    │  ├─ 📁 java/com/certsniper/        → 2 ~ 4번
    │  └─ 📁 resources/
    │     ├─ 📄 application.yml        ★ 공통 설정 (DB 주소는 환경변수로)
-   │     ├─ 📄 application-local.yml  ★ localhost:3307 · cert_app 접속, `ddl-auto: validate`, `spring.flyway.enabled: false` (커밋 금지)
+   │     ├─ 📄 application-local.yml.example ★ 내 설정 예시 → `application-local.yml`로 복사해 값 채움 (복사본은 커밋 금지)
    │     └─ 📁 db/migration/            (있음) Flyway 마이그레이션, DB 관리자만 추가
    │        └─ 📄 V1__create_tables.sql   (있음) DB 설계서 Ver.12 (31개 테이블)
    └─ 📁 test/java/com/certsniper/      → 5번
@@ -48,7 +47,7 @@
 ```
 📁 java/com/certsniper/
 ├─ 📄 CertSniperApplication.java      ★ 앱 시작 (@SpringBootApplication, @EnableScheduling)
-└─ 📁 global/                       [공통 · 담당 미정]
+└─ 📁 global/                       [이은아]
    ├─ 📁 config/
    │  ├─ 📄 SecurityConfig.java       ★ URL별 권한 (GUEST·USER·ADMIN), JWT 필터 등록          CF-00-03
    │  ├─ 📄 WebConfig.java            ★ CORS (프론트 주소 허용)
@@ -362,6 +361,8 @@
 
 ### 5. 테스트
 
+기능을 구현하면서 담당자가 추가합니다. 아래는 정해 둔 이름입니다.
+
 ```
 📁 test/java/com/certsniper/
 ├─ 📄 CertSniperApplicationTests.java      앱이 뜨는지
@@ -441,7 +442,13 @@
 ## 뼈대 사용법
 
 1. 루트에서 `docker compose up -d` (DB·데이터 자동 적재)
-2. `src/main/resources/application-local.yml.example`을 `application-local.yml`로 복사하고 `DB_APP_PASSWORD`·`JWT_SECRET_32_CHARS_OR_MORE` 자리를 채웁니다
+2. `src/main/resources/application-local.yml.example`을 `application-local.yml`로 복사하고 아래 칸을 채웁니다
+
+   | 칸 | 넣을 값 |
+   |---|---|
+   | `DB_APP_PASSWORD` | 내 `.env`의 `DB_APP_PASSWORD` |
+   | `JWT_SECRET_32_CHARS_OR_MORE` | 32자 이상 아무 문자열 (Git Bash `openssl rand -base64 48`) |
+   | 메일 `username`·`password` | 인증 메일을 보낼 Gmail 계정·앱 비밀번호. 비워 두면 인증 메일만 안 가고 나머지는 실행됩니다 |
 3. `./gradlew bootRun` (Windows `gradlew.bat bootRun`) → http://localhost:8080/swagger-ui.html 에서 전체 API 확인
 4. 각자 `feature/{파트}/{작업}` 브랜치에서 자기 서비스 메서드의 `throw new BusinessException(ErrorCode.NOT_IMPLEMENTED)`를 지우고 구현합니다. 구현 전 API는 501 `NOT_IMPLEMENTED`로 응답합니다
 
