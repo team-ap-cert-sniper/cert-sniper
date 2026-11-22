@@ -1,57 +1,9 @@
-# 파트별 리뷰어: 해당 경로를 고친 PR에 자동으로 리뷰어가 지정됩니다.
-# 형식: 경로  @GitHub아이디
-# 아이디를 아는 담당만 채워 두었습니다. 나머지는 # 을 지우고 @ 뒤에 아이디를 채워 주세요.
-# 담당은 임시 배정입니다 (README 팀 소개 표와 같이 고칩니다).
+# 모든 PR은 이은아 또는 박준성 중 한 명이 승인합니다.
+*                                    @euna0428 @I-LOVE-CABBAGE
 
-# ----- 이은아: 자격증 추천 · 자격증 상세 · ETL · 설계 문서 -----
-/etl/                                                   @euna0428
-/docs/                                                  @euna0428
-/backend/src/main/resources/db/                         @euna0428
-/db/                                                    @euna0428
-/docker-compose.yml                                     @euna0428
-/.env.example                                           @euna0428
-/backend/src/main/java/com/certsniper/option/           @euna0428
-/backend/src/main/java/com/certsniper/university/       @euna0428
-/backend/src/main/java/com/certsniper/job/              @euna0428
-/backend/src/main/java/com/certsniper/recommendation/   @euna0428
-/backend/src/main/java/com/certsniper/qualification/    @euna0428
-/backend/src/main/java/com/certsniper/examschedule/     @euna0428
-/frontend/src/pages/Recommend/                          @euna0428
-/frontend/src/pages/QualificationDetail/                @euna0428
-/frontend/src/components/qualification/                 @euna0428
-
-# ----- 유다연: 초기 메인 · 회원가입 · 로그인 -----
-# /backend/src/main/java/com/certsniper/auth/           @
-# /frontend/src/pages/Main/                             @
-# /frontend/src/pages/Auth/                             @
-
-# ----- 박준성: 플래너 다이어리 · AI 플래너 -----
-# /backend/src/main/java/com/certsniper/targetexam/     @
-# /backend/src/main/java/com/certsniper/planner/        @
-# /backend/src/main/java/com/certsniper/memo/           @
-# /backend/src/main/java/com/certsniper/aiplanner/      @
-# /frontend/src/pages/Planner/                          @
-# /frontend/src/pages/AiPlanner/                        @
-# /frontend/src/components/planner/                     @
-
-# ----- 최기완: 저격왕 합격수기 · 마이페이지 -----
-# /backend/src/main/java/com/certsniper/user/           @
-# /backend/src/main/java/com/certsniper/favorite/       @
-# /backend/src/main/java/com/certsniper/passstory/      @
-# /backend/src/main/java/com/certsniper/report/         @
-# /backend/src/main/java/com/certsniper/rank/           @
-# /frontend/src/pages/PassStory/                        @
-# /frontend/src/pages/MyPage/                           @
-# /frontend/src/components/passstory/                   @
-
-# ----- 황정규: 고객센터 · 관리자 -----
-# /backend/src/main/java/com/certsniper/support/        @
-# /backend/src/main/java/com/certsniper/admin/          @
-# /frontend/src/pages/Support/                          @
-# /frontend/src/pages/Admin/                            @
-
-# ----- 공통 (담당 미정): 정해지면 아이디 채우기 -----
-# /backend/src/main/java/com/certsniper/global/         @
-# /backend/src/main/resources/                          @
-# /frontend/src/components/common/                      @
-# /frontend/src/router/                                 @
+# DB 스키마·데이터는 이은아만 승인합니다.
+/db/                                 @euna0428
+/backend/src/main/resources/db/      @euna0428
+/etl/                                @euna0428
+/docker-compose.yml                  @euna0428
+/.env.example                        @euna0428
