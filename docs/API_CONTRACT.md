@@ -17,7 +17,7 @@
 
 공통 규칙
 - 응답은 모두 `application/json; charset=utf-8`, 성공 200.
-- 오류 본문은 팀 공통 형식 `{"code", "message", "timestamp"}`입니다(기능 명세서 10장).
+- 오류 본문은 팀 공통 형식 `{"code", "message", "timestamp"}`입니다.
   - 잘못된 입력: 함수가 `ValidationError` → **HTTP 400** `VALIDATION_ERROR`
   - 없는 종목코드·시험 회차: 함수가 `NotFoundError` → **HTTP 404** `NOT_FOUND`
   - 그 밖의 예외: **HTTP 500** `INTERNAL_ERROR`. 내부 메시지는 내보내지 않습니다.
@@ -26,8 +26,6 @@
 - 화면 쪽 정해진 것: 대학교·전공은 검색+선택 드롭다운(검색어 없이 열면 전체 목록), 관심분야·희망직무는 최대 5개 칩, 합격률 그래프는 점에 마우스를 올리면 응시자·합격자 수(`pass_rates[].examinees`·`passers`) 표시.
 - 이름 규칙: 요청·응답 필드 이름은 DB 컬럼 이름을 따른다(`university_id`, `jmcd`·`jmfldnm`, `qualgbcd`(T/S), `grade_level`, `interest_field_code`, `job_category_code`, `year`·`examinees`·`passers`·`pass_rate_pct`·`data_source`). 화면 표시용 이름은 `qualgbnm`·`interest_field_name`·`job_category_name`.
 - 백엔드(Java) 응답: 연도가 붙은 필드는 연도를 뺀 이름(`schedules_2026` → `schedules`), 종목은 `qualification_id`(`QNET:1320`) 없이 `jmcd`만, ID는 DB의 BIGINT를 씁니다. CSV 내부 이름(`school_id`·`exam_year`·`passed`·`seriesnm` 등)은 쓰지 않습니다.
-
-아래 1~4장은 각 함수의 입력·출력 상세입니다.
 
 ## 1. 선택 목록 — `service.options(kind, university_id=None, query='', offset=0, limit=50, qualgbcd=None, grade_level=None, interest_field_code=None, job_category_code=None)`
 경로: `GET /api/v1/options/{kind}?university_id=&query=&offset=&limit=`
@@ -111,7 +109,7 @@
 - `next_levels[]`: 보유 자격의 상위 등급(같은 이름 계열). `{from_jmcd, from_jmfldnm, jmcd, jmfldnm, exam_window, experience_route}` — 국가기술 기능사→산업기사→기사→기능장/기술사, 서비스·국가전문 3급→2급→1급. `experience_route`는 보유 자격+실무경력으로 응시하는 경로 문구(학과 경로는 `exam_window`).
 - `needs_school_info`: 대학교·전공·학년이 비어 있으면 true(결과 없음) → 화면은 조건 선택 추천 안내.
 - `card`(항목마다): 추천 카드 표시값. `{qualgbcd, qualgbnm, grade_level, job_category_name, interest_field_name, summary, pass_rate_latest{year, items[]}, next_registration, nearest_exam}`. 기준은 자격증 상세(3장)와 같고, 값이 없으면 null(미제공 표시). `grade_level`은 국가기술 등급(기능사~기술사·서비스), 국가전문은 null. 국가전문 일부는 `job_category_name`이 비어 있어 `interest_field_name`을 표시.
-- `roadmap`·`next_levels`는 기능 명세서 v1.4.0에서 화면 반영 미정이다(응답에는 계속 포함).
+- `roadmap`·`next_levels`는 화면에 쓰지 않아도 응답에 포함합니다.
 
 ## 2-2. 조건 선택 추천 — `service.recommend_by_condition(conditions, today=None)`
 경로: `POST /api/v1/recommendations/conditions`
@@ -169,7 +167,7 @@
 ## 3-2. 트렌드 — `service.trends(qualgbcd='T', grade_level=None, interest_field_code=None, year=None, limit=20, today=None)`
 경로: `GET /api/v1/trends?qualgbcd=T&grade_level=기사&interest_field_code=21&limit=20`
 
-- 기준: 최근 완결 연도(`today` 연도 이전 중 자료가 있는 마지막 해, 2026-11 기준 2025)의 **1차 실제 응시자 수**(필기 → 1차 → 단일시험 중 그 종목의 첫 단계). 2026 국가기술자격 통계연보 상위 종목 수치와 일치 확인.
+- 기준: 최근 완결 연도(`today` 연도 이전 중 자료가 있는 마지막 해, 2026-11 기준 2025)의 **1차 실제 응시자 수**(필기 → 1차 → 단일시험 중 그 종목의 첫 단계).
 - 통계는 2001년부터 최근 완결 연도까지만 있어 올해 값은 없다.
 - `qualgbcd`: `T`(국가기술자격) | `S`(국가전문자격) — 따로 순위.
 - `grade_level`: 기능사 / 산업기사 / 기사 / 기능장 / 기술사 / 서비스(국가기술만, `S`와 함께 주면 400). 판정은 DB `qualifications.grade_level`과 같다(괄호 분야명 제외, 서비스 분야 구분). `interest_field_code`: 관심분야(직무분야 대분류) 코드.
@@ -186,7 +184,6 @@
 
 - 시험 기간이 하루가 아니면 `exam_date`(기간 안의 실제 응시일) 필수.
 - 응답: `{schedule_id, jmcd, exam_stage, exam_date, today, days_remaining, label, state}` — `label` = `D-5` / `D-Day` / `종료`(지난 시험은 응시 불가), `state` = UPCOMING / TODAY / ENDED.
-- 주의: `schedule_id`는 데이터 재생성 시 바뀔 수 있으므로 DB 이관 시 일정 테이블의 PK로 대체.
 
 ## 5. 오늘의 사자성어 — `service.daily_idiom(today=None)`
 경로: `GET /api/v1/daily-idiom` (메인 사이드바 CF-00-04, 플래너 CF-04-19 공통)

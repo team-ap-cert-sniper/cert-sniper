@@ -5,7 +5,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: jg_service
+      MYSQL_DATABASE: cert_sniper
       DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:?DB_MIGRATOR_PASSWORD}
       DB_APP_PASSWORD: ${DB_APP_PASSWORD:?DB_APP_PASSWORD}
       TZ: Asia/Seoul
@@ -30,46 +30,47 @@ services:
       db:
         condition: service_healthy
     environment:
-      FLYWAY_URL: jdbc:mysql://db:3306/jg_service?allowPublicKeyRetrieval=true&useSSL=false
+      FLYWAY_URL: jdbc:mysql://db:3306/cert_sniper?allowPublicKeyRetrieval=true&useSSL=false
       FLYWAY_USER: cert_migrator
       FLYWAY_PASSWORD: ${DB_MIGRATOR_PASSWORD}
       FLYWAY_LOCATIONS: filesystem:/flyway/sql
     volumes:
-      - ./backend/src/main/resources/db/migration:/flyway/sql:ro
+      - ./db/migration:/flyway/sql:ro
     command: migrate
 
-  service-data-sql:
+  seed-build:
     image: python:3.12-alpine
     environment:
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - ./etl:/etl:ro
-      - service-data:/out
-    command: ["python", "/etl/tools/load_service_data.py", "--output", "/out/service-data.sql"]
+      - seed-sql:/out
+    command: ["python", "/etl/tools/load_service_data.py", "--output", "/out/service_data.sql"]
 
-  service-data:
+  seed:
     image: mysql:8.0
     depends_on:
       flyway:
         condition: service_completed_successfully
-      service-data-sql:
+      seed-build:
         condition: service_completed_successfully
     environment:
       MYSQL_PWD: ${DB_MIGRATOR_PASSWORD}
     volumes:
-      - service-data:/out:ro
+      - seed-sql:/out:ro
       - ./db/seed:/seed:ro
     entrypoint:
       - sh
       - -c
       - |
-        if [ "$$(mysql -h db -u cert_migrator -N -e 'SELECT COUNT(*) FROM jg_service.qualifications')" = "0" ]; then
-          mysql -h db -u cert_migrator --default-character-set=utf8mb4 < /out/service-data.sql
+        DB="mysql -h db -u cert_migrator --default-character-set=utf8mb4 cert_sniper"
+        if [ "$$($$DB -N -e 'SELECT COUNT(*) FROM qualifications')" = "0" ]; then
+          $$DB < /out/service_data.sql
         fi
-        if [ "$$(mysql -h db -u cert_migrator -N -e "SELECT COUNT(*) FROM jg_service.users WHERE role = 'ADMIN'")" = "0" ]; then
-          mysql -h db -u cert_migrator --default-character-set=utf8mb4 < /seed/admin_accounts.sql
+        if [ "$$($$DB -N -e "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'")" = "0" ]; then
+          $$DB < /seed/admin_accounts.sql
         fi
 
 volumes:
   db-data:
-  service-data:
+  seed-sql:

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 공통 오류 응답 (명세서 10장).
+ * 공통 오류 응답.
  * code, message, timestamp, errors(검증 오류일 때만 포함)
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)

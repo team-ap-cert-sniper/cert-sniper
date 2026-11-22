@@ -3,7 +3,6 @@
 
 # DB 스키마·데이터·공통 백엔드는 이은아만 승인합니다.
 /db/                                 @euna0428
-/backend/src/main/resources/db/      @euna0428
 /etl/                                @euna0428
 /docker-compose.yml                  @euna0428
 /.env.example                        @euna0428
