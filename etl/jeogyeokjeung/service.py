@@ -26,30 +26,29 @@ class NotFoundError(ValidationError):
 
 IDIOM_CYCLE_START = date(2026, 1, 1)   # 사자성어 순환 기준일: 이날이 1번
 GRADES = ('1', '2', '3', '4', '5', '6', 'GRADUATED', 'NOT_ENROLLED')
-PROFILE_KEYS = {'school_id', 'major_id', 'grade', 'owned_qualification_ids'}   # 전공 맞춤 추천: 학교·학과·학년·보유 자격
-TYPE_CODE = {'TECHNICAL': 'T', 'PROFESSIONAL': 'S'}   # 추천 조건의 자격구분 → qualgbcd
+PROFILE_KEYS = {'university_id', 'major_id', 'grade', 'owned_jmcds'}   # 전공 맞춤 추천: 학교·학과·학년·보유 자격
 # 같은 해 안에서 단계 표시 순서 (필기→실기, 1차→2차→3차→면접)
 STAGE_ORDER = {'필기': 0, '1차': 1, '2차': 2, '3차': 3, '실기': 4, '면접': 5, '시험': 6}
 # 추천 순위 점수표. 항목별 점수와 이유를 score_breakdown 으로 함께 돌려준다.
 SCORE = {
-    'JOB_FIELD': 30, 'INTEREST_FIELD': 20,
+    'JOB_CATEGORY': 30, 'INTEREST_FIELD': 20,
     'existing_direct_links': 40, 'recommended': 35, 'same_subfield': 30, 'faculty_aggregate': 40,
     'NOW': 20, 'NO_RESTRICTION': 20, 'FROM_GRADE_NEXT': 10, 'FROM_GRADE_LATER': 5, 'CHECK_QUALIFICATION': 5,
     'AFTER_GRADUATION_EXPERIENCE': 0, 'UPCOMING_2026': 10, 'LEVEL_FIT': 5, 'LEVEL_UNFIT': -20,
     'NO_ELIGIBILITY_REQUIRED': 5,
 }
 RESULT_LIMIT = 5                                  # 추천 화면 최대 개수(후보가 적으면 그 수만큼)
-CONDITION_KEYS = {'qualification_type', 'job_field_ids', 'interest_field_ids', 'owned_qualification_ids'}
+CONDITION_KEYS = {'qualgbcd', 'job_category_codes', 'interest_field_codes', 'owned_jmcds'}
 BASIS_LABEL = {'existing_direct_links': '학과 직접 연결', 'recommended': '전공 연관', 'same_subfield': '동계열 공통',
                'faculty_aggregate': '학부 소속 학과 합산'}
 # 트렌드: 최근 완결 연도의 1차(필기·1차·단일시험) 응시자 수 순위. 국가기술·국가전문 분리.
 FIRST_STAGES = ('필기', '1차', '시험')
-TREND_TYPES = {'TECHNICAL': '국가기술자격', 'PROFESSIONAL': '국가전문자격'}
+QUALGB = {'T': '국가기술자격', 'S': '국가전문자격'}   # qualgbcd → 자격구분명
 TREND_YEARS, TREND_THRESHOLD = 5, 10.0      # 5년(기준연도 포함) 응시자 증감률 ±10% 넘으면 증가/감소
 ROADMAP_PER_STAGE = 5                          # 학년별 로드맵: 단계마다 점수 상위 몇 개
 GRADE_NUM = re.compile(r'\s*\d급\s*')             # 국가전문 급수(1급 청소년지도사, 정수시설운영관리사2급)
-QUAL_SERIES = ('기능사', '산업기사', '기사', '기능장', '기술사', '서비스')   # 자격증 검색 등급 필터(국가기술)
-OPTION_KINDS = ('schools', 'majors', 'grades', 'job_fields', 'interest_fields', 'qualifications')
+GRADE_LEVELS = ('기능사', '산업기사', '기사', '기능장', '기술사', '서비스')   # grade_level 필터(국가기술)
+OPTION_KINDS = ('universities', 'majors', 'grades', 'job_categories', 'interest_fields', 'qualifications')
 
 
 class JeogyeokjeungService:
@@ -57,7 +56,7 @@ class JeogyeokjeungService:
         self.db = store or DataStore(data_dir)
         q = self.db.qualifications.values()
         self.interest_fields = {r['obligfldcd']: r['obligfldnm'] for r in q if r['obligfldcd']}   # 관심분야 = Q-Net 직무분야(대)
-        self.job_fields = {r['mdobligfldcd']: r['mdobligfldnm'] for r in q if r['mdobligfldcd']}   # 희망직무 = Q-Net 직무분야(중)
+        self.job_categories = {r['mdobligfldcd']: r['mdobligfldnm'] for r in q if r['mdobligfldcd']}   # 희망직무 = Q-Net 직무분야(중)
         # 입력 흐름: 대학교 → 전공. 학부는 별도 입력 단계가 아니다.
         #  - 전공 목록의 학부 이름 항목(예: 첨단IT학부)을 고르면 그 학부 소속 전공 합산 추천(major_faculty)
         #  - 학부 이름이 전공 목록에 없는 학부는 '(학부 전체)' 항목으로 전공 목록에 넣는다(faculty_scope_id 를 major_id 로 받음)
@@ -74,8 +73,8 @@ class JeogyeokjeungService:
     # ---------- 입력 검증 ----------
     def _check_codes(self, p: dict, keys) -> None:
         """선택 코드 목록 검증: 중복 없음, 목록에 있는 코드, 최대 개수(직무·관심 5개)."""
-        catalogs = {'job_field_ids': (self.job_fields, 5), 'interest_field_ids': (self.interest_fields, 5),
-                    'owned_qualification_ids': (self.db.qualifications, len(self.db.qualifications))}
+        catalogs = {'job_category_codes': (self.job_categories, 5), 'interest_field_codes': (self.interest_fields, 5),
+                    'owned_jmcds': (self.db.qualifications, len(self.db.qualifications))}
         for key in keys:
             catalog, maximum = catalogs[key]
             values = p.get(key, [])
@@ -90,85 +89,83 @@ class JeogyeokjeungService:
         if not isinstance(profile, dict) or set(profile) - PROFILE_KEYS:
             raise ValidationError('알 수 없는 추천 입력 필드')
         p = dict(profile)
-        for key in ('school_id', 'major_id', 'grade'):
+        for key in ('university_id', 'major_id', 'grade'):
             p[key] = p.get(key) or None
-        filled = [p[k] is not None for k in ('school_id', 'major_id', 'grade')]
+        filled = [p[k] is not None for k in ('university_id', 'major_id', 'grade')]
         if any(filled) and not all(filled):
             raise ValidationError('대학교·전공·학년은 함께 입력하거나 모두 비워 둠')
         if p['grade'] is not None and (not isinstance(p['grade'], str) or p['grade'] not in GRADES):
             raise ValidationError('grade 선택값 필요')
-        self._check_codes(p, ('owned_qualification_ids',))
-        for key, catalog in [('school_id', self.db.schools), ('major_id', {**self.db.majors, **self.faculty_items})]:
+        self._check_codes(p, ('owned_jmcds',))
+        for key, catalog in [('university_id', self.db.schools), ('major_id', {**self.db.majors, **self.faculty_items})]:
             value = p[key]
             if value is not None and (not isinstance(value, str) or value not in catalog):
                 raise ValidationError(key + ': 유효하지 않거나 서비스 제외된 선택')
         major = p['major_id']
-        if major and (self.db.majors.get(major) or self.faculty_items.get(major))['school_id'] != p['school_id']:
+        if major and (self.db.majors.get(major) or self.faculty_items.get(major))['school_id'] != p['university_id']:
             raise ValidationError('학교·캠퍼스와 전공 불일치')
         return p
 
     # ---------- 선택 목록(회원가입 드롭다운) ----------
-    def options(self, kind, school_id=None, query='', offset=0, limit=50, qualification_type=None, series=None,
-                interest_field_id=None, job_field_id=None) -> dict:
+    def options(self, kind, university_id=None, query='', offset=0, limit=50, qualgbcd=None, grade_level=None,
+                interest_field_code=None, job_category_code=None) -> dict:
         if type(offset) is not int or type(limit) is not int or offset < 0 or not 1 <= limit <= 100:
             raise ValidationError('offset >= 0, 1 <= limit <= 100 필요')
         if not isinstance(query, str):
             raise ValidationError('검색어는 문자열')
-        if school_id is not None and (not isinstance(school_id, str) or school_id not in self.db.schools):
-            raise ValidationError('school_id: 유효하지 않거나 서비스 제외된 선택')
-        if kind == 'schools':
-            values = [{'id': s['school_id'], 'name': s['school_name'], 'campus': s['campus'],
+        if university_id is not None and (not isinstance(university_id, str) or university_id not in self.db.schools):
+            raise ValidationError('university_id: 유효하지 않거나 서비스 제외된 선택')
+        if qualgbcd is not None and qualgbcd not in QUALGB:
+            raise ValidationError('qualgbcd 는 T 또는 S')
+        if kind == 'universities':
+            values = [{'id': s['school_id'], 'name': s['school_name'], 'campus_name': s['campus'],
                        'school_type': s['school_type']} for s in self.db.schools.values()]
         elif kind == 'majors':
-            if not school_id:
-                raise ValidationError('학교 선택 필요')
+            if not university_id:
+                raise ValidationError('대학교 선택 필요')
             # 전공 + 학부 전체 항목. scope: MAJOR(전공 기준) | FACULTY(소속 전공 합산).
             # label = '전공 · 소속 학부'. 검색은 전공 이름과 소속 학부 이름 둘 다(경상 → 경상학부·회계학·경영학).
             # 정렬은 학부별로 묶어 학부 항목 먼저, 그 아래 소속 전공 가나다순.
             values = [{'id': mid, 'name': m['major_name'], 'parent_name': m['parent_name'] or m['college_name'],
                        'scope': 'FACULTY' if mid in self.major_faculty else 'MAJOR'}
-                      for mid, m in self.db.majors.items() if m['school_id'] == school_id]
+                      for mid, m in self.db.majors.items() if m['school_id'] == university_id]
             values += [{'id': fs, 'name': f['faculty_name'] + ' (학부 전체)', 'parent_name': '', 'scope': 'FACULTY',
-                        'group': f['faculty_name']} for fs, f in self.faculty_items.items() if f['school_id'] == school_id]
+                        'group': f['faculty_name']} for fs, f in self.faculty_items.items() if f['school_id'] == university_id]
             for v in values:
                 v['label'] = f"{v['name']} · {v['parent_name']}" if v['parent_name'] else v['name']
                 v.setdefault('group', v['parent_name'] or v['name'])
-        elif kind in ('job_fields', 'interest_fields'):
+        elif kind in ('job_categories', 'interest_fields'):
             # 자격증 상세 탐색(자격구분 → 대직무분야 → 중직무분야 → 종목)에도 쓴다. count = 조건에 맞는 종목 수(0이면 제외)
-            if qualification_type is not None and qualification_type not in TREND_TYPES:
-                raise ValidationError('qualification_type 은 TECHNICAL 또는 PROFESSIONAL')
             pool = [q for q in self.db.qualifications.values()
-                    if (qualification_type is None or q['qualgbnm'] == TREND_TYPES[qualification_type])
-                    and (kind == 'interest_fields' or interest_field_id is None or q['obligfldcd'] == interest_field_id)]
-            key = 'mdobligfldcd' if kind == 'job_fields' else 'obligfldcd'
-            catalog = self.job_fields if kind == 'job_fields' else self.interest_fields
+                    if (qualgbcd is None or q['qualgbcd'] == qualgbcd)
+                    and (kind == 'interest_fields' or interest_field_code is None or q['obligfldcd'] == interest_field_code)]
+            key = 'mdobligfldcd' if kind == 'job_categories' else 'obligfldcd'
+            catalog = self.job_categories if kind == 'job_categories' else self.interest_fields
             counts = {}
             for q in pool:
                 if q[key]:
                     counts[q[key]] = counts.get(q[key], 0) + 1
-            values = [{'id': k, 'name': v, 'count': counts[k]} for k, v in catalog.items() if k in counts]
+            values = [{'code': k, 'name': v, 'count': counts[k]} for k, v in catalog.items() if k in counts]
         elif kind == 'qualifications':
-            # 자격증 검색: 국가기술(TECHNICAL) / 국가전문(PROFESSIONAL) 분류. 없으면 613종 전체
-            if qualification_type is not None and qualification_type not in TREND_TYPES:
-                raise ValidationError('qualification_type 은 TECHNICAL 또는 PROFESSIONAL')
-            if series is not None and (series not in QUAL_SERIES or qualification_type == 'PROFESSIONAL'):
-                raise ValidationError('series 는 국가기술 등급(' + ' / '.join(QUAL_SERIES) + ')')
-            values = [{'id': k, 'name': q['name'],
-                       'qualification_type': 'TECHNICAL' if q['qualgbnm'] == TREND_TYPES['TECHNICAL'] else 'PROFESSIONAL',
-                       'qualification_type_name': q['qualgbnm'],
-                       'series': level(q) if q['qualgbnm'] == TREND_TYPES['TECHNICAL'] else None}
+            # 자격증 검색: 국가기술(T) / 국가전문(S). 없으면 613종 전체
+            if grade_level is not None and (grade_level not in GRADE_LEVELS or qualgbcd == 'S'):
+                raise ValidationError('grade_level 은 국가기술 등급(' + ' / '.join(GRADE_LEVELS) + ')')
+            values = [{'jmcd': k, 'jmfldnm': q['name'], 'qualgbcd': q['qualgbcd'], 'qualgbnm': q['qualgbnm'],
+                       'grade_level': self._grade_level(q)}
                       for k, q in self.db.qualifications.items()
-                      if (qualification_type is None or q['qualgbnm'] == TREND_TYPES[qualification_type])
-                      and (series is None or (q['qualgbnm'] == TREND_TYPES['TECHNICAL'] and level(q) == series))
-                      and (interest_field_id is None or q['obligfldcd'] == interest_field_id)
-                      and (job_field_id is None or q['mdobligfldcd'] == job_field_id)]
+                      if (qualgbcd is None or q['qualgbcd'] == qualgbcd)
+                      and (grade_level is None or self._grade_level(q) == grade_level)
+                      and (interest_field_code is None or q['obligfldcd'] == interest_field_code)
+                      and (job_category_code is None or q['mdobligfldcd'] == job_category_code)]
         elif kind == 'grades':
             values = [{'id': g, 'name': g} for g in GRADES]
         else:
             raise ValidationError('알 수 없는 선택 목록: ' + str(kind))
         q = query.casefold()
-        values = sorted((v for v in values if q in v['name'].casefold() or q in v.get('group', '').casefold()),
-                        key=lambda v: (v.get('group', ''), v['name'] != v.get('group') and not v['id'].startswith('FS:'), v['name'],
+        label = lambda v: v.get('name', v.get('jmfldnm', ''))
+        ident = lambda v: str(v.get('id', v.get('code', v.get('jmcd', ''))))
+        values = sorted((v for v in values if q in label(v).casefold() or q in v.get('group', '').casefold()),
+                        key=lambda v: (v.get('group', ''), label(v) != v.get('group') and not ident(v).startswith('FS:'), label(v),
                                        json.dumps(v, sort_keys=True, ensure_ascii=False)))
         for v in values:
             v.pop('group', None)
@@ -191,15 +188,15 @@ class JeogyeokjeungService:
                     'grade_guidance': None, 'exam_window_basis': EXAM_WINDOW_SOURCE,
                     'personal_eligibility_verified': False, 'score_basis_date': current.isoformat(),
                     'needs_school_info': True, 'items': [], 'result_limit': RESULT_LIMIT}
-        owned = set(p['owned_qualification_ids'])
+        owned = set(p['owned_jmcds'])
         owned_rows = [self.db.qualifications[c] for c in sorted(owned)]
         owned |= self._lower_levels(owned_rows)            # 보유 자격과 그 하위 등급은 추천 제외
-        school_type = self.db.schools.get(p.get('school_id') or '', {}).get('school_type', '')
+        school_type = self.db.schools.get(p.get('university_id') or '', {}).get('school_type', '')
         start = start_level(school_type, p['grade'])
 
         def item(code, basis):
             q = self.db.qualifications[code]
-            return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'name': q['name'], 'basis': basis,
+            return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'jmfldnm': q['name'], 'basis': basis,
                     'exam_window': grade_exam_window(q, school_type, p['grade'], owned_rows),
                     'personal_eligibility_verified': False, 'card': self._card(code, current)}
 
@@ -221,10 +218,9 @@ class JeogyeokjeungService:
             upcoming = [s for s in self.db.schedules.get(v['jmcd'], []) if s['exam_start_date'] >= current.isoformat()]
             if upcoming:
                 parts.append(('UPCOMING_2026', SCORE['UPCOMING_2026'], f"남은 시험 {upcoming[0]['exam_start_date']} {upcoming[0]['exam_stage']}"))
-            series = q['seriesnm']
-            if q['qualgbnm'] == '국가기술자격' and level(q) == start:
+            if q['qualgbcd'] == 'T' and level(q) == start:
                 parts.append(('LEVEL_FIT', SCORE['LEVEL_FIT'], f'지금 학년에 딸 수 있는 시작 등급({start})'))
-            if g.isdigit() and series in ('기술사', '기능장'):
+            if g.isdigit() and q['seriesnm'] in ('기술사', '기능장'):
                 parts.append(('LEVEL_UNFIT', SCORE['LEVEL_UNFIT'], '재학 중에는 응시 불가한 등급(졸업·경력 후)'))
             v['score'] = sum(x[1] for x in parts)
             v['score_breakdown'] = [{'factor': f, 'points': pt, 'reason': r} for f, pt, r in parts if pt]
@@ -271,26 +267,26 @@ class JeogyeokjeungService:
         점수 = 희망직무 일치 +30, 관심분야 일치 +20, 올해 남은 시험 +10, 응시 조건 없음 +5.
         동점이면 최근 연도 1차 응시자 많은 순 → 종목코드 순. 보유 자격과 그 하위 등급은 제외(점수 아님)."""
         if not isinstance(conditions, dict) or set(conditions) - CONDITION_KEYS:
-            raise ValidationError('조건 추천 입력은 qualification_type · interest_field_ids · job_field_ids 만 받는다')
+            raise ValidationError('조건 추천 입력은 qualgbcd · interest_field_codes · job_category_codes · owned_jmcds 만 받는다')
         p = dict(conditions)
-        if p.get('qualification_type') not in (None, *TYPE_CODE):
-            raise ValidationError('qualification_type: TECHNICAL 또는 PROFESSIONAL')
-        self._check_codes(p, ('job_field_ids', 'interest_field_ids', 'owned_qualification_ids'))
-        if not p['job_field_ids'] and not p['interest_field_ids']:
+        if p.get('qualgbcd') not in (None, *QUALGB):
+            raise ValidationError('qualgbcd: T 또는 S')
+        self._check_codes(p, ('job_category_codes', 'interest_field_codes', 'owned_jmcds'))
+        if not p['job_category_codes'] and not p['interest_field_codes']:
             raise ValidationError('관심 분야 또는 희망 직무를 하나 이상 선택')
         current = date.fromisoformat(today) if today else date.today()
-        owned_rows = [self.db.qualifications[c] for c in p['owned_qualification_ids']]
-        owned = set(p['owned_qualification_ids']) | self._lower_levels(owned_rows)
-        t = p.get('qualification_type')
+        owned_rows = [self.db.qualifications[c] for c in p['owned_jmcds']]
+        owned = set(p['owned_jmcds']) | self._lower_levels(owned_rows)
+        t = p.get('qualgbcd')
         year = self._trend_year(current.isoformat())
         items = []
         for code, q in self.db.qualifications.items():
-            if code in owned or (t and q['qualgbcd'] != TYPE_CODE[t]):
+            if code in owned or (t and q['qualgbcd'] != t):
                 continue
             parts = []
-            if q['mdobligfldcd'] in p['job_field_ids']:
-                parts.append(('JOB_FIELD', SCORE['JOB_FIELD'], '희망직무 일치'))
-            if q['obligfldcd'] in p['interest_field_ids']:
+            if q['mdobligfldcd'] in p['job_category_codes']:
+                parts.append(('JOB_CATEGORY', SCORE['JOB_CATEGORY'], '희망직무 일치'))
+            if q['obligfldcd'] in p['interest_field_codes']:
                 parts.append(('INTEREST_FIELD', SCORE['INTEREST_FIELD'], '관심분야 일치'))
             if not parts:
                 continue
@@ -300,9 +296,9 @@ class JeogyeokjeungService:
             if q['eligibility_required'] == 'N':
                 parts.append(('NO_ELIGIBILITY_REQUIRED', SCORE['NO_ELIGIBILITY_REQUIRED'], '응시 조건 없음(바로 응시 가능)'))
             popular = self._first_stage_counts(code).get(year, (0,))[0]
-            items.append({'jmcd': code, 'qualification_id': 'QNET:' + code, 'name': q['name'],
-                          'interest_matches': [{'type': f, 'id': q['mdobligfldcd'] if f == 'JOB_FIELD' else q['obligfldcd']}
-                                               for f, _, _ in parts if f in ('JOB_FIELD', 'INTEREST_FIELD')],
+            items.append({'jmcd': code, 'qualification_id': 'QNET:' + code, 'jmfldnm': q['name'],
+                          'interest_matches': [{'type': f, 'code': q['mdobligfldcd'] if f == 'JOB_CATEGORY' else q['obligfldcd']}
+                                               for f, _, _ in parts if f in ('JOB_CATEGORY', 'INTEREST_FIELD')],
                           'score': sum(x[1] for x in parts),
                           'score_breakdown': [{'factor': f, 'points': pt, 'reason': r} for f, pt, r in parts],
                           'recent_examinees': {'year': year, 'count': popular},
@@ -330,7 +326,7 @@ class JeogyeokjeungService:
             stages[key].append(v)
         label = {'GRADUATED': '졸업 후(실무경력 필요 포함)', 'CHECK': '응시자격 개별 확인'}
         return [{'stage': k, 'label': label.get(k, f'{k}학년'), 'count': len(vs),
-                 'items': [{'jmcd': v['jmcd'], 'name': v['name'], 'score': v['score']} for v in vs[:ROADMAP_PER_STAGE]]}
+                 'items': [{'jmcd': v['jmcd'], 'jmfldnm': v['jmfldnm'], 'score': v['score']} for v in vs[:ROADMAP_PER_STAGE]]}
                 for k, vs in stages.items() if vs]
 
     def _ladder_key(self, q):
@@ -363,14 +359,14 @@ class JeogyeokjeungService:
             for rank, c in sorted(ladder.get(k[0], []) if k else []):
                 if rank > k[1] and c not in owned:
                     q = self.db.qualifications[c]
-                    out.append({'from_jmcd': o['jmcd'], 'from_name': o['name'], 'jmcd': c, 'name': q['name'],
+                    out.append({'from_jmcd': o['jmcd'], 'from_jmfldnm': o['name'], 'jmcd': c, 'jmfldnm': q['name'],
                                 'exam_window': grade_exam_window(q, school_type, grade, owned_rows),
                                 'experience_route': EXPERIENCE_ROUTE.get(level(q))})
         return out
 
     # ---------- 트렌드 ----------
     def _first_stage_counts(self, code):
-        """연도별 1차 응시자 {year: (examinees, passed, stage)} — 필기 > 1차 > 시험 순으로 그 종목의 첫 단계."""
+        """연도별 1차 응시자 {year: (examinees, passers, stage)} — 필기 > 1차 > 시험 순으로 그 종목의 첫 단계."""
         by = {}
         for r in self.db.pass_rates.get(code, []):
             if r['exam_stage'] in FIRST_STAGES:
@@ -395,34 +391,34 @@ class JeogyeokjeungService:
         label = ('NEW_OR_SHORT_HISTORY' if change is None else 'UP' if change > TREND_THRESHOLD
                  else 'DOWN' if change < -TREND_THRESHOLD else 'STEADY')
         n, k, stage = counts[year]
-        return {'jmcd': code, 'name': q['name'], 'qualification_type': q['qualgbnm'], 'series': self._series_label(q),
-                'interest_field_id': q['obligfldcd'], 'interest_field': q['obligfldnm'],
-                'year': year, 'stage': stage, 'examinees': n, 'passed': k, 'pass_rate_percent': percent(k, n),
+        return {'jmcd': code, 'jmfldnm': q['name'], 'qualgbcd': q['qualgbcd'], 'grade_level': self._grade_level(q),
+                'interest_field_code': q['obligfldcd'], 'interest_field_name': q['obligfldnm'],
+                'year': year, 'exam_stage': stage, 'examinees': n, 'passers': k, 'pass_rate_pct': percent(k, n),
                 'five_year': series, 'five_year_change_percent': change, 'trend': label}
 
     @staticmethod
-    def _series_label(q):
-        # 국가기술 등급(DB qualifications.grade_level과 같은 판정). 국가전문은 등급 없음
-        return level(q) if q['qualgbnm'] == '국가기술자격' else None
+    def _grade_level(q):
+        # DB qualifications.grade_level과 같은 판정. 국가전문은 등급 없음
+        return level(q) if q['qualgbcd'] == 'T' else None
 
-    def trends(self, qualification_type='TECHNICAL', series=None, interest_field_id=None, year=None, limit=20, today=None):
-        """최근 완결 연도 응시자 많은 순. qualification_type: TECHNICAL(국가기술) | PROFESSIONAL(국가전문)."""
-        if qualification_type not in TREND_TYPES:
-            raise ValidationError('qualification_type 은 TECHNICAL 또는 PROFESSIONAL')
-        if series is not None and (series not in QUAL_SERIES or qualification_type == 'PROFESSIONAL'):
-            raise ValidationError('series 는 국가기술 등급(' + ' / '.join(QUAL_SERIES) + ')')
-        if interest_field_id is not None and interest_field_id not in self.interest_fields:
-            raise ValidationError('interest_field_id: 유효한 관심분야 코드 필요')
+    def trends(self, qualgbcd='T', grade_level=None, interest_field_code=None, year=None, limit=20, today=None):
+        """최근 완결 연도 응시자 많은 순. qualgbcd: T(국가기술) | S(국가전문)."""
+        if qualgbcd not in QUALGB:
+            raise ValidationError('qualgbcd 는 T 또는 S')
+        if grade_level is not None and (grade_level not in GRADE_LEVELS or qualgbcd == 'S'):
+            raise ValidationError('grade_level 은 국가기술 등급(' + ' / '.join(GRADE_LEVELS) + ')')
+        if interest_field_code is not None and interest_field_code not in self.interest_fields:
+            raise ValidationError('interest_field_code: 유효한 관심분야 코드 필요')
         if type(limit) is not int or not 1 <= limit <= 100:
             raise ValidationError('1 <= limit <= 100 필요')
         year = int(year) if year else self._trend_year(today)
         items = []
         for code, q in self.db.qualifications.items():
-            if q['qualgbnm'] != TREND_TYPES[qualification_type]:
+            if q['qualgbcd'] != qualgbcd:
                 continue
-            if series and self._series_label(q) != series:
+            if grade_level and self._grade_level(q) != grade_level:
                 continue
-            if interest_field_id and q['obligfldcd'] != interest_field_id:
+            if interest_field_code and q['obligfldcd'] != interest_field_code:
                 continue
             it = self._trend_item(code, year)
             if it:
@@ -431,14 +427,27 @@ class JeogyeokjeungService:
         for i, it in enumerate(items, 1):
             it['rank'] = i
         basis = f'{year}년 1차(필기·1차·단일시험) 실제 응시자 수'
-        return {'year': year, 'qualification_type': qualification_type, 'series': series,
-                'interest_field_id': interest_field_id, 'basis': basis,
+        return {'year': year, 'qualgbcd': qualgbcd, 'grade_level': grade_level,
+                'interest_field_code': interest_field_code, 'basis': basis,
                 'total': len(items), 'items': items[:limit],
                 'trend_rule': (f'기준연도를 포함한 최근 {TREND_YEARS}개 연도 중 첫해 대비 응시자 증감률이 '
                                f'±{TREND_THRESHOLD:g}% 범위를 벗어나면 UP/DOWN, 범위 안이면 STEADY. '
                                '첫해 자료가 없거나 응시자 수가 0이면 NEW_OR_SHORT_HISTORY')}
 
     # ---------- 자격증 상세 ----------
+    QUALIFICATION_COLUMNS = ('jmcd', 'eng_name', 'qualgbcd', 'obligfldcd', 'mdobligfldcd', 'related_ministry', 'summary',
+                             'summary_basis', 'overview', 'job_description', 'career_outlook', 'conducting_agency',
+                             'related_majors', 'exam_method', 'exam_subjects', 'eligibility', 'eligibility_required',
+                             'eligibility_summary', 'eligibility_rule_key', 'fee_written', 'fee_practical', 'fee_note',
+                             'schedule_type')
+
+    def _qualification_view(self, q):
+        """DB qualifications 컬럼 이름으로 돌려준다(+ 화면용 이름 qualgbnm · interest_field_name · job_category_name)."""
+        v = {k: q[k] for k in self.QUALIFICATION_COLUMNS}
+        v.update(jmfldnm=q['name'], exam_standard=q['pass_criteria'], grade_level=self._grade_level(q),
+                 qualgbnm=q['qualgbnm'], interest_field_name=q['obligfldnm'], job_category_name=q['mdobligfldnm'])
+        return v
+
     def _card(self, code, current):
         """추천 카드 표시값: 한 줄 소개, 최근 연도 합격률, 다음 접수 회차, 가장 가까운 시험 (상세 화면과 같은 기준)."""
         q = self.db.qualifications[code]
@@ -448,12 +457,12 @@ class JeogyeokjeungService:
         reg = [s_ for s_ in active if s_['exam_status'] == 'UPCOMING' and s_['registration_status'] != 'CLOSED']
         rates = self.db.pass_rates.get(code, [])
         year = max((int(r['exam_year']) for r in rates), default=None)
-        latest = sorted(({'exam_stage': r['exam_stage'], 'examinees': int(r['examinees']), 'passed': int(r['passed']),
-                          'pass_rate_percent': percent(int(r['passed']), int(r['examinees']))}
+        latest = sorted(({'exam_stage': r['exam_stage'], 'examinees': int(r['examinees']), 'passers': int(r['passed']),
+                          'pass_rate_pct': percent(int(r['passed']), int(r['examinees']))}
                          for r in rates if int(r['exam_year']) == year), key=lambda r: STAGE_ORDER.get(r['exam_stage'], 99))
-        return {'qualification_type_name': q['qualgbnm'], 'series': self._series_label(q),
-                'field': q['mdobligfldnm'] or q['obligfldnm'], 'summary': q['summary'],
-                'pass_rate_latest': {'exam_year': year, 'items': latest} if latest else None,
+        return {'qualgbcd': q['qualgbcd'], 'qualgbnm': q['qualgbnm'], 'grade_level': self._grade_level(q),
+                'job_category_name': q['mdobligfldnm'], 'interest_field_name': q['obligfldnm'], 'summary': q['summary'],
+                'pass_rate_latest': {'year': year, 'items': latest} if latest else None,
                 'next_registration': reg[0] if reg else None, 'nearest_exam': active[0] if active else None}
 
     @staticmethod
@@ -499,18 +508,18 @@ class JeogyeokjeungService:
         for r in self.db.pass_rates.get(code, []):
             n, k = int(r['examinees']), int(r['passed'])
             a = int(r['applicants']) if r.get('applicants') else None
-            rates.append({'exam_year': int(r['exam_year']), 'exam_stage': r['exam_stage'], 'applicants': a, 'examinees': n, 'passed': k,
+            rates.append({'year': int(r['exam_year']), 'exam_stage': r['exam_stage'], 'applicants': a, 'examinees': n, 'passers': k,
                           'attendance_rate_percent': percent(n, a, 1),
-                          'pass_rate_percent': percent(k, n),
-                          'source_type': r['source_type'], 'source_url': r['source_url']})
-        rates.sort(key=lambda r: (r['exam_year'], STAGE_ORDER.get(r['exam_stage'], 99), r['exam_stage']))
+                          'pass_rate_pct': percent(k, n),
+                          'data_source': r['source_type'], 'source_url': r['source_url']})
+        rates.sort(key=lambda r: (r['year'], STAGE_ORDER.get(r['exam_stage'], 99), r['exam_stage']))
         # 화면 순서: 진행 중·예정 회차를 시험일 가까운 순으로 먼저, 끝난 회차는 최근 것부터 뒤에
         active = sorted((s_ for s_ in schedules if s_['exam_status'] != 'ENDED'), key=lambda s_: s_['exam_start_date'])
         ended = sorted((s_ for s_ in schedules if s_['exam_status'] == 'ENDED'),
                        key=lambda s_: s_['exam_start_date'], reverse=True)
         schedules = active + ended
         by_id = {s_['schedule_id']: s_ for s_ in schedules}
-        latest_year = max((r['exam_year'] for r in rates), default=None)
+        latest_year = max((r['year'] for r in rates), default=None)
         rounds = {}                      # 화면용: 같은 회차의 필기·실기(1차·2차…)를 한 줄로
         for s_ in sorted(schedules, key=lambda s_: (s_['exam_start_date'], STAGE_ORDER.get(s_['exam_stage'], 99))):
             rounds.setdefault(s_['exam_round'], []).append(s_['schedule_id'])
@@ -521,10 +530,11 @@ class JeogyeokjeungService:
                                 if rules else ''),
                        'source_url': 'https://www.q-net.or.kr/crf006.do?id=crf00603',
                        'personal_eligibility_verified': False}
-        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': q, 'series': self._series_label(q),
+        return {'jmcd': code, 'qualification_id': 'QNET:' + code, 'qualification': self._qualification_view(q),
+                'grade_level': self._grade_level(q),
                 'eligibility': eligibility,
                 'schedule_rounds': [{'exam_round': k, 'schedule_ids': v} for k, v in rounds.items()],
-                'pass_rate_years': sorted({r['exam_year'] for r in rates}, reverse=True),
+                'pass_rate_years': sorted({r['year'] for r in rates}, reverse=True),
                 'schedules_2026': schedules, 'schedule_status': 'AVAILABLE' if schedules else 'NOT_ACQUIRED',
                 'schedule_basis_date': current.isoformat(),
                 'next_schedule_id': applicable[0]['schedule_id'] if applicable else None,
@@ -534,8 +544,8 @@ class JeogyeokjeungService:
                 'applicable_2026_count': len(applicable),
                 'remaining_2026_note': ('' if applicable or not schedules else
                                         '2026년 접수 가능한 남은 회차 없음(다음 연도 일정 공고 전)'),
-                'pass_rate_latest': ({'exam_year': latest_year,
-                                      'items': [r for r in rates if r['exam_year'] == latest_year]} if rates else None),
+                'pass_rate_latest': ({'year': latest_year,
+                                      'items': [r for r in rates if r['year'] == latest_year]} if rates else None),
                 'pass_rates': rates, 'pass_rate_status': 'AVAILABLE' if rates else 'NOT_ACQUIRED',
                 'trend': self._detail_trend(code, q, current),
                 'pass_rate_definition': '합격자수 / 실제 응시자수 × 100 (접수자 아님)'}
@@ -546,9 +556,8 @@ class JeogyeokjeungService:
         it = self._trend_item(code, year)
         if not it:
             return None
-        t_ = 'TECHNICAL' if q['qualgbnm'] == TREND_TYPES['TECHNICAL'] else 'PROFESSIONAL'
-        ranked = self.trends(t_, year=year, limit=100)
-        same = [c for c, qq in self.db.qualifications.items() if qq['qualgbnm'] == q['qualgbnm']]
+        ranked = self.trends(q['qualgbcd'], year=year, limit=100)
+        same = [c for c, qq in self.db.qualifications.items() if qq['qualgbcd'] == q['qualgbcd']]
         rank = 1 + sum(1 for c in same if (self._trend_item(c, year) or {}).get('examinees', -1) > it['examinees'])
         return dict(it, rank_in_type=rank, type_total=ranked['total'])
 

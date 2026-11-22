@@ -16,13 +16,13 @@
 | CF-00-02 | 초기 메인 화면 | 유다연 | VIEW-01 | pages/Main | GET /api/v1/trends | qualification | qualification_statistics_yearly |
 | CF-00-03 | 비회원 회원 전용 기능 접근 | 공통 | 공통 | components/common, router | 담당 파트 설계 | global/security | (저장 없음) |
 | CF-00-04 | 오늘의 일정 패널 | 유다연 | VIEW-01 | pages/Main | GET /api/v1/planner/today · GET /api/v1/daily-idiom | planner | planner_bars, daily_idioms |
-| CF-01-01 | 대학교·전공 선택 | 이은아 | VIEW-02·05·11 | pages/Auth, pages/Recommend, pages/MyPage | GET /api/v1/options/schools · majors | option, university | universities, colleges, majors |
-| CF-01-02 | 희망 직무·관심 분야 선택 (추천 페이지 조건 선택) | 이은아 | VIEW-05 | pages/Recommend | GET /api/v1/options/job_fields · interest_fields | option, job | job_categories, interest_fields |
+| CF-01-01 | 대학교·전공 선택 | 이은아 | VIEW-02·05·11 | pages/Auth, pages/Recommend, pages/MyPage | GET /api/v1/options/universities · majors | option, university | universities, colleges, majors |
+| CF-01-02 | 희망 직무·관심 분야 선택 (추천 페이지 조건 선택) | 이은아 | VIEW-05 | pages/Recommend | GET /api/v1/options/job_categories · interest_fields | option, job | job_categories, interest_fields |
 | CF-01-03 | 추천 데이터 매칭 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations | recommendation | user_certificates, major_qualification_links, qualifications |
 | CF-01-04 | 추천 우선순위 산정 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations | recommendation | (점수표는 백엔드 상수) |
 | CF-01-05 | 추천 결과 조회 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations | recommendation | (저장 안 함) |
 | CF-01-06 | 자격증 상세 이동 | 이은아 | VIEW-05·06 | pages/Recommend, pages/QualificationDetail | GET /api/v1/qualifications/{jmcd} | qualification | (저장 없음) |
-| CF-01-07 | 대학교·전공 목록 조회 | 이은아 | VIEW-02·05·11 | pages/Auth, pages/Recommend, pages/MyPage | GET /api/v1/options/schools · majors | option, university | universities, colleges, majors |
+| CF-01-07 | 대학교·전공 목록 조회 | 이은아 | VIEW-02·05·11 | pages/Auth, pages/Recommend, pages/MyPage | GET /api/v1/options/universities · majors | option, university | universities, colleges, majors |
 | CF-01-08 | 추천 근거 표시 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations | recommendation | major_qualification_links |
 | CF-01-09 | 추천 조건 선택 및 반영 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations/conditions | recommendation | interest_fields, job_categories, qualifications |
 | CF-01-10 | 추천 자격증 카드 | 이은아 | VIEW-05 | pages/Recommend | POST /api/v1/recommendations | recommendation | qualifications, qualification_statistics_yearly, qualification_exam_schedules |
@@ -36,7 +36,7 @@
 | CF-02-06 | 연도별 상세조회 | 이은아 | VIEW-06 | pages/QualificationDetail | GET /api/v1/qualifications/{jmcd} | qualification | qualification_statistics_yearly |
 | CF-02-07 | 난이도 조회 | 이은아 | VIEW-06 | pages/QualificationDetail | GET /api/v1/qualifications/{jmcd} | qualification | (저장 없음) |
 | CF-02-08 | 주목받는 자격증 트렌드 | 이은아 | VIEW-01·05·06 | pages/Main, pages/Recommend, pages/QualificationDetail | GET /api/v1/trends | qualification | qualification_statistics_yearly |
-| CF-02-09 | 자격증 검색 및 상세 첫 화면 | 이은아 | VIEW-06 | pages/QualificationDetail | GET /api/v1/options/qualifications · interest_fields · job_fields | option, qualification | qualifications |
+| CF-02-09 | 자격증 검색 및 상세 첫 화면 | 이은아 | VIEW-06 | pages/QualificationDetail | GET /api/v1/options/qualifications · interest_fields · job_categories | option, qualification | qualifications |
 | CF-02-10 | 시험일정 조회 | 이은아 | VIEW-06 | pages/QualificationDetail | GET /api/v1/qualifications/{jmcd} | examschedule | qualification_exam_schedules |
 | CF-03-01 | 찜 등록 | 이은아 | VIEW-05 | pages/Recommend | 담당 파트 설계 | favorite | favorites |
 | CF-03-02 | 찜 해제 | 이은아 · 최기완 | VIEW-05·11 | pages/Recommend, pages/MyPage | 담당 파트 설계 | favorite | favorites |
