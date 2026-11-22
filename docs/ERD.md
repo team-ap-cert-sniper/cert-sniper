@@ -3,7 +3,7 @@
 | 쓰는 곳 | 방법 |
 |---|---|
 | GitHub · Notion | 아래 `mermaid` 코드 블록이 그대로 그림으로 보입니다. Notion은 코드 블록을 만들고 언어를 Mermaid로 고른 뒤 붙여 넣습니다 |
-| ERD 프로그램 | [schema.sql](schema.sql)을 SQL 가져오기(ERDCloud·dbdiagram·draw.io 등)에 넣거나, MySQL에 실행한 뒤 DBeaver의 ER 다이어그램으로 엽니다 |
+| ERD 프로그램 | [V1__create_tables.sql](../backend/src/main/resources/db/migration/V1__create_tables.sql)을 SQL 가져오기(ERDCloud·dbdiagram·draw.io 등)에 넣거나, MySQL에 실행한 뒤 DBeaver의 ER 다이어그램으로 엽니다 |
 | 기능 ID에서 테이블 찾기 | [TRACEABILITY.md](TRACEABILITY.md) |
 
 관계 표기: `||--o{` 1:N (부모 필수) · `|o--o{` 0..1:N (부모 선택) · `||--o|` 1:1 · 점선은 논리 참조(FK 없음). 선 위 이름은 자식 테이블의 FK 컬럼입니다.

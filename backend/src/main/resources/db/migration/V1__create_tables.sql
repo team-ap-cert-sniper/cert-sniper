@@ -1,10 +1,4 @@
--- 저격증 jg_service 스키마 (DB 설계서 Ver.12 기준, MySQL 8.0.16 이상)
--- 테이블 31개 · FK 46개
--- 시간대: Asia/Seoul. 문자셋: utf8mb4 / utf8mb4_0900_ai_ci
-
-CREATE DATABASE IF NOT EXISTS `jg_service` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE `jg_service`;
-SET NAMES utf8mb4;
+-- DB설계서-Cert-Sniper (테이블 31개 · FK 46개)
 
 -- ===== 회원·인증 =====
 

@@ -2,7 +2,7 @@
 
 기능 명세서 v1.4.0 · DB 설계서 Ver.12(31개 테이블) 기준 패키지 구조와 **만들 파일 전체**입니다. 패키지 하나가 기능 하나이며, 담당자는 자기 패키지 안에서만 작업합니다. [← 처음으로](../README.md)
 
-* 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [docs/schema.sql](../docs/schema.sql)
+* 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](src/main/resources/db/migration)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
 * 표시: `★` 기능 개발 전에 먼저 만들 공통 파일 (`feature/common/...`), `[이름]` 패키지 담당, 오른쪽 끝은 기능 ID / 테이블
@@ -37,9 +37,9 @@
    │  ├─ 📁 java/com/certsniper/        → 2 ~ 4번
    │  └─ 📁 resources/
    │     ├─ 📄 application.yml        ★ 공통 설정 (DB 주소는 환경변수로)
-   │     ├─ 📄 application-local.yml  ★ 비밀값 (커밋 금지, .gitignore 대상)
-   │     └─ 📁 db/migration/
-   │        └─ 📄 V1__init.sql        ★ docs/schema.sql 그대로 (이후 변경은 V2__, V3__ … 추가)
+   │     ├─ 📄 application-local.yml  ★ localhost:3307 · cert_app 접속, `ddl-auto: validate`, `spring.flyway.enabled: false` (커밋 금지)
+   │     └─ 📁 db/migration/            (있음) Flyway 마이그레이션, DB 관리자만 추가
+   │        └─ 📄 V1__create_tables.sql   (있음) DB 설계서 Ver.12 (31개 테이블)
    └─ 📁 test/java/com/certsniper/      → 5번
 ```
 
@@ -423,14 +423,14 @@
 
 ## 만드는 순서
 
-1. **공통(★)**: 루트 `docker-compose.yml`·`.env.example` → `build.gradle`·`application.yml`·`V1__init.sql` → `global/` → `user/entity/User.java`·`UserRepository.java`
+1. **공통(★)**: 루트에서 `docker compose up -d` → `build.gradle`·`application.yml` → `global/` → `user/entity/User.java`·`UserRepository.java`
    * `users`는 auth(가입·로그인)와 user(마이페이지)가 같이 쓰므로 공통 단계에서 엔티티만 먼저 만듭니다
-2. **데이터 적재**: `python etl/tools/load_service_data.py`로 적재 SQL을 만들어 로컬 MySQL에 실행 (CSV 10종, 사자성어 50개 포함, [etl README](../etl/README.md))
+2. **데이터 적재**: `docker compose up -d` 때 자동 (CSV 10종, 사자성어 50개 포함)
 3. **기능별**: 각자 `feature/{파트}/{작업}` 브랜치에서 엔티티 → 리포지토리 → 서비스 → 컨트롤러 → DTO 순
 
 ## 지켜 주세요
 
 * 다른 기능 패키지의 클래스를 고치지 않습니다. 여러 기능이 같이 쓰는 것은 `global/`에 둡니다
-* DB는 `db/migration`의 SQL 파일로만 바꿉니다. 이미 병합된 SQL 파일은 고치지 않고 새 번호 파일을 추가합니다. 기준 DDL은 [docs/schema.sql](../docs/schema.sql)입니다
+* DB 구조는 `db/migration`의 SQL 파일로만 바꾸고, DB 관리자(이은아)만 추가합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
 * DB 계정·SMTP 앱 비밀번호·AI API 키는 환경변수(`.env`)나 `application-local.yml`에 둡니다 (커밋 금지)
 * 추천·자격증 로직(`recommendation`, `qualification`, `examschedule`)의 기준 구현은 [etl/](../etl/README.md)에 있습니다. 같은 입력에 같은 결과가 나와야 합니다

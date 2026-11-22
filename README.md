@@ -8,8 +8,8 @@
 
 | 이름 | 담당 화면 | 백엔드 패키지 | 비고 |
 |---|---|---|---|
-| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git 관리자, Docker Compose |
-| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` | 추천 알고리즘, ETL 작업(`etl/`), 설계 문서(`docs/`), DB 관리자 |
+| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git 관리자 |
+| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` | 추천 알고리즘, ETL 작업(`etl/`), 설계 문서(`docs/`), DB 관리자, Docker Compose |
 | **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인 |
 | **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인|
 | **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 기능 흐름, 디자인 |
@@ -67,9 +67,9 @@
 ### **Backend**
 
 * **Framework**: Java 21 · Spring Boot 3.5.X · Gradle
-* **Database**: MySQL 8.0.4X (Docker Compose로 팀 공통 실행)
+* **Database**: MySQL 8.0 (Docker Compose로 팀원 각자 실행)
 * **JPA/ORM**: Spring Data JPA
-* **DB 변경 관리**: 팀 공통 SQL 변경 이력 (Flyway 선택 도입)
+* **DB 변경 관리**: Flyway (DB 관리자만 마이그레이션 추가)
 * **인증**: Spring Security · JWT
 * **메일**: JavaMailSender (Google SMTP)
 * **AI**: Qwen2.5 API (설문 기반 학습 플랜 생성)
@@ -99,7 +99,7 @@
 
 * **Client**: 화면별 페이지와 API 호출 모듈로 사용자 요청 처리
 * **Server**: 기능별 패키지(Controller → Service → Repository)로 비즈니스 로직 수행
-* **Storage**: MySQL `jg_service` (서비스 데이터 31개 테이블, [ERD](docs/ERD.md), [schema.sql](docs/schema.sql))
+* **Storage**: MySQL `jg_service` (서비스 데이터 31개 테이블, [ERD](docs/ERD.md), [마이그레이션](backend/src/main/resources/db/migration))
 * **Data Pipeline**: Python으로 공공데이터를 수집·정제해 CSV로 만들고 DB에 적재. 추천 로직의 기준 구현과 테스트도 함께 보관
 
 ---
@@ -111,7 +111,10 @@
 ├─ 📁 backend/    Spring Boot 서버
 ├─ 📁 frontend/   React 웹
 ├─ 📁 etl/        공공데이터 정리 결과 + 추천 로직 기준 구현
-├─ 📁 docs/       ERD · DDL · API 명세 · 기능 추적표 · 플로우차트
+├─ 📁 docs/       ERD · API 명세 · 기능 추적표 · 플로우차트
+├─ 📁 db/         Docker DB 계정 생성
+├─ 📄 docker-compose.yml
+├─ 📄 .env.example
 └─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS
 ```
 
@@ -120,12 +123,29 @@
 | 🖥 [backend](backend/README.md) | 패키지별 담당, 만들 파일 전체 트리, 패키지끼리 부르는 곳, 이름 규칙 |
 | 🎨 [frontend](frontend/README.md) | 화면별 담당, 만들 파일 전체 트리, 화면 경로·화면 이동 전체, 이름 규칙 |
 | 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, CSV–테이블 정의 |
-| 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). [schema.sql](docs/schema.sql)은 ERD 프로그램·MySQL용 DDL |
+| 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). DDL은 [마이그레이션](backend/src/main/resources/db/migration) |
 | 📡 [API 명세](docs/API_CONTRACT.md) | 추천·자격증 API 경로·입출력·화면 표시 순서 |
 | 🔎 [기능 추적표](docs/TRACEABILITY.md) | 기능 ID → 담당 → 화면 → 프론트 위치 → API → 백엔드 패키지 → 테이블 |
 | 🧭 [플로우차트](docs/FLOWCHART.md) | 전체 + 파트별 화면 흐름 (Mermaid) |
 
 ---
+
+## 🐳 로컬 DB 실행
+
+1. Docker Desktop 실행
+2. 레포 루트에서 `.env.example`을 `.env`로 복사하고 비밀번호 세 칸 채우기 (영문·숫자)
+3. `docker compose up -d`
+
+처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
+
+| 접속 | 값 |
+|---|---|
+| 주소 | `localhost:3307` |
+| DB | `jg_service` |
+| 백엔드 계정 | `cert_app` / `.env`의 `DB_APP_PASSWORD` (조회·등록·수정·삭제만) |
+
+* DB 구조는 DB 관리자(이은아)만 바꿉니다. 컬럼·테이블이 필요하면 이슈로 요청합니다
+* 마이그레이션 파일은 병합된 뒤 고치지 않고 다음 번호(`V2__...sql`)로 추가합니다
 
 ## 🌿 브랜치 전략
 
@@ -197,8 +217,8 @@ main        ← 최종(배포). Git 관리자만 병합
 
 | 브랜치 | 규칙 |
 |---|---|
-| `main` | 직접 push 금지, PR 필수, Git 관리자만 병합 |
-| `develop` | 직접 push 금지, PR 필수, 승인 1명 이상, 자동 검사 통과 |
+| `main` | 직접 push 금지, PR 필수, Git 관리자만 병합, CODEOWNERS 승인 필수 |
+| `develop` | 직접 push 금지, PR 필수, 승인 1명 이상, CODEOWNERS 승인 필수, 자동 검사 통과 |
 | `feature/*` | 담당자 자유롭게 push |
 
 * 파트별 리뷰어는 `.github/CODEOWNERS`에 적습니다
