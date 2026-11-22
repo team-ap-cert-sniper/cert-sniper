@@ -4,18 +4,21 @@
 
 * 기능 ID → 화면 → API → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
-* 표시: `★` 화면 개발 전에 먼저 만들 공통 파일 (`feature/common/...`), `[이름]` 담당, 오른쪽 끝은 기능 ID
+* 표시: `★` 뼈대에서 동작하게 만들어 둔 공통 파일, `[이름]` 담당, 오른쪽 끝은 기능 ID
 
 ## 👤 화면 담당
 
 | 담당 | 화면 (`pages/`) | 부품 (`components/`) | API 파일 (`api/`) |
 |---|---|---|---|
-| 유다연 | `Main/` VIEW-01, `Auth/` VIEW-02~04 | — | `authApi.js` |
-| 이은아 | `Recommend/` VIEW-05, `QualificationDetail/` VIEW-06 | `qualification/` (공용만) | `optionApi.js` · `recommendationApi.js` · `qualificationApi.js` · `examScheduleApi.js` |
-| 박준성 | `Planner/` VIEW-07, `AiPlanner/` VIEW-08 | `planner/` (공용만) | `targetExamApi.js` · `plannerApi.js` · `memoApi.js` · `aiPlannerApi.js` |
-| 최기완 | `PassStory/` VIEW-09·10, `MyPage/` VIEW-11 | `passstory/` (공용만) | `userApi.js` · `favoriteApi.js` · `passStoryApi.js` · `reportApi.js` · `rankApi.js` |
-| 황정규 | `Support/` VIEW-12·13, `Admin/` VIEW-14~19 | — | `supportApi.js` · `adminApi.js` |
-| 공통 (담당 미정) | `App.jsx` · `router/` · `store/` · `hooks/` · `utils/` · `constants/` · `styles/` | `common/` | `client.js` |
+| 유다연 | `Main/` VIEW-01, `Auth/` VIEW-02~04 | `common/` Header · Footer · LoginRequiredModal · ConfirmModal · AlertModal · EmailVerifyField · FieldError, `styles/` | `authApi.js` |
+| 이은아 | `Recommend/` VIEW-05, `QualificationDetail/` VIEW-06 | `qualification/`, `common/` SearchSelect · ChipSelect · EmptyState | `optionApi.js` · `recommendationApi.js` · `qualificationApi.js` · `examScheduleApi.js` |
+| 박준성 | `Planner/` VIEW-07, `AiPlanner/` VIEW-08 | `planner/`, `common/` Loading | `targetExamApi.js` · `plannerApi.js` · `memoApi.js` · `aiPlannerApi.js` |
+| 최기완 | `PassStory/` VIEW-09·10, `MyPage/` VIEW-11 | `passstory/`, `common/` Pagination | `userApi.js` · `favoriteApi.js` · `passStoryApi.js` · `reportApi.js` · `rankApi.js` |
+| 황정규 | `Support/` VIEW-12·13, `Admin/` VIEW-14~19 (`AdminLayout` 포함) | — | `supportApi.js` · `adminApi.js` |
+| 이은아 (뼈대) | `main.jsx` · `App.jsx` · `router/` · `store/` · `hooks/` · `utils/` · `constants/` | — | `client.js` |
+
+* 여러 화면이 같이 쓰는 부품은 그 부품을 쓰는 화면 담당이 만들고 고칩니다. 다른 사람 부품은 가져다 쓰기만 하고, 바꿀 일이 있으면 담당에게 요청합니다
+* `router/index.jsx`에 경로를 더하거나 `constants/`에 값을 더할 때는 자기 화면 것만 추가하고 PR에 적습니다
 
 ## 📁 파일 트리
 
@@ -57,22 +60,22 @@
    │  ├─ 📄 rank.js                   ★ 저격 등급·아이콘
    │  ├─ 📄 report.js                 ★ 신고 사유 5개
    │  └─ 📄 inquiry.js                ★ 문의 유형 5개
-   ├─ 📁 styles/
+   ├─ 📁 styles/                      [유다연]
    │  ├─ 📄 global.css                ★
    │  └─ 📄 variables.css             ★ 색·글꼴·간격
-   └─ 📁 components/common/           [공통 · 담당 미정]
-      ├─ 📄 Header.jsx                ★ 로고·메뉴·로그인/마이페이지·로그아웃 확인, ADMIN이면 마이페이지 옆 관리자 페이지 버튼        CF-00-01
-      ├─ 📄 Footer.jsx                ★ 고객센터·1:1 문의 바로가기
-      ├─ 📄 LoginRequiredModal.jsx    ★ 로그인 필요 팝업                                 CF-00-03
-      ├─ 📄 ConfirmModal.jsx          ★ 로그아웃·삭제·작성 취소 확인
-      ├─ 📄 AlertModal.jsx            ★ 완료·안내 팝업 (가입 완료·비밀번호 변경·탈퇴 완료 → 버튼으로 이동)  AUTH-01·04·05·06
-      ├─ 📄 SearchSelect.jsx          ★ 검색 + 선택 (대학교·전공·자격증)                 CF-01-01
-      ├─ 📄 ChipSelect.jsx            ★ 최대 5개 칩 (추천 조건의 희망 직무·관심 분야)     CF-01-02
-      ├─ 📄 EmailVerifyField.jsx      ★ 이메일 + 인증코드 + 3분 카운트다운 (가입·재설정·변경)  AUTH-01·05·06
-      ├─ 📄 Pagination.jsx            ★ 5개 단위 페이지 블록                             CF-05-11
-      ├─ 📄 FieldError.jsx            ★ 입력칸 오류 문구
-      ├─ 📄 EmptyState.jsx            ★ 0건 안내 (추천: 학교 정보 없음 · 학과 연결 없음 · 조건 결과 없음)
-      └─ 📄 Loading.jsx               ★ 로딩
+   └─ 📁 components/common/           [부품마다 담당]
+      ├─ 📄 Header.jsx             [유다연] ★ 로고·메뉴·로그인/마이페이지·로그아웃 확인, ADMIN이면 마이페이지 옆 관리자 페이지 버튼        CF-00-01
+      ├─ 📄 Footer.jsx             [유다연] ★ 고객센터·1:1 문의 바로가기
+      ├─ 📄 LoginRequiredModal.jsx [유다연] ★ 로그인 필요 팝업                                 CF-00-03
+      ├─ 📄 ConfirmModal.jsx       [유다연] ★ 로그아웃·삭제·작성 취소 확인
+      ├─ 📄 AlertModal.jsx         [유다연] ★ 완료·안내 팝업 (가입 완료·비밀번호 변경·탈퇴 완료 → 버튼으로 이동)  AUTH-01·04·05·06
+      ├─ 📄 SearchSelect.jsx       [이은아] ★ 검색 + 선택 (대학교·전공·자격증)                 CF-01-01
+      ├─ 📄 ChipSelect.jsx         [이은아] ★ 최대 5개 칩 (추천 조건의 희망 직무·관심 분야)     CF-01-02
+      ├─ 📄 EmailVerifyField.jsx   [유다연] ★ 이메일 + 인증코드 + 3분 카운트다운 (가입·재설정·변경)  AUTH-01·05·06
+      ├─ 📄 Pagination.jsx         [최기완] ★ 5개 단위 페이지 블록                             CF-05-11
+      ├─ 📄 FieldError.jsx         [유다연] ★ 입력칸 오류 문구
+      ├─ 📄 EmptyState.jsx         [이은아] ★ 0건 안내 (추천: 학교 정보 없음 · 학과 연결 없음 · 조건 결과 없음)
+      └─ 📄 Loading.jsx            [박준성] ★ 로딩
 ```
 
 ### 2. API 파일 (backend 패키지 하나에 하나)
@@ -182,7 +185,7 @@
 
 ```
 📁 src/components/
-├─ 📁 common/                          [공통 · 담당 미정]  → 1번 트리 참고
+├─ 📁 common/                          [부품마다 담당]  → 1번 트리 참고
 ├─ 📁 qualification/ [이은아]
 │  └─ 📄 TrendList.jsx                    주목받는 자격증 (메인 · 추천 1~3위 · 상세 첫 화면)  CF-02-08
 ├─ 📁 planner/ [박준성]

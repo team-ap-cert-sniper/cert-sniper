@@ -12,9 +12,9 @@
 | AUTH-04 | 회원 탈퇴 | 최기완 | VIEW-11 | pages/MyPage | POST · DELETE /api/v1/users/me/withdrawal | user | users, account_status_histories |
 | AUTH-05 | 비밀번호 재설정 | 유다연 | VIEW-04 | pages/Auth | POST /api/v1/auth/email-code · /auth/email-verify · /auth/password-reset | auth | users (인증코드는 백엔드 메모리) |
 | AUTH-06 | 비밀번호 변경(마이페이지) | 최기완 | VIEW-11 | pages/MyPage | POST /api/v1/auth/email-code · /auth/email-verify · PATCH /auth/password | auth | users (인증코드는 백엔드 메모리) |
-| CF-00-01 | 공통 헤더 및 메뉴 이동 | 공통 | 공통 | components/common, router | POST /api/v1/auth/logout | global/security | (저장 없음) |
+| CF-00-01 | 공통 헤더 및 메뉴 이동 | 유다연 | 공통 | components/common, router | POST /api/v1/auth/logout | global/security | (저장 없음) |
 | CF-00-02 | 초기 메인 화면 | 유다연 | VIEW-01 | pages/Main | GET /api/v1/trends | qualification | qualification_statistics_yearly |
-| CF-00-03 | 비회원 회원 전용 기능 접근 | 공통 | 공통 | components/common, router | (API 없음, 401 응답 → 로그인 필요 팝업) | global/security | (저장 없음) |
+| CF-00-03 | 비회원 회원 전용 기능 접근 | 유다연 | 공통 | components/common, router | (API 없음, 401 응답 → 로그인 필요 팝업) | global/security | (저장 없음) |
 | CF-00-04 | 오늘의 일정 패널 | 유다연 | VIEW-01 | pages/Main | GET /api/v1/planner/today · GET /api/v1/daily-idiom | planner | planner_bars, daily_idioms |
 | CF-01-01 | 대학교·전공 선택 | 이은아 | VIEW-02·05·11 | pages/Auth, pages/Recommend, pages/MyPage | GET /api/v1/options/universities · majors | option, university | universities, colleges, majors |
 | CF-01-02 | 희망 직무·관심 분야 선택 (추천 페이지 조건 선택) | 이은아 | VIEW-05 | pages/Recommend | GET /api/v1/options/job_categories · interest_fields | option, job | job_categories, interest_fields |
