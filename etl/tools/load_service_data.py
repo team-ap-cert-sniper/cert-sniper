@@ -1,4 +1,4 @@
-"""Ver.12 jg_service 빈 DB에 넣을 초기 적재 SQL을 만든다 (CSV 10종, 사자성어 포함)."""
+"""빈 cert_sniper DB에 넣을 초기 적재 SQL을 만든다 (CSV 10종, 사자성어 포함)."""
 import argparse
 import csv
 from datetime import date
@@ -70,7 +70,7 @@ def write_load_sql(data, output):
         elif not same_name and members.get(scope):
             list_items.add(scope)
 
-    output.write("USE jg_service;\nSET NAMES utf8mb4;\n"
+    output.write("SET NAMES utf8mb4;\n"
                  "SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';\n"
                  "START TRANSACTION;\n")
     # DB ID는 CSV 순서대로 1부터 매기고, CSV 코드(school_id·faculty_scope_id·major_id)는 여기서 ID로만 바꾼다.

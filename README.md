@@ -1,6 +1,6 @@
 # 🎯 저격증 (학과 기반 국가자격증 추천 및 학습 관리 플랫폼)
 
-**저격증**은 내 학교·전공·학년, 그리고 추천 페이지에서 고른 관심 분야·희망 직무를 바탕으로 **지금 나에게 맞는 국가자격증을 저격해 추천**하고, 자격증 정보 확인부터 시험 일정·학습 계획·합격 후기까지 한 곳에서 관리할 수 있는 **자격증 맞춤 추천 및 학습 관리 웹 플랫폼**입니다.
+**저격증**은 학교·전공·학년과 관심 분야·희망 직무로 국가자격증을 추천하고, 자격증 정보·시험 일정·학습 계획·합격 후기를 한 곳에서 관리하는 웹 서비스입니다.
 
 ---
 
@@ -92,20 +92,21 @@
 
 ### **Collaboration & Tools**
 
+* **IDE**: VS Code 또는 Antigravity. 코드 모양은 `.editorconfig`·Prettier·ESLint·PR 자동 검사로 맞춥니다 (VS Code 확장: Extension Pack for Java, Spring Boot Extension Pack, ESLint, Prettier, EditorConfig)
 * **VCS**: Git · GitHub (Organization)
 * **CI**: GitHub Actions (PR 자동 검사)
 * **Container**: Docker · Docker Compose
-* **Docs / Design / ERD**: Notion · Figma · ERDCloud
+* **Docs / Design**: Notion · Figma
 
 ---
 
 ## 🏗 시스템 구조 (Architecture)
 
-본 시스템은 React 웹 클라이언트와 Spring Boot 서버 간의 **REST API (JSON, `/api/v1`)** 통신을 기반으로 동작합니다.
+React ↔ Spring Boot **REST API (JSON, `/api/v1`)**
 
 * **Client**: 화면별 페이지와 API 호출 모듈로 사용자 요청 처리
 * **Server**: 기능별 패키지(Controller → Service → Repository)로 비즈니스 로직 수행
-* **Storage**: MySQL `jg_service` (서비스 데이터 31개 테이블, [ERD](docs/ERD.md), [마이그레이션](backend/src/main/resources/db/migration))
+* **Storage**: MySQL `cert_sniper` (31개 테이블, [ERD](docs/ERD.md))
 * **Data Pipeline**: Python으로 공공데이터를 수집·정제해 CSV로 만들고 DB에 적재. 추천 로직의 기준 구현과 테스트도 함께 보관
 
 ---
@@ -118,7 +119,10 @@
 ├─ 📁 frontend/   React 웹
 ├─ 📁 etl/        공공데이터 정리 결과 + 추천 로직 기준 구현
 ├─ 📁 docs/       ERD · API 명세 · 기능 추적표 · 플로우차트
-├─ 📁 db/         Docker DB 계정 생성 · 관리자 계정 시드
+├─ 📁 db/         DB 관리 (DB 관리자만 수정)
+│  ├─ 📁 init/       계정·권한 (컨테이너 처음 만들 때 1번)
+│  ├─ 📁 migration/  테이블 구조 (Flyway, `V번호__설명.sql`)
+│  └─ 📁 seed/       처음 넣는 데이터 (관리자 계정). 자격증·학교·학과·시험일정·합격률·사자성어 50개는 `etl/data` CSV에서 만들어 넣음
 ├─ 📄 docker-compose.yml
 ├─ 📄 .env.example
 └─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS, 자동 검사(workflows)
@@ -129,7 +133,7 @@
 | 🖥 [backend](backend/README.md) | 패키지별 담당, 파일 전체 트리(뼈대 있음), 뼈대 사용법, 패키지끼리 부르는 곳, 이름 규칙 |
 | 🎨 [frontend](frontend/README.md) | 화면별 담당, 파일 전체 트리(뼈대 있음), 화면 경로·화면 이동 전체, 이름 규칙 |
 | 🔄 [etl](etl/README.md) | 서비스용 데이터(CSV 10종, 사자성어 포함), 추천·자격증 로직, CSV–테이블 정의 |
-| 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid). DDL은 [마이그레이션](backend/src/main/resources/db/migration) |
+| 🗂 [ERD](docs/ERD.md) | 테이블 관계도 (Mermaid) |
 | 📡 [API 명세](docs/API_CONTRACT.md) | 추천·자격증 API 경로·입출력·화면 표시 순서 |
 | 🔎 [기능 추적표](docs/TRACEABILITY.md) | 기능 ID → 담당 → 화면 → 프론트 위치 → API → 백엔드 패키지 → 테이블 |
 | 🧭 [플로우차트](docs/FLOWCHART.md) | 전체 + 파트별 화면 흐름 (Mermaid) |
@@ -138,22 +142,22 @@
 
 ## 🐳 로컬 DB 실행
 
-DB·백엔드·프론트는 모두 **내 노트북에서** 실행합니다. 다른 팀원 노트북이 꺼져 있어도 레포만 받으면 똑같이 실행되고, Swagger도 내 백엔드를 켠 상태에서 내 주소로 봅니다.
+DB·백엔드·프론트·Swagger는 각자 노트북에서 실행합니다. 다른 팀원 노트북과 관계없습니다.
 
 1. Docker Desktop 실행
 2. 레포 루트에서 `.env.example`을 `.env`로 복사하고 비밀번호 세 칸 채우기 (영문·숫자)
 3. `docker compose up -d`
 
-처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종), 관리자 계정 1개(`euna@certsniper.admin`, 초기 비밀번호는 팀 안에서 공유)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
+처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종: 공공데이터 9종 + 사자성어 50개), 관리자 계정 1개(`euna@certsniper.admin`, 초기 비밀번호는 팀 안에서 공유)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
 
 | 접속 | 값 |
 |---|---|
 | 주소 | `localhost:3307` |
-| DB | `jg_service` |
+| DB | `cert_sniper` |
 | 백엔드 계정 | `cert_app` / `.env`의 `DB_APP_PASSWORD` (조회·등록·수정·삭제만) |
 
 * DB 구조는 DB 관리자(이은아)만 바꿉니다. 컬럼·테이블이 필요하면 이슈로 요청합니다
-* 마이그레이션 파일은 병합된 뒤 고치지 않고 다음 번호(`V2__...sql`)로 추가합니다
+* 테이블 구조는 `db/migration`, 처음 넣는 데이터는 `db/seed`로 나눕니다. 마이그레이션 파일은 병합된 뒤 고치지 않고 다음 번호(`V2__...sql`)로 추가합니다
 
 ## ▶ 백엔드 · 프론트 실행
 
@@ -161,6 +165,9 @@ DB·백엔드·프론트는 모두 **내 노트북에서** 실행합니다. 다�
 |---|---|---|---|
 | 백엔드 | JDK 21 설치, `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 복사 후 값 채우기 ([방법](backend/README.md#뼈대-사용법)) | `cd backend` → `./gradlew bootRun` (Windows `gradlew.bat bootRun`) | http://localhost:8080/swagger-ui.html |
 | 프론트 | Node.js 24 설치 (`node -v`로 확인) | `cd frontend` → `npm install` → `npm run dev` | http://localhost:5173 (`/api`는 8080으로 전달) |
+
+* 터미널 대신 에디터 버튼으로도 실행됩니다: 백엔드는 `CertSniperApplication.java`의 ▶ Run, 프론트는 탐색기 아래 **NPM 스크립트**의 `dev` ▶ (`npm install`은 처음 한 번)
+* 화면은 백엔드·프론트를 둘 다 켠 상태에서 http://localhost:5173 으로 봅니다
 
 ## 🌿 브랜치 전략
 
@@ -176,7 +183,7 @@ main        ← 최종(배포). 이은아·박준성만 병합
 | 버그 수정 | `fix/{파트}/{작업내용}` | `fix/recommend/sort-order` |
 | 문서 | `docs/{작업내용}` | `docs/update-readme` |
 
-* **파트**: 내가 맡은 기능 이름이에요. 아래 표에서 골라 쓰면 됩니다
+* **파트**: 맡은 기능 (아래 표)
 
   | 파트 | 기능 | 담당 |
   |---|---|---|
@@ -189,7 +196,7 @@ main        ← 최종(배포). 이은아·박준성만 병합
   | `user` | 마이페이지·찜(관심 자격증) | 최기완 |
   | `support` | 고객센터 | 황정규 |
   | `admin` | 관리자 | 황정규 |
-  | `common` | 공통 설정·헤더 등 여러 기능이 같이 쓰는 것 | 공통 |
+  | `common` | 공통 설정·뼈대 | 이은아 |
 
 * **작업내용**: 영어 소문자로 짧게, 단어 사이는 `-` (예: `login-form`, `score`, `pass-rate-chart`)
 * 브랜치 이름에 **front / backend / 사람 이름은 넣지 않습니다.** 한 브랜치에서 화면과 API를 같이 작업합니다

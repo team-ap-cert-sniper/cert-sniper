@@ -2,7 +2,7 @@
 
 공공데이터로 만든 **서비스용 데이터(CSV 9종)** 와 팀이 정한 사자성어 목록(CSV 1종), 그 데이터를 쓰는 **추천·자격증 정보 로직(Python)** 을 담고 있습니다.
 
-* **DB 적재 원천**: `data/*.csv`를 DB 설계서 Ver.12 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
+* **DB 적재 원천**: `data/*.csv`를 `cert_sniper` 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
 * **백엔드 이식 기준**: `jeogyeokjeung/`의 함수 흐름과 [docs/API_CONTRACT.md](../docs/API_CONTRACT.md)의 입출력을 Spring Boot로 옮깁니다
 * **결과 검증 기준**: `tests/golden_recommendations.json`과 같은 입력을 넣어 Java 결과가 같은지 비교합니다
 
@@ -137,19 +137,20 @@ python run.py check
 
 ## MySQL 초기 적재
 
-팀 개발 DB는 루트에서 `docker compose up -d` 때 자동으로 적재됩니다. 아래는 Docker 없이 넣을 때만 씁니다.
-
-[V1__create_tables.sql](../backend/src/main/resources/db/migration/V1__create_tables.sql)을 적용한 **빈 DB**에서 실행합니다. 이미 데이터가 있는 DB에 합치는 용도가 아닙니다. 적재는 한 트랜잭션으로 하며 MySQL 클라이언트의 `--force`를 끕니다. 생성되는 `service-data-ver12.sql`은 실행용 임시 파일이라 커밋하지 않습니다.
+팀 DB는 `docker compose up -d` 때 자동으로 적재됩니다. Docker 없이 넣을 때만 아래를 씁니다 (`V1__create_tables.sql`을 적용한 빈 DB, 한 트랜잭션).
 
 ```powershell
-mysql --login-path=cert_sniper_local --execute="CREATE DATABASE IF NOT EXISTS jg_service CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
-mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 --database=jg_service --execute="source backend/src/main/resources/db/migration/V1__create_tables.sql"
-python etl/tools/load_service_data.py --output service-data-ver12.sql
-mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 --execute="source service-data-ver12.sql"
+mysql --login-path=cert_sniper_local --execute="CREATE DATABASE IF NOT EXISTS cert_sniper CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 cert_sniper --execute="source db/migration/V1__create_tables.sql"
+python etl/tools/load_service_data.py --output service_data.sql
+mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 cert_sniper --execute="source service_data.sql"
 ```
 
-`cert_sniper_local`은 로컬 MySQL 로그인 프로필 이름입니다. 생성 단계의 종료 코드가 0이면 적재합니다. CSV의 원천 ID는 DB에 넣지 않고 DB ID(1부터)로 바꿔 FK를 채웁니다. 관심 분야(23개)·희망 직무(50개)는 자격증 Master의 대·중직무분야로 채우고, 국가기술 등급(`qualifications.grade_level`)은 추천 계산과 같은 판정으로 넣습니다(국가전문은 NULL). 합격 통계는 2001년~최근 완결 연도만 넣고, 합격률(`pass_rate_pct`)은 생성 컬럼이라 넣지 않습니다. 사자성어 50개(`daily_idioms.csv`)도 같은 SQL로 들어갑니다.
+* `service_data.sql`은 실행할 때 만들어지는 파일이라 커밋하지 않습니다
+* CSV의 원천 ID는 DB ID(1부터)로 바꿔 넣고, 합격률(`pass_rate_pct`)은 생성 컬럼이라 넣지 않습니다
 
 ## 트렌드와 시험 단계
 
-트렌드 순위(지금 주목받는 자격증)만 종목별 **첫 시험**(필기 → 1차 → 단일 시험 순으로 한 단계) 실제 응시자 수를 씁니다(CF-02-08). 자격증 상세의 합격률·그래프·연도별 상세·시험일정은 필기·실기, 1차·2차·3차·면접, 단일 시험을 **모두** 보여 줍니다(`tests/test_service.py`의 `test_detail_keeps_every_exam_stage`). 백엔드는 트렌드 조회를 SQL 파일로 따로 두지 않고 `TrendService`의 리포지토리 쿼리로 구현합니다.
+* 트렌드 순위(CF-02-08)는 종목별 **첫 시험**(필기 → 1차 → 단일 시험 중 하나)의 실제 응시자 수만 씁니다
+* 자격증 상세의 합격률·그래프·시험일정은 모든 단계(필기·실기, 1차·2차·3차·면접)를 보여 줍니다
+* 백엔드는 `TrendService`의 리포지토리 쿼리로 구현합니다 (별도 SQL 파일 없음)

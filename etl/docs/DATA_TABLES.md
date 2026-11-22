@@ -2,9 +2,9 @@
 
 보정표·생성 스크립트(`tools/*.csv`, `tools/build_service_data.py`, `tools/faculty_scope`)는 원천 프로젝트(Planner-DataSchool-v2)에 있습니다.
 
-CSV 파일 1개를 MySQL 테이블 하나에 적재합니다. 적재할 테이블 이름은 DB 설계서 Ver.12([ERD](../../docs/ERD.md))를 따릅니다. CSV의 원천 ID(school_id·faculty_scope_id·major_id)는 DB에 넣지 않고 적재 도구(`tools/load_service_data.py`)가 DB ID(1부터)로 바꿔 FK를 채웁니다. 아래 PK·FK는 CSV 기준이며 `tests/test_data_integrity.py`가 검사합니다.
+CSV 파일 1개를 MySQL 테이블 하나에 적재합니다. 테이블은 [ERD](../../docs/ERD.md)와 같습니다. CSV의 원천 ID(school_id·faculty_scope_id·major_id)는 DB에 넣지 않고 적재 도구(`tools/load_service_data.py`)가 DB ID(1부터)로 바꿔 FK를 채웁니다. 아래 PK·FK는 CSV 기준이며 `tests/test_data_integrity.py`가 검사합니다.
 
-| CSV | 적재 테이블 (DB 설계서 Ver.12) | PK | 컬럼 | FK |
+| CSV | 적재 테이블 | PK | 컬럼 | FK |
 |---|---|---|---|---|
 | schools | universities (school_id → DB id) | school_id | school_name, campus, school_type | |
 | majors | majors (major_id → DB id) | major_id | school_id, major_name, college_name, parent_name | school_id → schools |

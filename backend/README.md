@@ -1,8 +1,8 @@
 # 🖥 backend (Spring Boot)
 
-기능 명세서 v1.4.0 · DB 설계서 Ver.12(31개 테이블) 기준 패키지 구조와 파일 전체입니다. 아래 파일은 모두 만들어져 있고(엔티티·리포지토리·DTO·컨트롤러 URL·서비스 메서드 이름), 담당자는 자기 패키지의 서비스 메서드 안을 채웁니다. 패키지 하나가 기능 하나입니다. [← 처음으로](../README.md)
+패키지 하나가 기능 하나입니다. 엔티티·리포지토리·DTO·컨트롤러 URL·서비스 메서드 이름까지 만들어져 있고, 담당자는 서비스 메서드 안을 채웁니다. [← 처음으로](../README.md)
 
-* 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](src/main/resources/db/migration)
+* 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](../db/migration)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
 * 표시: `★` 뼈대에서 동작하게 만들어 둔 공통 파일, `[이름]` 패키지 담당, 오른쪽 끝은 기능 ID / 테이블
@@ -36,9 +36,7 @@
    │  ├─ 📁 java/com/certsniper/        → 2 ~ 4번
    │  └─ 📁 resources/
    │     ├─ 📄 application.yml        ★ 공통 설정 (DB 주소는 환경변수로)
-   │     ├─ 📄 application-local.yml.example ★ 내 설정 예시 → `application-local.yml`로 복사해 값 채움 (복사본은 커밋 금지)
-   │     └─ 📁 db/migration/            (있음) Flyway 마이그레이션, DB 관리자만 추가
-   │        └─ 📄 V1__create_tables.sql   (있음) DB 설계서 Ver.12 (31개 테이블)
+   │     └─ 📄 application-local.yml.example ★ 내 설정 예시 → `application-local.yml`로 복사해 값 채움 (복사본은 커밋 금지)
    └─ 📁 test/java/com/certsniper/      → 5번
 ```
 
@@ -378,14 +376,14 @@
 └─ 📁 (각 패키지)/                          담당자가 같은 구조로 추가 (예: planner/ScheduleLimitValidatorTest.java)
 ```
 
-> 엔티티 31개 = auth 1 · user 3 · university 3 · job 2 · recommendation 1 · qualification 3 · examschedule 1 · favorite 1 · targetexam 1 · planner 5 · memo 1 · passstory 1 · report 2 · rank 1 · support 4 · admin 1 (DB 설계서 Ver.12 테이블 수와 같음)
+> 엔티티 31개 = auth 1 · user 3 · university 3 · job 2 · recommendation 1 · qualification 3 · examschedule 1 · favorite 1 · targetexam 1 · planner 5 · memo 1 · passstory 1 · report 2 · rank 1 · support 4 · admin 1
 
 ## 🧱 global 공통을 쓰는 곳
 
 | 공통 | 쓰는 패키지 |
 |---|---|
 | `@LoginUser`, `SecurityConfig` | 회원 전용 API 전부 (CF-00-03) |
-| `ErrorResponse`, `GlobalExceptionHandler` | 전부 (기능 명세서 10장 오류 응답) |
+| `ErrorResponse`, `GlobalExceptionHandler` | 전부 (오류 응답 `code`·`message`·`timestamp`) |
 | `BaseTimeEntity` | user, favorite, targetexam, planner, passstory, report, support, admin (created_at이 있는 테이블) |
 | `PageResponse` | option, passstory, report, support, admin |
 | `DateUtils` | examschedule(D-Day·회차 상태), planner(오늘의 일정), recommendation(남은 시험) |
@@ -395,14 +393,14 @@
 
 ## 🔗 패키지끼리 부르는 곳
 
-다른 패키지의 클래스는 고치지 않고 **아래 메서드만 호출**합니다. 메서드는 뼈대에 이름·입력·반환이 정해져 있고, 구현은 그 패키지 담당자가 합니다. 필요한 메서드가 더 있으면 담당자에게 이슈로 요청합니다.
+다른 패키지는 **아래 메서드만 호출**합니다. 구현은 그 패키지 담당이 하고, 더 필요하면 이슈로 요청합니다.
 
 | 부르는 쪽 | 부르는 메서드 (담당) | 이유 | 기능 ID |
 |---|---|---|---|
 | auth | `UserService.createUser` · `findByEmail` · `updatePassword` · `isNicknameAvailable` (최기완) | 가입 저장, 로그인·재설정 회원 조회, 비밀번호 저장, 닉네임 중복 | AUTH-01·02·05·06 |
 | auth | `EmailVerificationService.checkVerified` (유다연) | 가입·재설정·변경 전 이메일 인증 완료 확인 | AUTH-01·05·06 |
 | auth, user | `OptionService.validateSchoolInfo` (이은아) | 대학·학부·전공·학년 묶음 검증 | CF-01-01 |
-| global/security | `UserRepository` (공통) | 정지·탈퇴 계정 차단 (필터에서 직접 조회) | AUTH-02, ADMIN-07 |
+| global/security | `UserRepository` (최기완) | 정지·탈퇴 계정 차단 (필터에서 직접 조회) | AUTH-02, ADMIN-07 |
 | user | `RankService.getCurrentRank` (최기완) | 회원정보의 저격 등급 | AUTH-03 |
 | recommendation | `UserService.getRecommendationProfile` (최기완) | 전공 맞춤 추천에 회원 학력·보유 자격 | CF-01-03 |
 | recommendation | `QualificationService` · `ExamScheduleService.getSchedules` (이은아) | 카드의 한 줄 소개·최근 합격률·다음 접수·가까운 시험일 | CF-01-10 |
@@ -465,6 +463,6 @@
 ## 지켜 주세요
 
 * 다른 기능 패키지의 클래스를 고치지 않습니다. 여러 기능이 같이 쓰는 것은 `global/`에 둡니다
-* DB 구조는 `db/migration`의 SQL 파일로만 바꾸고, DB 관리자(이은아)만 추가합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
+* DB 구조는 루트 `db/migration`의 SQL 파일로만 바꾸고, DB 관리자(이은아)만 추가합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
 * DB 계정·SMTP 앱 비밀번호·AI API 키는 환경변수(`.env`)나 `application-local.yml`에 둡니다 (커밋 금지)
 * 추천·자격증 로직(`recommendation`, `qualification`, `examschedule`)의 기준 구현은 [etl/](../etl/README.md)에 있습니다. 같은 입력에 같은 결과가 나와야 합니다
