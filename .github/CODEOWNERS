@@ -6,6 +6,10 @@
 # ----- 이은아: 자격증 추천 · 자격증 상세 · ETL · 설계 문서 -----
 /etl/                                                   @euna0428
 /docs/                                                  @euna0428
+/backend/src/main/resources/db/                         @euna0428
+/db/                                                    @euna0428
+/docker-compose.yml                                     @euna0428
+/.env.example                                           @euna0428
 /backend/src/main/java/com/certsniper/option/           @euna0428
 /backend/src/main/java/com/certsniper/university/       @euna0428
 /backend/src/main/java/com/certsniper/job/              @euna0428

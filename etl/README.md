@@ -137,10 +137,13 @@ python run.py check
 
 ## MySQL 초기 적재
 
-`docs/schema.sql`을 적용한 **빈 DB**에서 실행합니다. 이미 데이터가 있는 DB에 합치는 용도가 아닙니다. 적재는 한 트랜잭션으로 하며 MySQL 클라이언트의 `--force`를 끕니다. 생성되는 `service-data-ver12.sql`은 실행용 임시 파일이라 커밋하지 않습니다.
+팀 개발 DB는 루트에서 `docker compose up -d` 때 자동으로 적재됩니다. 아래는 Docker 없이 넣을 때만 씁니다.
+
+[V1__create_tables.sql](../backend/src/main/resources/db/migration/V1__create_tables.sql)을 적용한 **빈 DB**에서 실행합니다. 이미 데이터가 있는 DB에 합치는 용도가 아닙니다. 적재는 한 트랜잭션으로 하며 MySQL 클라이언트의 `--force`를 끕니다. 생성되는 `service-data-ver12.sql`은 실행용 임시 파일이라 커밋하지 않습니다.
 
 ```powershell
-mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 --execute="source docs/schema.sql"
+mysql --login-path=cert_sniper_local --execute="CREATE DATABASE IF NOT EXISTS jg_service CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 --database=jg_service --execute="source backend/src/main/resources/db/migration/V1__create_tables.sql"
 python etl/tools/load_service_data.py --output service-data-ver12.sql
 mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 --execute="source service-data-ver12.sql"
 ```
