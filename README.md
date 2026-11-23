@@ -8,7 +8,7 @@
 
 | 이름 | 담당 화면 | 백엔드 패키지 | 비고 |
 |---|---|---|---|
-| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git관리, GitHub 저장소·백엔드 초기 설정, AI 학습 |
+| **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git관리, GitHub 저장소·백엔드 초기 설정, AI 학습 모델 |
 | **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` `global` | 개발 뼈대(백엔드 공통·API 틀, 프론트 공통·라우터), 자동 검사·코드 규칙, DB 관리자(Flyway·Docker Compose), 추천 알고리즘·ETL(`etl/`) |
 | **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인, 공통 헤더·푸터·팝업 |
 | **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인 |
