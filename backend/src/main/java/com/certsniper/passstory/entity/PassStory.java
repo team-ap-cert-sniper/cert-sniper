@@ -1,6 +1,7 @@
 package com.certsniper.passstory.entity;
 
 import com.certsniper.global.common.BaseTimeEntity;
+import com.certsniper.passstory.dto.PassStoryRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -61,4 +62,40 @@ public class PassStory extends BaseTimeEntity {
 
     @Column(name = "hidden_confirmed_at")
     private LocalDateTime hiddenConfirmedAt;
+
+    public static PassStory create(Long userId, PassStoryRequest r, String sanitizedBody) {
+        PassStory s = new PassStory();
+        s.userId = userId;
+        s.edit(r, sanitizedBody);
+        return s;
+    }
+
+    public void edit(PassStoryRequest r, String sanitizedBody) {
+        this.jmcd = r.jmcd();
+        this.body = sanitizedBody;
+        this.examineeBase = r.examineeBase();
+        this.prepPeriod = r.prepPeriod();
+        this.attemptBand = r.attemptBand();
+        this.textbookName = r.textbookName();
+        this.passScore = r.passScore();
+        this.examDate = r.examDate();
+    }
+
+    public void changeStatus(String status) {
+        this.status = status;
+    }
+
+    public void hide(String reason) {
+        this.status = "HIDDEN";
+        this.hiddenReason = reason;
+    }
+
+    public void confirmHidden(LocalDateTime at) {
+        this.hiddenConfirmedAt = at;
+    }
+
+    public void clearHidden() {
+        this.hiddenReason = null;
+        this.hiddenConfirmedAt = null;
+    }
 }
