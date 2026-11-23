@@ -20,6 +20,12 @@ export const REPORT_LABELS = {
   ETC: '기타',
 };
 
+export const REPORT_STATUS_LABELS = {
+  PENDING: '관리자 검토 중 (숨김)',
+  CONFIRMED: '숨김 확정',
+  DISMISSED: '기각 (숨김 해제)',
+};
+
 export const EXAMINEE_BASE_LABELS = {
   NO_BASE: '노베이스',
   BASIC: '기초 지식 있음',
