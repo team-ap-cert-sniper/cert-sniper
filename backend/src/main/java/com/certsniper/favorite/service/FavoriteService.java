@@ -5,6 +5,8 @@ import com.certsniper.favorite.entity.Favorite;
 import com.certsniper.favorite.repository.FavoriteRepository;
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
+import com.certsniper.qualification.dto.QualificationDetailResponse.QualificationInfo;
+import com.certsniper.qualification.service.QualificationService;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,9 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class FavoriteService {
 
     private final FavoriteRepository favoriteRepository;
+    private final QualificationService qualificationService;
 
+    /** 최근 찜한 순 */
     public List<FavoriteResponse> getFavorites(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return favoriteRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(f -> {
+                    QualificationInfo q = qualificationService.getInfo(f.getJmcd());
+                    return new FavoriteResponse(f.getJmcd(), q.jmfldnm(), q.qualgbnm(), q.gradeLevel(), q.summary(),
+                            f.getCreatedAt());
+                })
+                .toList();
     }
 
     @Transactional

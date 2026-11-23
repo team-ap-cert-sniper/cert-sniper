@@ -10,6 +10,8 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
 
     List<Favorite> findByUserId(Long userId);
 
+    List<Favorite> findByUserIdOrderByCreatedAtDesc(Long userId);
+
     void deleteByUserIdAndJmcd(Long userId, String jmcd);
 
     void deleteByUserId(Long userId);

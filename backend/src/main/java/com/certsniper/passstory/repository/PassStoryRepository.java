@@ -16,6 +16,15 @@ public interface PassStoryRepository extends JpaRepository<PassStory, Long> {
 
     Page<PassStory> findByUserIdAndStatusNot(Long userId, String status, Pageable pageable);
 
+    /** admin 전체 글: 작성자 닉네임 부분 일치, 상태 일치 (각각 null이면 조건 없음, 삭제 글 포함) */
+    @Query("""
+            select p from PassStory p
+            where (:status is null or p.status = :status)
+              and (:nickname is null or p.userId in
+                   (select u.id from User u where u.nickname like concat('%', :nickname, '%')))
+            """)
+    Page<PassStory> searchForAdmin(@Param("nickname") String nickname, @Param("status") String status, Pageable pageable);
+
     /** 저격 등급용: 공개 + 숨김 확정 전 글의 서로 다른 자격증 수 */
     @Query("""
             select count(distinct p.jmcd) from PassStory p

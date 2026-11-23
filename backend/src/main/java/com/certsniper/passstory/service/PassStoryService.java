@@ -60,7 +60,7 @@ public class PassStoryService {
             // 자격증 이름 → jmcd 변환 수단이 팀에서 정해지지 않음 (kiwan.md Q1)
             throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
         }
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        PageRequest pageable = latest(page, size);
         Page<PassStory> stories;
         if (mine) {
             stories = passStoryRepository.findByUserIdAndStatusNot(userId, "DELETED", pageable);
@@ -156,13 +156,22 @@ public class PassStoryService {
         rankService.recalculate(userId);
     }
 
+    /** admin 전체 글: 닉네임 부분 일치·상태 필터 (각각 비우면 조건 없음, 삭제 글 포함), 최신순 */
     public PageResponse<PassStoryCardResponse> getPassStoriesForAdmin(
             String nickname,
             String status,
             int page,
             int size) {
-        // Phase 3: 닉네임 검색은 UserService.searchUsers 구현 후
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        String n = nickname == null || nickname.isBlank() ? null : nickname.trim();
+        String s = status == null || status.isBlank() ? null : status;
+        if ((s != null && !STATUSES.contains(s)) || page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+        return PageResponse.of(toCards(passStoryRepository.searchForAdmin(n, s, latest(page, size))));
+    }
+
+    private static PageRequest latest(int page, int size) {
+        return PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
     }
 
     /** report 신고: 즉시 숨김. 이미 숨김·재검토 대기면 상태 유지 */

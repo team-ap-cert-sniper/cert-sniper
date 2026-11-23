@@ -14,6 +14,7 @@ import com.certsniper.passstory.dto.PassStoryRequest;
 import com.certsniper.passstory.entity.PassStory;
 import com.certsniper.passstory.repository.PassStoryRepository;
 import com.certsniper.passstory.service.PassStoryService;
+import com.certsniper.qualification.service.QualificationService;
 import com.certsniper.report.dto.ReportRequest;
 import com.certsniper.report.repository.PassStoryModerationLogRepository;
 import com.certsniper.report.repository.PassStoryReportRepository;
@@ -31,7 +32,8 @@ class ReportServiceTest {
     private final PassStoryModerationLogRepository logRepo = mock(PassStoryModerationLogRepository.class);
     private final PassStoryRepository storyRepo = mock(PassStoryRepository.class);
     private final PassStoryService passStoryService = mock(PassStoryService.class);
-    private final ReportService service = new ReportService(reportRepo, logRepo, storyRepo, passStoryService);
+    private final ReportService service =
+            new ReportService(reportRepo, logRepo, storyRepo, passStoryService, mock(QualificationService.class));
     private final ReportRequest abuse = new ReportRequest("ABUSE");
 
     private void stored(String status) {

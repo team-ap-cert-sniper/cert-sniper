@@ -6,16 +6,22 @@ import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.passstory.entity.PassStory;
 import com.certsniper.passstory.repository.PassStoryRepository;
 import com.certsniper.passstory.service.PassStoryService;
+import com.certsniper.qualification.service.QualificationService;
 import com.certsniper.report.dto.MyReportResponse;
 import com.certsniper.report.dto.ReportRequest;
 import com.certsniper.report.entity.PassStoryModerationLog;
 import com.certsniper.report.entity.PassStoryReport;
 import com.certsniper.report.repository.PassStoryModerationLogRepository;
 import com.certsniper.report.repository.PassStoryReportRepository;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,22 +30,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportService {
 
     private static final Set<String> RESOLVE_STATUSES = Set.of("CONFIRMED", "DISMISSED");
+    private static final int MAX_PAGE_SIZE = 50;
 
     private final PassStoryReportRepository passStoryReportRepository;
     private final PassStoryModerationLogRepository passStoryModerationLogRepository;
     private final PassStoryRepository passStoryRepository;
     private final PassStoryService passStoryService;
+    private final QualificationService qualificationService;
 
     // PassStoryService도 recordModeration 때문에 이 서비스를 받으므로 @Lazy로 순환 참조를 끊는다
     public ReportService(
             PassStoryReportRepository passStoryReportRepository,
             PassStoryModerationLogRepository passStoryModerationLogRepository,
             PassStoryRepository passStoryRepository,
-            @Lazy PassStoryService passStoryService) {
+            @Lazy PassStoryService passStoryService,
+            QualificationService qualificationService) {
         this.passStoryReportRepository = passStoryReportRepository;
         this.passStoryModerationLogRepository = passStoryModerationLogRepository;
         this.passStoryRepository = passStoryRepository;
         this.passStoryService = passStoryService;
+        this.qualificationService = qualificationService;
     }
 
     /** 본인 글 FORBIDDEN, 같은 글 재신고 DUPLICATE. 공개 글이면 즉시 숨김 + 이력 */
@@ -65,9 +75,24 @@ public class ReportService {
         }
     }
 
+    /** 마이페이지 신고내역: 내 글에 들어온 신고, 최신순 */
     public PageResponse<MyReportResponse> getMyReports(Long userId, int page, int size) {
-        // Phase 3 (마이페이지)
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+        Page<PassStoryReport> reports = passStoryReportRepository.findReportsOnUserStories(userId,
+                PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))));
+        Map<Long, String> jmcdByStory = passStoryRepository
+                .findAllById(reports.stream().map(PassStoryReport::getStoryId).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(PassStory::getId, PassStory::getJmcd));
+        Map<String, String> names = new HashMap<>();
+        return PageResponse.of(reports.map(r -> new MyReportResponse(
+                r.getStoryId(),
+                names.computeIfAbsent(jmcdByStory.get(r.getStoryId()), j -> qualificationService.getInfo(j).jmfldnm()),
+                r.getReportType(),
+                r.getStatus(),
+                r.getCreatedAt())));
     }
 
     /** admin 대시보드: 미처리 신고 수 */
