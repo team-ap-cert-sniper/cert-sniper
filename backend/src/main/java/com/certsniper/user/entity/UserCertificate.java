@@ -31,19 +31,17 @@ public class UserCertificate {
     @Column(name = "cert_name", length = 100)
     private String certName;
 
-    /** 613종 목록에서 고른 보유 자격증 */
     public static UserCertificate ofJmcd(Long userId, String jmcd) {
-        UserCertificate certificate = new UserCertificate();
-        certificate.userId = userId;
-        certificate.jmcd = jmcd;
-        return certificate;
+        UserCertificate c = new UserCertificate();
+        c.userId = userId;
+        c.jmcd = jmcd;
+        return c;
     }
 
-    /** 목록에 없는 자격증 (직접 입력) */
-    public static UserCertificate ofCertName(Long userId, String certName) {
-        UserCertificate certificate = new UserCertificate();
-        certificate.userId = userId;
-        certificate.certName = certName;
-        return certificate;
+    public static UserCertificate ofName(Long userId, String certName) {
+        UserCertificate c = new UserCertificate();
+        c.userId = userId;
+        c.certName = certName;
+        return c;
     }
 }

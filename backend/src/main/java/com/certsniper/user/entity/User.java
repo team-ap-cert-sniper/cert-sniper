@@ -63,19 +63,8 @@ public class User extends BaseTimeEntity {
     @Column(name = "withdrawal_requested_at")
     private LocalDateTime withdrawalRequestedAt;
 
-    /**
-     * 회원가입용 생성 (role = USER, status = ACTIVE).
-     * 대학교 안 나옴이면 universityId·collegeId·majorId·grade 모두 null.
-     */
-    public static User create(
-            String email,
-            String encodedPassword,
-            String name,
-            String nickname,
-            Long universityId,
-            Long collegeId,
-            Long majorId,
-            String grade) {
+    public static User create(String email, String encodedPassword, String name, String nickname,
+            Long universityId, Long collegeId, Long majorId, String grade) {
         User user = new User();
         user.email = email;
         user.password = encodedPassword;
@@ -86,5 +75,45 @@ public class User extends BaseTimeEntity {
         user.majorId = majorId;
         user.grade = grade;
         return user;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void changeName(String name) {
+        this.name = name;
+    }
+
+    /** 학력은 묶음으로 바뀐다 (넷 다 null = 학교 정보 없음) */
+    public void changeSchool(Long universityId, Long collegeId, Long majorId, String grade) {
+        this.universityId = universityId;
+        this.collegeId = collegeId;
+        this.majorId = majorId;
+        this.grade = grade;
+    }
+
+    public void addConfirmedHidden() {
+        this.confirmedHiddenCount++;
+    }
+
+    public void suspend(LocalDateTime until) {
+        this.status = "SUSPENDED";
+        this.suspendedUntil = until;
+    }
+
+    public void activate() {
+        this.status = "ACTIVE";
+        this.suspendedUntil = null;
+        this.withdrawalRequestedAt = null;
+    }
+
+    public void requestWithdrawal(LocalDateTime at) {
+        this.status = "WITHDRAWAL_PENDING";
+        this.withdrawalRequestedAt = at;
     }
 }

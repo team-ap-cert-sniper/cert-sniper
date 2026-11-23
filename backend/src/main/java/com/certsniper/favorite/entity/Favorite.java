@@ -28,4 +28,11 @@ public class Favorite extends BaseTimeEntity {
 
     @Column(name = "jmcd", nullable = false, length = 20)
     private String jmcd;
+
+    public static Favorite of(Long userId, String jmcd) {
+        Favorite f = new Favorite();
+        f.userId = userId;
+        f.jmcd = jmcd;
+        return f;
+    }
 }

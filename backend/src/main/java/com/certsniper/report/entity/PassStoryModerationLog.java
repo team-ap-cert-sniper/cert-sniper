@@ -52,4 +52,18 @@ public class PassStoryModerationLog extends BaseTimeEntity {
 
     @Column(name = "previous_content", columnDefinition = "json")
     private String previousContent;
+
+    public static PassStoryModerationLog of(Long storyId, String action, Long actorId, String actorRole,
+            Long reportId, String reasonCode, String previousStatus, String newStatus) {
+        PassStoryModerationLog l = new PassStoryModerationLog();
+        l.storyId = storyId;
+        l.action = action;
+        l.actorId = actorId;
+        l.actorRole = actorRole;
+        l.reportId = reportId;
+        l.reasonCode = reasonCode;
+        l.previousStatus = previousStatus;
+        l.newStatus = newStatus;
+        return l;
+    }
 }

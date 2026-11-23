@@ -2,15 +2,24 @@ package com.certsniper.user.repository;
 
 import com.certsniper.user.entity.User;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    /** 이메일 중복 확인 (이메일은 소문자로 정규화해 저장) */
-    boolean existsByEmail(String email);
+    Optional<User> findByEmail(String email);
 
-    /** 닉네임 중복 확인 (DB 정렬 규칙상 대소문자 구분 없이 비교) */
     boolean existsByNickname(String nickname);
 
-    Optional<User> findByEmail(String email);
+    /** admin 회원 목록: 이메일·이름·닉네임 부분 일치, 상태 일치 (각각 null이면 조건 없음) */
+    @Query("""
+            select u from User u
+            where (:keyword is null or u.email like concat('%', :keyword, '%')
+                   or u.name like concat('%', :keyword, '%') or u.nickname like concat('%', :keyword, '%'))
+              and (:status is null or u.status = :status)
+            """)
+    Page<User> search(@Param("keyword") String keyword, @Param("status") String status, Pageable pageable);
 }

@@ -34,4 +34,16 @@ public class PassStoryReport extends BaseTimeEntity {
 
     @Column(name = "status", nullable = false, length = 20)
     private String status = "PENDING";
+
+    public static PassStoryReport of(Long storyId, Long reporterId, String reportType) {
+        PassStoryReport r = new PassStoryReport();
+        r.storyId = storyId;
+        r.reporterId = reporterId;
+        r.reportType = reportType;
+        return r;
+    }
+
+    public void resolve(String status) {
+        this.status = status;
+    }
 }

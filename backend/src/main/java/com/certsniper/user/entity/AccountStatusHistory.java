@@ -44,4 +44,17 @@ public class AccountStatusHistory extends BaseTimeEntity {
 
     @Column(name = "admin_id")
     private Long adminId;
+
+    public static AccountStatusHistory of(Long userId, String changeType, String previousStatus, String newStatus,
+            String reason, LocalDateTime endsAt, Long adminId) {
+        AccountStatusHistory h = new AccountStatusHistory();
+        h.userId = userId;
+        h.changeType = changeType;
+        h.previousStatus = previousStatus;
+        h.newStatus = newStatus;
+        h.reason = reason;
+        h.endsAt = endsAt;
+        h.adminId = adminId;
+        return h;
+    }
 }
