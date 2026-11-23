@@ -24,4 +24,13 @@ public class UserRank {
 
     @Column(name = "current_rank", nullable = false, length = 20)
     private String currentRank = "TRAINEE";
+
+    public UserRank(Long userId) {
+        this.userId = userId;
+    }
+
+    public void update(int validCertCount, String currentRank) {
+        this.validCertCount = validCertCount;
+        this.currentRank = currentRank;
+    }
 }

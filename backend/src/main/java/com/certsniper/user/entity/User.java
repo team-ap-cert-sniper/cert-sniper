@@ -62,4 +62,58 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "withdrawal_requested_at")
     private LocalDateTime withdrawalRequestedAt;
+
+    public static User create(String email, String encodedPassword, String name, String nickname,
+            Long universityId, Long collegeId, Long majorId, String grade) {
+        User user = new User();
+        user.email = email;
+        user.password = encodedPassword;
+        user.name = name;
+        user.nickname = nickname;
+        user.universityId = universityId;
+        user.collegeId = collegeId;
+        user.majorId = majorId;
+        user.grade = grade;
+        return user;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
+
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void changeName(String name) {
+        this.name = name;
+    }
+
+    /** 학력은 묶음으로 바뀐다 (넷 다 null = 학교 정보 없음) */
+    public void changeSchool(Long universityId, Long collegeId, Long majorId, String grade) {
+        this.universityId = universityId;
+        this.collegeId = collegeId;
+        this.majorId = majorId;
+        this.grade = grade;
+    }
+
+    public void addConfirmedHidden() {
+        this.confirmedHiddenCount++;
+    }
+
+    public void suspend(LocalDateTime until) {
+        this.status = "SUSPENDED";
+        this.suspendedUntil = until;
+    }
+
+    public void activate() {
+        this.status = "ACTIVE";
+        this.suspendedUntil = null;
+        this.withdrawalRequestedAt = null;
+    }
+
+    public void requestWithdrawal(LocalDateTime at) {
+        this.status = "WITHDRAWAL_PENDING";
+        this.withdrawalRequestedAt = at;
+    }
 }

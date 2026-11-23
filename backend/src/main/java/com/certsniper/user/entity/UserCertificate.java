@@ -30,4 +30,18 @@ public class UserCertificate {
 
     @Column(name = "cert_name", length = 100)
     private String certName;
+
+    public static UserCertificate ofJmcd(Long userId, String jmcd) {
+        UserCertificate c = new UserCertificate();
+        c.userId = userId;
+        c.jmcd = jmcd;
+        return c;
+    }
+
+    public static UserCertificate ofName(Long userId, String certName) {
+        UserCertificate c = new UserCertificate();
+        c.userId = userId;
+        c.certName = certName;
+        return c;
+    }
 }
