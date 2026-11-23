@@ -1,0 +1,74 @@
+/*
+ * 공통 헤더 (담당: 유다연)
+ * Header.jsx는 건드리지 않고 기존 클래스에만 스타일을 입힌다.
+ * TODO 표시는 아직 시안 수치를 못 받은 값
+ */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: none; /* TODO 시안에 헤더 아래 선이 없는지 확인 */
+  background: #fff;
+}
+
+/* 로고 | 메뉴(가운데) | 로그인 영역 */
+.header .header__inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0;
+  max-width: none;
+  height: 84px; /* TODO 헤더 높이 */
+  margin: 0;
+  padding: 0 40px; /* TODO 좌우 여백 */
+}
+
+.header .header__logo {
+  justify-self: start;
+  font-size: 32px; /* TODO 로고 이미지로 바꿀 예정 */
+  font-weight: 900;
+  font-style: italic;
+  color: #111;
+}
+
+/* 가운데 메뉴: SemiBold 18px, 간격 40 */
+.header .header__menu {
+  gap: 40px;
+}
+
+.header .header__menu a {
+  font-size: 18px;
+  font-weight: 600;
+  color: #454b5a;
+  transition: color 120ms ease-out;
+}
+
+.header .header__menu a:hover,
+.header .header__menu a:focus-visible {
+  color: #e8bcce;
+  -webkit-text-stroke: 0.3px #f0abc7;
+}
+
+/* 오른쪽: 마이페이지·로그아웃 / 로그인·회원가입, Medium 16px */
+.header .header__user {
+  justify-self: end;
+  gap: 0;
+}
+
+.header .header__user > a,
+.header .header__user > button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: #454b5a; /* TODO 색 확인 */
+}
+
+/* 항목 사이에 | 구분선 (JSX를 안 고치고 CSS로 넣음) */
+.header .header__user > * + *::before {
+  content: '|';
+  margin: 0 25px; /* TODO | 양옆 간격 */
+  color: #454b5a;
+}

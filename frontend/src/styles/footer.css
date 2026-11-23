@@ -1,0 +1,35 @@
+/*
+ * 공통 푸터 (담당: 유다연)
+ * Footer.jsx는 건드리지 않고 기존 클래스에만 스타일을 입힌다.
+ * 시안의 로고 아이콘·회사 정보·윗줄 구조는 Footer.jsx가 바뀌어야 들어간다 (지금은 색·크기·여백만).
+ * TODO 표시는 아직 시안 수치를 못 받은 값
+ */
+
+.footer {
+  box-sizing: border-box;
+  height: 233px;
+  margin-top: 0; /* TODO 본문과 푸터 사이 여백 */
+  padding: 20px 0 60px;
+  border-top: none;
+  background: #8e93a8; /* TODO 배경색 */
+  color: #fff;
+}
+
+.footer .footer__inner {
+  justify-content: flex-start;
+  gap: 30px;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 0 65px; /* 로고 왼쪽 간격 65 */
+}
+
+.footer .footer__inner > span {
+  font-size: 36px; /* 저격증 글씨 */
+  font-weight: 900;
+}
+
+.footer .footer__inner button {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+}
