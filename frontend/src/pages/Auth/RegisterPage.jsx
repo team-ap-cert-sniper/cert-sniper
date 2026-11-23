@@ -331,15 +331,15 @@ export default function RegisterPage() {
       return;
     }
 
-    // "(학부 전체)" 항목은 id가 'college:학부ID' 형식 → 학부 ID로 보냄. 일반 전공은 전공 ID로 보냄
-    const isFaculty = String(major?.id ?? '').startsWith('college:');
+    // "(학부 전체)" 항목(scope = FACULTY)은 id가 학부 ID → college_id로 보냄. 일반 전공은 major_id로 보냄
+    const isFaculty = major?.scope === 'FACULTY';
     const request = {
       email: normalizeEmail(email),
       password,
       name: name.trim(),
       nickname: nickname.trim(),
       university_id: noSchool ? null : Number(university.id),
-      college_id: noSchool || !isFaculty ? null : Number(String(major.id).slice('college:'.length)),
+      college_id: noSchool || !isFaculty ? null : Number(major.id),
       major_id: noSchool || isFaculty ? null : Number(major.id),
       grade: noSchool ? null : grade,
       owned_jmcds: certs.map((c) => c.jmcd),
