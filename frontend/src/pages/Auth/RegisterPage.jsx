@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AlertModal from '@/components/common/AlertModal';
+import PopupModal from '@/components/common/PopupModal';
 import SearchSelect from '@/components/common/SearchSelect';
 import { checkNickname, register, sendEmailCode, verifyEmailCode } from '@/api/authApi';
 import { getOptions } from '@/api/optionApi';
@@ -667,10 +667,10 @@ export default function RegisterPage() {
       </form>
 
       {done && (
-        <AlertModal
-          message="회원가입이 완료되었습니다."
-          buttonText="로그인하러 가기"
-          onClose={() => navigate('/login')}
+        <PopupModal
+          title="회원가입 완료!"
+          message="저격증의 회원이 되신 것을 환영합니다!"
+          buttons={[{ text: '로그인하러 가기', onClick: () => navigate('/login') }]}
         />
       )}
     </div>
