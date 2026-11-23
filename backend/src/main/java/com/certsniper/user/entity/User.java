@@ -62,4 +62,22 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "withdrawal_requested_at")
     private LocalDateTime withdrawalRequestedAt;
+
+    public static User create(String email, String encodedPassword, String name, String nickname,
+            Long universityId, Long collegeId, Long majorId, String grade) {
+        User user = new User();
+        user.email = email;
+        user.password = encodedPassword;
+        user.name = name;
+        user.nickname = nickname;
+        user.universityId = universityId;
+        user.collegeId = collegeId;
+        user.majorId = majorId;
+        user.grade = grade;
+        return user;
+    }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

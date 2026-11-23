@@ -7,11 +7,15 @@ import com.certsniper.recommendation.dto.RecommendationRequest;
 import com.certsniper.user.dto.UserProfileResponse;
 import com.certsniper.user.dto.UserUpdateRequest;
 import com.certsniper.user.entity.User;
+import com.certsniper.user.entity.UserCertificate;
 import com.certsniper.user.repository.UserCertificateRepository;
 import com.certsniper.user.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,28 +42,47 @@ public class UserService {
     /** auth 회원가입: 회원·학력·보유 자격 저장 후 회원 ID 반환 */
     @Transactional
     public Long createUser(RegisterRequest request, String encodedPassword) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        // 학교 정보 검증(OptionService.validateSchoolInfo)은 auth가 호출한다. 닉네임만 한 번 더 확인
+        if (!isNicknameAvailable(request.nickname())) {
+            throw new BusinessException(ErrorCode.DUPLICATE);
+        }
+        User user = userRepository.save(User.create(
+                request.email(), encodedPassword, request.name(), request.nickname(),
+                request.universityId(), request.collegeId(), request.majorId(), request.grade()));
+
+        List<UserCertificate> certs = new ArrayList<>();
+        distinctNonBlank(request.ownedJmcds()).forEach(j -> certs.add(UserCertificate.ofJmcd(user.getId(), j)));
+        distinctNonBlank(request.ownedCertNames()).forEach(n -> certs.add(UserCertificate.ofName(user.getId(), n)));
+        userCertificateRepository.saveAll(certs);
+        return user.getId();
+    }
+
+    private static List<String> distinctNonBlank(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+        return values.stream().filter(v -> v != null && !v.isBlank()).map(String::trim).distinct().toList();
     }
 
     /** auth 로그인·비밀번호 재설정: 이메일로 회원 조회 (없으면 null) */
     public User findByEmail(String email) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     /** 회원 조회 (없으면 NOT_FOUND) */
     public User getUser(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
     }
 
     /** auth 비밀번호 재설정·변경: 암호화된 비밀번호 저장 */
     @Transactional
     public void updatePassword(Long userId, String encodedPassword) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        getUser(userId).changePassword(encodedPassword);
     }
 
     /** auth 닉네임 중복 확인 */
     public boolean isNicknameAvailable(String nickname) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return !userRepository.existsByNickname(nickname);
     }
 
     /** recommendation 전공 맞춤 추천: 회원정보의 학력·보유 자격 */
@@ -69,7 +92,7 @@ public class UserService {
 
     /** admin 대시보드: 전체 회원 수 */
     public long countUsers() {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return userRepository.count();
     }
 
     /** auth 로그인: 정지 기간이 끝났으면 ACTIVE로 되돌리고 이력 기록 */
@@ -80,7 +103,8 @@ public class UserService {
 
     /** passstory·admin 목록: 작성자 닉네임 (회원 ID → 닉네임) */
     public Map<Long, String> getNicknames(Collection<Long> userIds) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
     }
 
     /** admin 신고 숨김 확정: 누적 숨김 횟수 +1 (정지는 관리자가 suspend로 직접 실행) */
