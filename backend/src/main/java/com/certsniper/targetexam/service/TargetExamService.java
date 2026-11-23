@@ -4,6 +4,7 @@ import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.targetexam.dto.TargetExamRequest;
 import com.certsniper.targetexam.dto.TargetExamResponse;
+import com.certsniper.targetexam.entity.TargetExam;
 import com.certsniper.targetexam.repository.TargetExamRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,19 +44,23 @@ public class TargetExamService {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
-    /** planner·memo: 내 목표 자격증인지 확인 (아니면 FORBIDDEN) */
+        /** planner·memo: 내 목표 자격증인지 확인 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
     public void validateOwner(Long userId, Long targetExamId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        TargetExam targetExam = targetExamRepository.findById(targetExamId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (!targetExam.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
     }
 
     /** planner 일정 6개 제한 검사: 목표 자격증 수 */
     public long countByUser(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return targetExamRepository.countByUserId(userId);
     }
 
     /** user 탈퇴 확정: 목표 자격증 전체 삭제 (일정바·메모는 DB에서 같이 삭제) */
     @Transactional
     public void deleteAllByUser(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        targetExamRepository.deleteAllByUserId(userId);
     }
 }
