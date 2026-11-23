@@ -14,6 +14,7 @@
 
 #root > main {
   flex: 1 0 auto;
+  width: 100%; /* 세로 정렬에서 본문 폭이 내용만큼 줄어드는 것 방지 */
 }
 
 /* footer.footer: global.css의 .footer 규칙보다 우선 적용 */
