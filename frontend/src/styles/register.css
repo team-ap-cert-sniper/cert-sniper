@@ -272,6 +272,10 @@ main:has(> .register-page) {
 .register__search .search-select__list li:hover {
   background: #f1f3ff;
 }
+/* 검색칸 밖(빈 곳)을 누르면 목록 닫기: 입력칸에서 포커스가 빠지면 목록을 숨김 */
+.register__search .search-select:not(:focus-within) .search-select__list {
+  display: none;
+}
 
 .register__checkbox {
   display: flex;

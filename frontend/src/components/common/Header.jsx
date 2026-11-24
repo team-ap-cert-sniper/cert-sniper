@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { logout } from '@/api/authApi';
 import useAuth from '@/hooks/useAuth';
+import useHideOnScroll from '@/hooks/useHideOnScroll';
 import { authStore } from '@/store/authStore';
 
 const MENUS = [
@@ -16,6 +17,7 @@ export default function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, isAdmin } = useAuth();
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const hidden = useHideOnScroll();
 
   const handleLogout = async () => {
     const { refreshToken } = authStore.getState();
@@ -29,7 +31,7 @@ export default function Header() {
   };
 
   return (
-    <header className="header">
+    <header className={hidden ? 'header header--hidden' : 'header'}>
       <div className="header__inner">
         <Link to="/" className="header__logo">
           저격증

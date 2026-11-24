@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Footer from '@/components/common/Footer';
 import Header from '@/components/common/Header';
 import LoginRequiredModal from '@/components/common/LoginRequiredModal';
+import ScrollProgressBar from '@/components/common/ScrollProgressBar';
 import useAuth from '@/hooks/useAuth';
 import { authStore } from '@/store/authStore';
 
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <>
       <Header />
+      <ScrollProgressBar />
       <main className="container">
         <Outlet />
       </main>
