@@ -30,4 +30,10 @@ public class InquiryAnswer {
 
     @Column(name = "content", nullable = false, length = 1000)
     private String content;
+
+    public InquiryAnswer(Long inquiryId, Long adminId, String content) {
+        this.inquiryId = inquiryId;
+        this.adminId = adminId;
+        this.content = content;
+    }
 }

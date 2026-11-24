@@ -52,4 +52,17 @@ public class AdminAuditLog extends BaseTimeEntity {
 
     @Column(name = "client_ip", length = 45)
     private String clientIp;
+
+    /** request_id·client_ip는 팀 결정(Q10) 전까지 비워 둠 */
+    public AdminAuditLog(Long adminId, Long targetUserId, String action, String targetTable, String targetId,
+                         String beforeJson, String afterJson, String reason) {
+        this.adminId = adminId;
+        this.targetUserId = targetUserId;
+        this.action = action;
+        this.targetTable = targetTable;
+        this.targetId = targetId;
+        this.beforeJson = beforeJson;
+        this.afterJson = afterJson;
+        this.reason = reason;
+    }
 }

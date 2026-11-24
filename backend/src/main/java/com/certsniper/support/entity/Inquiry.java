@@ -37,4 +37,16 @@ public class Inquiry extends BaseTimeEntity {
 
     @Column(name = "status", nullable = false, length = 20)
     private String status = "WAITING";
+
+    public Inquiry(Long userId, String inquiryType, String title, String content) {
+        this.userId = userId;
+        this.inquiryType = inquiryType;
+        this.title = title;
+        this.content = content;
+    }
+
+    /** 답변 저장 시 답변 완료로 변경 */
+    public void markAnswered() {
+        this.status = "ANSWERED";
+    }
 }
