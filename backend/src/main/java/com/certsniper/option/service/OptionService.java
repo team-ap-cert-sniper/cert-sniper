@@ -2,11 +2,16 @@ package com.certsniper.option.service;
 
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
+import com.certsniper.job.entity.InterestField;
+import com.certsniper.job.entity.JobCategory;
+import com.certsniper.job.repository.InterestFieldRepository;
+import com.certsniper.job.repository.JobCategoryRepository;
 import com.certsniper.option.dto.OptionItem;
 import com.certsniper.option.dto.OptionResponse;
 import com.certsniper.option.dto.SchoolInfoResponse;
 import com.certsniper.qualification.entity.Qualification;
 import com.certsniper.qualification.repository.QualificationRepository;
+import com.certsniper.qualification.repository.QualificationRepository.FieldCount;
 import com.certsniper.university.entity.College;
 import com.certsniper.university.entity.Major;
 import com.certsniper.university.entity.University;
@@ -19,7 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +55,8 @@ public class OptionService {
     private final CollegeRepository collegeRepository;
     private final MajorRepository majorRepository;
     private final QualificationRepository qualificationRepository;
+    private final InterestFieldRepository interestFieldRepository;
+    private final JobCategoryRepository jobCategoryRepository;
 
     public OptionResponse getOptions(
             String kind,
@@ -69,8 +78,8 @@ public class OptionService {
             case "majors" -> majors(universityId, q);
             case "grades" -> grades(q);
             case "qualifications" -> qualifications(q, qualgbcd, gradeLevel, interestFieldCode, jobCategoryCode);
-            // 관심 분야·희망 직무는 추천 화면 담당 범위 (아직 미구현)
-            case "interest_fields", "job_categories" -> throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+            case "interest_fields" -> fields(q, qualgbcd, null, true);
+            case "job_categories" -> fields(q, qualgbcd, interestFieldCode, false);
             default -> throw new BusinessException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 목록 종류입니다.");
         };
         return page(kind, items, offset, limit);
@@ -173,9 +182,7 @@ public class OptionService {
 
     private List<OptionItem> qualifications(
             String q, String qualgbcd, String gradeLevel, String interestFieldCode, String jobCategoryCode) {
-        if (qualgbcd != null && !qualgbcd.isBlank() && !"T".equals(qualgbcd) && !"S".equals(qualgbcd)) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "qualgbcd는 T 또는 S만 가능합니다.");
-        }
+        requireQualgbcd(qualgbcd);
         if ("S".equals(qualgbcd) && gradeLevel != null && !gradeLevel.isBlank()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "국가전문자격(S)은 등급으로 거를 수 없습니다.");
         }
@@ -191,7 +198,37 @@ public class OptionService {
                 .toList();
     }
 
+    /**
+     * 직무분야 목록. large = 대분류(interest_fields), 아니면 중분류(job_categories).
+     * count = 조건에 맞는 종목 수, 종목이 0개인 분야는 제외. 이름 → 코드 순.
+     */
+    private List<OptionItem> fields(String q, String qualgbcd, String interestFieldCode, boolean large) {
+        requireQualgbcd(qualgbcd);
+        Function<FieldCount, String> key = large ? FieldCount::getObligfldcd : FieldCount::getMdobligfldcd;
+        Map<String, Long> counts = qualificationRepository.countByField(isBlank(qualgbcd) ? null : qualgbcd).stream()
+                .filter(c -> key.apply(c) != null)
+                .filter(c -> large || isBlank(interestFieldCode) || interestFieldCode.equals(c.getObligfldcd()))
+                .collect(Collectors.groupingBy(key, Collectors.summingLong(FieldCount::getTotal)));
+        Map<String, String> names = large
+                ? interestFieldRepository.findAll().stream()
+                        .collect(Collectors.toMap(InterestField::getCode, InterestField::getName))
+                : jobCategoryRepository.findAll().stream()
+                        .collect(Collectors.toMap(JobCategory::getCode, JobCategory::getName));
+        return names.entrySet().stream()
+                .filter(e -> counts.containsKey(e.getKey()) && contains(e.getValue(), q))
+                .sorted(Map.Entry.<String, String>comparingByValue().thenComparing(Map.Entry.comparingByKey()))
+                .map(e -> new OptionItem(null, e.getKey(), e.getValue(), null, null, null, null, null,
+                        counts.get(e.getKey()).intValue(), null, null, null, null, null))
+                .toList();
+    }
+
     /* ---------- 도우미 ---------- */
+
+    private static void requireQualgbcd(String qualgbcd) {
+        if (!isBlank(qualgbcd) && !"T".equals(qualgbcd) && !"S".equals(qualgbcd)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "qualgbcd는 T 또는 S만 가능합니다.");
+        }
+    }
 
     private static OptionResponse page(String kind, List<OptionItem> items, int offset, int limit) {
         int from = Math.min(offset, items.size());
