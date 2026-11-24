@@ -1,0 +1,22 @@
+/*
+ * 스크롤 진행 바 (담당: 유다연)
+ * 화면 맨 위(헤더보다 위)에 항상 붙어 있고, 스크롤한 만큼 핑크가 채워진다.
+ */
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 60; /* 헤더(50)보다 위, 팝업(100)보다 아래 */
+  height: 3.5px;
+  background: #000;
+  pointer-events: none;
+}
+
+/* 채워지는 핑크 부분: 0(왼쪽 끝) ~ 1(오른쪽 끝)까지 가로로 늘어남 */
+.scroll-progress__fill {
+  height: 100%;
+  background: #e8bcce;
+  transform-origin: left center;
+}

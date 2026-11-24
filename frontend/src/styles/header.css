@@ -1,6 +1,6 @@
 /*
  * 공통 헤더 (담당: 유다연)
- * Header.jsx는 건드리지 않고 기존 클래스에만 스타일을 입힌다.
+ * 아래로 스크롤하면 헤더가 숨고, 위로 스크롤하면 다시 나타난다. (Header.jsx의 useHideOnScroll)
  * TODO 표시는 아직 시안 수치를 못 받은 값
  */
 
@@ -10,6 +10,12 @@
   z-index: 50;
   border-bottom: none; /* TODO 시안에 헤더 아래 선이 없는지 확인 */
   background: #fff;
+  transition: transform 300ms ease;
+}
+
+/* 아래로 스크롤하면 헤더가 위로 부드럽게 올라가 숨고, 위로 스크롤하면 다시 내려온다 */
+.header.header--hidden {
+  transform: translateY(-100%);
 }
 
 /* 로고 | 메뉴(가운데) | 로그인 영역 */
