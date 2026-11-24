@@ -37,4 +37,23 @@ public class Notice extends BaseTimeEntity {
 
     @Column(name = "is_deleted", nullable = false)
     private Boolean isDeleted = false;
+
+    public Notice(Long authorId, String noticeType, String title, String content) {
+        this.authorId = authorId;
+        this.noticeType = noticeType;
+        this.title = title;
+        this.content = content;
+    }
+
+    /** 공지 수정 (작성 관리자는 바꾸지 않음) */
+    public void update(String noticeType, String title, String content) {
+        this.noticeType = noticeType;
+        this.title = title;
+        this.content = content;
+    }
+
+    /** 삭제는 상태값으로 남김 */
+    public void delete() {
+        this.isDeleted = true;
+    }
 }
