@@ -1,0 +1,92 @@
+/* 공통 팝업 650 x 400 — 위치는 디자인 명세의 top 값 그대로 */
+.popup {
+  position: relative;
+  width: 650px;
+  height: 400px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #454b5a;
+}
+
+/* 아이콘 100 x 100 / top 45 / 가운데 */
+.popup__icon {
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  transform: translateX(-50%);
+}
+
+/* 제목 bold 40 / top 161 */
+.popup__title {
+  position: absolute;
+  top: 161px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 48px;
+  text-align: center;
+}
+
+/* 중간 내용 medium 20 / top 242 */
+.popup__message {
+  position: absolute;
+  top: 242px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+  text-align: center;
+}
+
+/* 버튼 줄 / top 305 */
+.popup__actions {
+  position: absolute;
+  top: 305px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+}
+
+/* 버튼 2개: 190 x 50 / 버튼 1개: 400 x 50 */
+.popup__button {
+  box-sizing: border-box;
+  width: 190px;
+  height: 50px;
+  padding: 12px 16px;
+  border: 0.2px solid #454b5a;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 26px;
+  color: #454b5a;
+  cursor: pointer;
+  transition: background 120ms ease-out;
+}
+
+.popup__actions--single .popup__button {
+  width: 400px;
+}
+
+.popup__button--primary {
+  background: #e8bcce;
+}
+
+.popup__button--primary:hover {
+  background: #dfa9be;
+}
+
+.popup__button--secondary {
+  background: #ffffff;
+}
+
+.popup__button--secondary:hover {
+  background: #f1f3ff;
+}
