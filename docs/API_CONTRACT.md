@@ -25,7 +25,7 @@
 - 인증은 팀 공통 규칙(JWT)을 따릅니다. 이 문서의 함수는 인증과 무관하게 입력만으로 결과를 계산합니다.
 - 화면 쪽 정해진 것: 대학교·전공은 검색+선택 드롭다운(검색어 없이 열면 전체 목록), 관심분야·희망직무는 최대 5개 칩, 합격률 그래프는 점에 마우스를 올리면 응시자·합격자 수(`pass_rates[].examinees`·`passers`) 표시.
 - 이름 규칙: 요청·응답 필드 이름은 DB 컬럼 이름을 따른다(`university_id`, `jmcd`·`jmfldnm`, `qualgbcd`(T/S), `grade_level`, `interest_field_code`, `job_category_code`, `year`·`examinees`·`passers`·`pass_rate_pct`·`data_source`). 화면 표시용 이름은 `qualgbnm`·`interest_field_name`·`job_category_name`.
-- 백엔드(Java) 응답: 연도가 붙은 필드는 연도를 뺀 이름(`schedules_2026` → `schedules`), 종목은 `qualification_id`(`QNET:1320`) 없이 `jmcd`만, ID는 DB의 BIGINT를 씁니다. CSV 내부 이름(`school_id`·`exam_year`·`passed`·`seriesnm` 등)은 쓰지 않습니다.
+- 백엔드(Java) 응답: 연도가 붙은 필드는 연도를 뺀 이름(`schedules_2026` → `schedules`), 종목은 `qualification_id`(`QNET:1320`) 없이 `jmcd`만, ID는 DB의 BIGINT를 씁니다. CSV 내부 이름(`school_id`·`exam_year`·`passed`·`seriesnm` 등)은 쓰지 않습니다. 학부 합산 선택은 `major_id` 대신 `college_id`(DB `colleges.id`)로 주고받습니다(1장 majors, 2장 입력).
 
 ## 1. 선택 목록 — `service.options(kind, university_id=None, query='', offset=0, limit=50, qualgbcd=None, grade_level=None, interest_field_code=None, job_category_code=None)`
 경로: `GET /api/v1/options/{kind}?university_id=&query=&offset=&limit=`
@@ -35,7 +35,7 @@
 | kind | 필요한 값 | items 원소 |
 |---|---|---|
 | universities | - | `{id, name, campus_name, school_type}` |
-| majors | university_id | `{id, name, parent_name, scope, label}` — 그 학교 전공 + '(학부 전체)' 항목. `scope`: `MAJOR`(전공 기준) / `FACULTY`(학부 이름 항목 → 소속 전공 합산). `label`: 화면 표시용 `전공 · 소속 학부`(소속 학부가 있을 때). `query`는 전공 이름과 소속 학부 이름 둘 다 검색(경상 → 경상학부·경영학·회계학). 정렬은 학부별로 묶어 학부 항목 먼저 |
+| majors | university_id | `{id, name, parent_name, scope, label}` — 그 학교 전공 + '(학부 전체)' 항목. `scope`: `MAJOR`(전공 기준) / `FACULTY`(학부 이름 항목 → 소속 전공 합산). `label`: 화면 표시용 `전공 · 소속 학부`(소속 학부가 있을 때). `query`는 전공 이름과 소속 학부 이름 둘 다 검색(경상 → 경상학부·경영학·회계학). 정렬은 학부별로 묶어 학부 항목 먼저. Java 응답에서 `FACULTY` 항목의 `id`는 학부 ID(`colleges.id`), `MAJOR` 항목의 `id`는 학과 ID(`majors.id`) |
 | grades | - | `{id, name}` — `1`~`6`, `GRADUATED`, `NOT_ENROLLED` |
 | interest_fields | (선택) `qualgbcd` | `{code, name, count}` — Q-Net 직무분야(대분류), `code` = `interest_fields.code`. `count` = 그 분야 종목 수(`qualgbcd`를 주면 그 구분만). 종목이 0개인 분야는 목록에 없음 |
 | job_categories | (선택) `qualgbcd`, `interest_field_code` | `{code, name, count}` — Q-Net 직무분야(중분류), `code` = `job_categories.code`. `interest_field_code`를 주면 그 대분류 아래만 |
@@ -59,12 +59,13 @@
   "owned_jmcds": []
 }
 ```
-- `university_id`·`major_id`·`grade`는 **셋 다 넣거나 셋 다 비웁니다**(회원가입에서 학교 정보 없음을 고른 회원). 하나만 있으면 400.
+- `university_id`·`major_id`·`grade`는 **셋 다 넣거나 셋 다 비웁니다**(회원가입에서 학교 정보 없음을 고른 회원). 하나만 있으면 400. Java는 `major_id` 자리에 `college_id`를 줄 수 있습니다.
 - 셋 다 비어 있으면 결과 없이 `needs_school_info: true` → 화면은 "관심 분야·희망 직무를 골라 주세요" 안내(조건 선택 추천으로 유도).
 - `owned_jmcds`(선택, `user_certificates.jmcd`): 보유 자격과 그 하위 등급은 결과에서 뺍니다.
 - **화면 표시**: `items` = 학과 연결 추천(`recommended`) 점수순 **최대 5개**(`result_limit`). 학과 연결이 5개보다 적으면 그 수만큼만 나옵니다.
 - **결과 0개 구분**: `needs_school_info: true` → 학교 정보 없음 안내 / `needs_school_info: false`이고 `items`가 빈 목록 → 학과 연결 없음 안내(관심 분야·희망 직무로 찾아보기). 두 경우 모두 화면은 조건 검색창을 펼칩니다.
 - `major_id`는 `options majors`의 `id`(전공 ID 또는 '(학부 전체)' 항목의 학부 ID). 같은 학교여야 함. `scope`가 `FACULTY`인 항목이면 `recommendation_scope = FACULTY`(소속 전공 합산, `faculty_share` 포함).
+- Java: `scope`가 `MAJOR`인 항목은 `major_id`, `FACULTY`인 항목은 `college_id`로 보냅니다(둘 중 하나, 회원정보 `users.major_id`·`users.college_id`와 같음). `college_id`가 오면 `recommendation_scope = FACULTY`. 학부 이름과 같은 학과 행은 `majors.aggregate_college_id`로 같은 학부를 찾으므로 결과는 Python과 같습니다.
 
 출력:
 ```json
