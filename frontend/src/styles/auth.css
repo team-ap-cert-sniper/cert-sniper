@@ -1,0 +1,286 @@
+/*
+ * 로그인 (VIEW-03) · 비밀번호 재설정 (VIEW-04), 담당: 유다연
+ * LoginPage.jsx · PasswordResetPage.jsx에서 직접 import. 모든 규칙을 .auth-page 안에서만 적용.
+ * 색은 회원가입과 같음: 페이지 배경 #F1F3FF / 흰 카드 #FFFFFF / 카드 안 입력칸 #F1F3FF / 포인트 #E8BCCE
+ */
+
+/* 헤더와 푸터 사이 남은 공간 전체를 쓰고, 흰 카드를 세로·가로 가운데에 */
+main:has(> .auth-page) {
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: #f1f3ff;
+}
+
+.auth-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 24px;
+  color: #454b5a;
+}
+
+.auth-page > .auth__card {
+  width: 100%;
+}
+
+.auth__card {
+  box-sizing: border-box;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 64px 120px 56px;
+  border-radius: 24px;
+  background: #fff;
+}
+
+.auth__card--narrow {
+  padding: 64px 180px 48px;
+}
+
+.auth__title {
+  margin: 0 0 40px;
+  font-size: 44px;
+  font-weight: 700;
+  text-align: center;
+  color: #1f2328;
+}
+
+.auth__desc {
+  margin: -16px 0 40px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ----- 입력 ----- */
+.auth__field {
+  margin-bottom: 24px;
+}
+
+.auth__label {
+  display: block;
+  margin: 0 0 8px 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.auth__row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.auth__input-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.auth__input {
+  box-sizing: border-box;
+  flex: 1;
+  width: 100%;
+  height: 56px;
+  padding: 0 24px;
+  border: 1.5px solid transparent;
+  border-radius: 28px;
+  background: #f1f3ff;
+  font: inherit;
+  font-size: 16px;
+  color: #454b5a;
+  outline: none;
+}
+
+.auth__input::placeholder {
+  color: #9aa0b4;
+}
+
+.auth__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth__input--with-badge {
+  padding-right: 64px;
+}
+
+.auth__timer {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%);
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #d92d20;
+}
+/* ----- 이메일 도메인 자동완성 (@ 입력 시, 회원가입과 같은 모양) ----- */
+.auth__suggest {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  max-height: 280px;
+  margin: 0;
+  padding: 8px 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(69, 75, 90, 0.12);
+}
+
+.auth__suggest li {
+  padding: 10px 24px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.auth__suggest li:hover,
+.auth__suggest li.is-active {
+  background: #f1f3ff;
+}
+/* ----- 입력칸 옆 버튼 (이메일 확인 · 인증 확인) ----- */
+.auth__button {
+  flex: none;
+  width: 180px;
+  height: 56px;
+  border: 1.5px solid #e8bcce;
+  border-radius: 28px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  color: #454b5a;
+  cursor: pointer;
+  transition: background 120ms ease-out;
+}
+
+.auth__button:hover:not(:disabled) {
+  background: #fdf3f7;
+}
+
+.auth__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- 비밀번호 규칙 V / X (칸 안 오른쪽) ----- */
+.auth__badge {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth__badge--ok {
+  color: #1e8e3e;
+}
+
+.auth__badge--ng {
+  color: #d92d20;
+}
+
+/* ----- 안내 문구 ----- */
+.auth__msg {
+  margin: 8px 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth__msg--error {
+  color: #d92d20;
+}
+
+.auth__msg--success {
+  color: #1e8e3e;
+}
+
+.auth__hint {
+  margin: 6px 0 0 16px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* 로그인: 비밀번호 칸 아래 (왼쪽 오류 문구 · 오른쪽 비밀번호 찾기) */
+.auth__under-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 24px;
+}
+
+.auth__link {
+  flex: none;
+  margin: 8px 8px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #454b5a;
+  text-decoration: none;
+}
+
+.auth__link:hover {
+  text-decoration: underline;
+}
+
+/* ----- 주요 버튼 (로그인 · 다음 · 비밀번호 변경 완료) ----- */
+.auth__primary {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin: 32px auto 0;
+  border: 0;
+  border-radius: 28px;
+  background: #e8bcce;
+  font-size: 18px;
+  font-weight: 700;
+  color: #454b5a;
+  cursor: pointer;
+  transition: background 120ms ease-out;
+}
+
+.auth__primary--small {
+  max-width: 320px;
+}
+
+.auth__primary:hover:not(:disabled) {
+  background: #dfa9be;
+}
+
+.auth__primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 로그인: 아직 회원이 아니신가요? 회원가입 */
+.auth__footer {
+  margin: 28px 0 0;
+  font-size: 14px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.auth__accent-link {
+  margin-left: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #e88aaf;
+  text-decoration: none;
+}
+
+.auth__accent-link:hover {
+  text-decoration: underline;
+}

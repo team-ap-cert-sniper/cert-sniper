@@ -34,4 +34,18 @@ public class UserToken {
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
+
+    /** 새 Refresh Token 저장 (원문 대신 해시만 보관). 같은 로그인에서 재발급된 토큰은 family가 같다. */
+    public static UserToken issue(Long userId, String tokenHash, String tokenFamily, LocalDateTime expiresAt) {
+        UserToken token = new UserToken();
+        token.userId = userId;
+        token.tokenHash = tokenHash;
+        token.tokenFamily = tokenFamily;
+        token.expiresAt = expiresAt;
+        return token;
+    }
+
+    public boolean isExpired(LocalDateTime now) {
+        return !expiresAt.isAfter(now);
+    }
 }
