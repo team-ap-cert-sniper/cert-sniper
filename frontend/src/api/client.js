@@ -41,7 +41,8 @@ client.interceptors.response.use(
         refreshing = null;
       }
     }
-    if (response?.status === 401) {
+    // 로그인 화면의 아이디·비밀번호 불일치(LOGIN_FAILED)는 로그인 필요 팝업 대상이 아님
+    if (response?.status === 401 && code !== 'LOGIN_FAILED') {
       authStore.openLoginRequired();
     }
     return Promise.reject(error);

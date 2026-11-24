@@ -35,7 +35,9 @@ public class EmailVerificationService {
         String email = AuthRules.normalizeEmail(request.email());
         AuthRules.requireValidEmail(email);
 
-        boolean registered = userService.findByEmail(email) != null;
+                // 탈퇴 확정 계정은 미가입과 같게 본다 (회원가입은 막고, 비밀번호 재설정은 인증번호를 보내지 않음)
+        var found = userService.findByEmail(email);
+        boolean registered = found != null && !"WITHDRAWN".equals(found.getStatus());
         if (PURPOSE_REGISTER.equals(purpose) && registered) {
             throw new BusinessException(ErrorCode.DUPLICATE, "이미 가입된 이메일입니다.");
         }
