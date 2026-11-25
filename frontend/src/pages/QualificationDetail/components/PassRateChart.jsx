@@ -6,11 +6,13 @@ import { formatNumber, formatPercent } from '@/utils/format';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
+// 막대 색은 variables.css 토큰 값을 그대로 쓴다
 const SERIES = [
-  { key: 'applicants', label: '접수자', color: '#454b5a' },
-  { key: 'examinees', label: '응시자', color: '#e8bcce' },
-  { key: 'passers', label: '합격자', color: '#dfa9be' },
+  { key: 'applicants', label: '접수자', token: '--color-brand-navy' },
+  { key: 'examinees', label: '응시자', token: '--color-brand-pink' },
+  { key: 'passers', label: '합격자', token: '--color-brand-pink-dark' },
 ];
+const tokenColor = (token) => getComputedStyle(document.documentElement).getPropertyValue(token).trim();
 
 // 연도별 단계 통계: 연도를 골라 접수자·응시자·합격자 막대그래프와 표
 export default function PassRateChart({ passRates, years }) {
@@ -22,7 +24,11 @@ export default function PassRateChart({ passRates, years }) {
 
   const data = {
     labels: rows.map((r) => r.exam_stage),
-    datasets: SERIES.map((s) => ({ label: s.label, data: rows.map((r) => r[s.key] ?? 0), backgroundColor: s.color })),
+    datasets: SERIES.map((s) => ({
+      label: s.label,
+      data: rows.map((r) => r[s.key] ?? 0),
+      backgroundColor: tokenColor(s.token),
+    })),
   };
   const options = {
     responsive: true,

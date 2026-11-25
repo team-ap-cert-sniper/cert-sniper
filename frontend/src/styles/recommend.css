@@ -1,130 +1,372 @@
+/* 디자인 값 (추천 화면 안에서만 사용) */
 .recommend {
+  --color-brand-line: #d5d9ee;
+  --color-brand-ink: #1e1b1c;
+  --color-brand-ink-sub: #59535e;
+  --color-brand-ink-pink: #2a1520;
+  --color-brand-plum: #6d3b5e;
+  --radius-brand: 15px;
+
   display: flex;
   flex-direction: column;
-  gap: var(--space-lg);
+  gap: 32px;
+  margin: calc(-1 * var(--space-lg)) calc(-1 * var(--space-md));
+  padding: 32px 24px;
+  background: var(--color-brand-lavender);
+  color: var(--color-brand-ink);
 }
 
-.recommend__title {
-  margin: 0;
-  font-size: var(--font-size-xl);
+/* 흰 박스 섹션 공통 */
+.recommend-box {
+  padding: 24px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: var(--radius-brand);
+  background: var(--color-bg);
+}
+
+.recommend-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.recommend-pill--pink {
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
 }
 
 .recommend__section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-md);
+  margin-bottom: 16px;
 }
 
 .recommend__section-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.recommend__section-head h2::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-brand-pink);
 }
 
 .recommend__section-head a {
-  color: var(--color-text-sub);
-  font-size: var(--font-size-sm);
+  padding: 8px 16px;
+  border-radius: var(--radius-brand);
+  background: var(--color-brand-lavender);
+  font-size: 15px;
+  font-weight: 500;
 }
 
-/* 현재 선택 조건 · 조건 검색창 */
+.recommend__note {
+  margin: 16px 0 0;
+  color: var(--color-brand-ink-sub);
+  font-size: 14px;
+  text-align: right;
+}
+
+/* 합격수기 미리보기 */
+.story-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--color-brand-ink);
+}
+
+.story-preview__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 16px;
+  background: var(--color-brand-lavender);
+  font-size: 15px;
+}
+
+.story-preview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story-preview__tags span {
+  padding: 4px 12px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: 9999px;
+  background: var(--color-bg);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.story-preview__tags span + span {
+  border-color: var(--color-brand-pink);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+}
+
+.story-preview__writer {
+  font-weight: 500;
+}
+
+.story-preview__body {
+  margin-top: -8px;
+  padding-right: 48px;
+  color: var(--color-brand-ink-sub);
+}
+
+.story-preview__date {
+  margin-top: auto;
+  color: var(--color-brand-ink-sub);
+  font-family: 'Red Hat Mono', monospace;
+  font-size: 13px;
+  text-align: right;
+}
+
+.story-preview__go {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: 9999px;
+  background: var(--color-bg);
+}
+
+/* 현재 선택 조건 (표시만) · 관심 분야·희망 직무 검색 */
 .condition-bar {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-bg-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .condition-bar__summary {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  background: var(--color-brand-lavender);
 }
 
-.condition-bar__label {
-  color: var(--color-text-sub);
-  font-size: var(--font-size-sm);
+.condition-bar__current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--color-brand-ink-sub);
+}
+
+.condition-bar__current > strong {
+  color: var(--color-brand-ink);
+  font-weight: 500;
+}
+
+.condition-bar__current span strong {
+  color: var(--color-brand-ink);
+}
+
+.condition-bar__divider {
+  color: #9e9db3;
 }
 
 .condition-bar__toggle {
-  margin-left: auto;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius);
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: var(--radius-brand);
   background: var(--color-bg);
-  color: var(--color-primary);
-  padding: var(--space-xs) var(--space-md);
+  font-size: 18px;
+  transition: transform 0.2s;
 }
 
-.condition-bar__panel {
+.condition-bar__toggle.is-open {
+  transform: rotate(90deg);
+}
+
+/* 검색 줄: 자격 구분 | 관심 분야 | 희망 직무 | 검색, 칩은 각 입력칸 아래 */
+.condition-bar__form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.condition-bar__type,
+.condition-bar__search {
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: var(--radius-brand);
+  background: var(--color-bg);
+  color: var(--color-brand-ink);
+  font-size: 15px;
+}
+
+.condition-bar__search {
+  font-size: 18px;
+}
+
+.condition-bar__search::placeholder {
+  color: var(--color-brand-ink-sub);
+}
+
+.condition-bar__submit {
+  height: 52px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-brand);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.condition-bar__chips {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border-top: 1px solid var(--color-border);
+  gap: 8px;
 }
 
-.condition-bar__panel > .btn {
-  align-self: flex-end;
+.condition-bar__chips--fields {
+  grid-column: 2;
 }
 
-.condition-bar__group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
+.condition-bar__chips--jobs {
+  grid-column: 3;
+}
+
+.condition-bar__chips p {
   margin: 0;
-  padding: 0;
-  border: 0;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.condition-bar__group legend {
-  margin-bottom: var(--space-sm);
-  font-weight: 700;
-}
-
-.condition-bar__group small {
-  color: var(--color-text-sub);
+.condition-bar__chips small {
+  color: var(--color-brand-ink-sub);
   font-weight: 400;
 }
 
-.condition-bar__radio {
-  display: inline-flex;
+.condition-bar__chips > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.condition-bar__chips .chip {
+  padding: 4px 12px;
+  border-color: var(--color-brand-line);
+  font-size: 14px;
+}
+
+.condition-bar__chips .chip--selected {
+  border-color: var(--color-brand-pink);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+}
+
+.condition-bar__footer {
+  grid-column: 1 / -1;
+  display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  margin-right: var(--space-md);
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 .condition-bar__error {
-  margin: 0;
+  margin: 0 auto 0 0;
   color: var(--color-error);
-  font-size: var(--font-size-sm);
+  font-size: 14px;
 }
 
-/* 추천 카드 캐러셀 */
+.condition-bar__reset {
+  border: 0;
+  background: none;
+  color: var(--color-brand-plum);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* 추천 카드: 커버플로우 */
 .recommend-carousel {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
-  gap: var(--space-md);
-}
-
-.recommend-carousel.is-single {
-  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
 }
 
 .recommend-carousel__arrow {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
+  width: 44px;
+  height: 64px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: var(--radius-brand);
   background: var(--color-bg);
-  font-size: var(--font-size-lg);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.coverflow {
+  grid-column: 2;
+  display: grid;
+  padding: 16px 0;
+}
+
+.coverflow__slide {
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(480px, 100%);
+  cursor: pointer;
+  transform: translateX(calc(var(--offset) * 52%)) scale(0.86);
+  opacity: 0.55;
+  z-index: 1;
+  transition:
+    transform 0.45s ease,
+    opacity 0.45s ease;
+}
+
+.coverflow__slide.is-center {
+  cursor: default;
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  z-index: 2;
+}
+
+.coverflow__slide.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .recommend-carousel__dots {
   grid-column: 1 / -1;
   display: flex;
   justify-content: center;
-  gap: var(--space-sm);
+  gap: 8px;
 }
 
 .recommend-carousel__dot {
@@ -133,20 +375,20 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--color-border);
+  background: var(--color-brand-line);
 }
 
 .recommend-carousel__dot.is-active {
-  background: var(--color-primary);
+  background: var(--color-brand-pink-dark);
 }
 
 .recommend-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  gap: 16px;
+  padding: 24px;
+  border: 2px solid var(--color-brand-pink);
+  border-radius: var(--radius-brand);
   background: var(--color-bg);
 }
 
@@ -154,82 +396,130 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-md);
+  gap: 12px;
 }
 
-.recommend-card__rank,
-.recommend-card__type {
+.recommend-card__rank {
   margin: 0;
-  color: var(--color-text-sub);
-  font-size: var(--font-size-sm);
+  color: var(--color-brand-ink-sub);
+  font-size: 13px;
 }
 
 .recommend-card__name {
-  margin: var(--space-xs) 0;
-  font-size: var(--font-size-xl);
+  margin: 2px 0 6px;
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.recommend-card__type {
+  margin: 0;
+  color: var(--color-brand-plum);
+  font-size: 14px;
 }
 
 .recommend-card__favorite {
+  display: inline-flex;
   flex-shrink: 0;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  color: var(--color-primary);
-  padding: var(--space-xs) var(--space-md);
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--color-brand-lavender);
+  color: var(--color-brand-ink);
+  font-size: 13px;
+}
+
+.recommend-card__mark {
+  fill: none;
 }
 
 .recommend-card__favorite.is-active {
-  background: var(--color-primary);
-  color: var(--color-bg);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+}
+
+.recommend-card__favorite.is-active .recommend-card__mark {
+  fill: currentColor;
 }
 
 .recommend-card__summary {
   margin: 0;
+  font-size: 15px;
 }
 
-.recommend-card__facts {
+.recommend-card__tiles {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: var(--space-sm) var(--space-md);
-  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.recommend-card__facts dt {
-  color: var(--color-text-sub);
+.recommend-card__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--color-brand-lavender);
+  font-size: 14px;
 }
 
-.recommend-card__facts dd {
-  margin: 0;
+.recommend-card__tile > span,
+.recommend-card__tile small {
+  color: var(--color-brand-ink-sub);
+  font-size: 13px;
+}
+
+.recommend-card__tile strong {
+  font-weight: 500;
+}
+
+.recommend-card__reason summary {
+  color: var(--color-brand-plum);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.recommend-card__reason[open] summary {
+  margin-bottom: 8px;
 }
 
 .recommend-card__actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.recommend-card__detail {
+  color: var(--color-brand-plum);
+  font-size: 14px;
+}
+
+.recommend-card__planner {
+  padding: 10px 16px;
+  border-radius: var(--radius-brand);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+  font-size: 17px;
+  font-weight: 500;
 }
 
 /* 추천 근거 */
 .score-reason {
-  padding: var(--space-md);
-  border-radius: var(--radius);
-  background: var(--color-bg-sub);
+  padding: 12px 16px;
+  background: var(--color-brand-lavender);
+  font-size: 13px;
 }
 
 .score-reason__total {
   display: flex;
   align-items: baseline;
-  gap: var(--space-sm);
-  margin: 0 0 var(--space-sm);
-}
-
-.score-reason__total strong {
-  color: var(--color-primary);
+  gap: 8px;
+  margin: 0 0 4px;
 }
 
 .score-reason__date {
   margin-left: auto;
-  color: var(--color-text-sub);
-  font-size: var(--font-size-sm);
+  color: var(--color-brand-ink-sub);
 }
 
 .score-reason__list {
@@ -241,8 +531,8 @@
 .score-reason__list li {
   display: flex;
   justify-content: space-between;
-  padding: var(--space-xs) 0;
-  font-size: var(--font-size-sm);
+  gap: 8px;
+  padding: 2px 0;
 }
 
 .score-reason__points {
@@ -253,16 +543,36 @@
   color: var(--color-error);
 }
 
+@media (max-width: 900px) {
+  .condition-bar__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .condition-bar__chips--fields,
+  .condition-bar__chips--jobs {
+    grid-column: 1;
+  }
+
+  .coverflow__slide:not(.is-center) {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 @media (max-width: 640px) {
   .recommend-carousel {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coverflow {
+    grid-column: 1;
   }
 
   .recommend-carousel__arrow {
     display: none;
   }
 
-  .recommend-card__facts {
+  .recommend-card__tiles {
     grid-template-columns: 1fr;
   }
 }

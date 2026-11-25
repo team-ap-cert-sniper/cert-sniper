@@ -5,7 +5,11 @@ import { GRADES } from '@/constants/grades';
 import { QUALIFICATION_TYPES } from '@/constants/qualification';
 
 const MAX_CHIPS = 5;
-const gradeLabel = (grade) => GRADES.find((g) => g.value === grade)?.label;
+// 학년 표시: 숫자 학년은 'n학년 재학 중', 그 외(졸업·비재학)는 이름 그대로
+function gradeText(grade) {
+  const label = GRADES.find((g) => g.value === grade)?.label;
+  return label && /^\d+$/.test(grade) ? `${label} 재학 중` : label;
+}
 
 // 관심 분야를 고르면 그 분야의 희망 직무만, 안 고르면 전체 희망 직무
 async function loadJobCategories(qualgbcd, interestFieldCodes) {
@@ -25,12 +29,20 @@ function keepAvailable(selected, options) {
   return kept.length === selected.length ? selected : kept;
 }
 
-export default function ConditionBar({ profile, open, onToggle, onSearch, searching, error }) {
+const namesOf = (codes, options) => codes.map((code) => options.find((o) => o.code === code)?.name).filter(Boolean);
+
+// 검색어로 칩 목록을 좁히되, 이미 고른 칩은 항상 보이게
+const filterChips = (options, keyword, selected) =>
+  keyword ? options.filter((o) => o.name.includes(keyword) || selected.includes(o.code)) : options;
+
+export default function ConditionBar({ profile, applied, open, onToggle, onSearch, onReset, searching, error }) {
   const [qualgbcd, setQualgbcd] = useState('');
   const [fieldOptions, setFieldOptions] = useState([]);
   const [jobOptions, setJobOptions] = useState([]);
   const [fields, setFields] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [fieldKeyword, setFieldKeyword] = useState('');
+  const [jobKeyword, setJobKeyword] = useState('');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -70,60 +82,111 @@ export default function ConditionBar({ profile, open, onToggle, onSearch, search
       return;
     }
     setMessage('');
-    onSearch({ qualgbcd: qualgbcd || null, interest_field_codes: fields, job_category_codes: jobs });
+    onSearch({
+      qualgbcd: qualgbcd || null,
+      interest_field_codes: fields,
+      job_category_codes: jobs,
+      labels: { fields: namesOf(fields, fieldOptions), jobs: namesOf(jobs, jobOptions) },
+    });
   };
 
   const school = profile?.university_id
-    ? [profile.university_name, profile.major_name ?? '학부 전체', gradeLabel(profile.grade)]
-        .filter(Boolean)
-        .join(' · ')
+    ? [profile.university_name, profile.major_name ?? '학부 전체', gradeText(profile.grade)].filter(Boolean).join(' ')
     : '학교 정보 없음';
 
   return (
-    <div className="condition-bar">
+    <section className="recommend-box condition-bar">
       <div className="condition-bar__summary">
-        <span className="condition-bar__label">현재 선택 조건</span>
-        <span>{school}</span>
-        <button type="button" className="condition-bar__toggle" aria-expanded={open} onClick={onToggle}>
-          {open ? '조건 검색 접기' : '관심 분야·희망 직무로 찾기'}
+        <div className="condition-bar__current">
+          <span className="recommend-pill recommend-pill--pink">현재 선택 조건</span>
+          <strong>{school}</strong>
+          <span className="condition-bar__divider" aria-hidden="true">
+            |
+          </span>
+          <span>
+            관심 분야: <strong>{applied?.fields.join(', ') || '-'}</strong>
+          </span>
+          <span>
+            희망 직무: <strong>{applied?.jobs.join(', ') || '-'}</strong>
+          </span>
+        </div>
+        <button
+          type="button"
+          className={open ? 'condition-bar__toggle is-open' : 'condition-bar__toggle'}
+          aria-expanded={open}
+          aria-label={open ? '조건 검색 접기' : '관심 분야·희망 직무로 찾기'}
+          onClick={onToggle}
+        >
+          ›
         </button>
       </div>
 
       {open && (
-        <form className="condition-bar__panel" onSubmit={submit}>
-          <fieldset className="condition-bar__group">
-            <legend>자격 구분</legend>
-            {[{ value: '', label: '전체' }, ...QUALIFICATION_TYPES].map((type) => (
-              <label key={type.value} className="condition-bar__radio">
-                <input
-                  type="radio"
-                  name="qualgbcd"
-                  value={type.value}
-                  checked={qualgbcd === type.value}
-                  onChange={() => setQualgbcd(type.value)}
-                />
-                {type.label}
-              </label>
+        <form className="condition-bar__form" onSubmit={submit}>
+          <select
+            className="condition-bar__type"
+            aria-label="자격 구분"
+            value={qualgbcd}
+            onChange={(e) => setQualgbcd(e.target.value)}
+          >
+            <option value="">전체</option>
+            {QUALIFICATION_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label.replace('국가', '')}
+              </option>
             ))}
-          </fieldset>
-          <fieldset className="condition-bar__group">
-            <legend>
-              관심 분야 <small>(최대 {MAX_CHIPS}개)</small>
-            </legend>
-            <ChipSelect options={fieldOptions} value={fields} onChange={setFields} max={MAX_CHIPS} />
-          </fieldset>
-          <fieldset className="condition-bar__group">
-            <legend>
-              희망 직무 <small>(최대 {MAX_CHIPS}개)</small>
-            </legend>
-            <ChipSelect options={jobOptions} value={jobs} onChange={setJobs} max={MAX_CHIPS} />
-          </fieldset>
-          {(message || error) && <p className="condition-bar__error">{message || error}</p>}
-          <button type="submit" className="btn btn--primary" disabled={searching}>
-            {searching ? '찾는 중' : '조건으로 추천받기'}
+          </select>
+          <input
+            className="condition-bar__search"
+            type="search"
+            aria-label="관심 분야 검색하기"
+            value={fieldKeyword}
+            onChange={(e) => setFieldKeyword(e.target.value.trim())}
+            placeholder="관심 분야 검색하기"
+          />
+          <input
+            className="condition-bar__search"
+            type="search"
+            aria-label="희망 직무 검색하기"
+            value={jobKeyword}
+            onChange={(e) => setJobKeyword(e.target.value.trim())}
+            placeholder="희망 직무 검색하기"
+          />
+          <button type="submit" className="condition-bar__submit" disabled={searching}>
+            {searching ? '찾는 중' : '검색'}
           </button>
+          <div className="condition-bar__chips condition-bar__chips--fields">
+            <p>
+              관심 분야 <small>(최대 {MAX_CHIPS}개)</small>
+            </p>
+            <ChipSelect
+              options={filterChips(fieldOptions, fieldKeyword, fields)}
+              value={fields}
+              onChange={setFields}
+              max={MAX_CHIPS}
+            />
+          </div>
+          <div className="condition-bar__chips condition-bar__chips--jobs">
+            <p>
+              희망 직무 <small>(최대 {MAX_CHIPS}개)</small>
+            </p>
+            <ChipSelect
+              options={filterChips(jobOptions, jobKeyword, jobs)}
+              value={jobs}
+              onChange={setJobs}
+              max={MAX_CHIPS}
+            />
+          </div>
+          <div className="condition-bar__footer">
+            {(message || error) && <p className="condition-bar__error">{message || error}</p>}
+            {onReset && (
+              <button type="button" className="condition-bar__reset" onClick={onReset}>
+                내 원래 자격증 추천 보기
+              </button>
+            )}
+          </div>
         </form>
       )}
-    </div>
+    </section>
   );
 }
