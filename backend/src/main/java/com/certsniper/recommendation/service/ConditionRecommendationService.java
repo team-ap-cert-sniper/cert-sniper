@@ -7,9 +7,8 @@ import com.certsniper.global.util.DateUtils;
 import com.certsniper.job.repository.InterestFieldRepository;
 import com.certsniper.job.repository.JobCategoryRepository;
 import com.certsniper.qualification.entity.Qualification;
-import com.certsniper.qualification.entity.QualificationStatisticsYearly;
-import com.certsniper.qualification.repository.QualificationStatisticsYearlyRepository;
 import com.certsniper.qualification.service.QualificationCatalog;
+import com.certsniper.qualification.service.TrendService;
 import com.certsniper.recommendation.dto.CardInfo;
 import com.certsniper.recommendation.dto.ConditionRecommendationRequest;
 import com.certsniper.recommendation.dto.RecommendationItem;
@@ -24,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,13 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ConditionRecommendationService {
 
-    /** 1차 시험 단계 (앞에 있을수록 우선: 필기 > 1차 > 시험) */
-    private static final List<String> FIRST_STAGES = List.of("필기", "1차", "시험");
-
     private final QualificationCatalog qualificationCatalog;
     private final InterestFieldRepository interestFieldRepository;
     private final JobCategoryRepository jobCategoryRepository;
-    private final QualificationStatisticsYearlyRepository statisticsRepository;
+    private final TrendService trendService;
     private final RecommendationCards recommendationCards;
 
     @Value("${app.schema-version}")
@@ -73,9 +68,8 @@ public class ConditionRecommendationService {
 
         List<String> codes = matched.stream().map(Qualification::getJmcd).toList();
         Map<String, List<QualificationExamSchedule>> schedules = recommendationCards.schedules(codes);
-        Short year = statisticsRepository.findFirstByYearLessThanOrderByYearDesc((short) today.getYear())
-                .map(QualificationStatisticsYearly::getYear).orElse(null);
-        Map<String, Integer> examinees = firstStageExaminees(codes, year);
+        Short year = trendService.latestYear();
+        Map<String, Integer> examinees = trendService.firstStageExaminees(codes, year);
 
         List<Scored> top = matched.stream()
                 .map(q -> score(q, jobs, fields, schedules.getOrDefault(q.getJmcd(), List.of()),
@@ -114,18 +108,6 @@ public class ConditionRecommendationService {
         return unique;
     }
 
-    /** 종목코드 → 그 연도 1차 응시자 수 (필기 > 1차 > 시험 순으로 그 종목의 첫 단계) */
-    private Map<String, Integer> firstStageExaminees(List<String> codes, Short year) {
-        if (codes.isEmpty() || year == null) {
-            return Map.of();
-        }
-        return statisticsRepository.findByJmcdInAndYearAndExamStageInOrderByIdAsc(codes, year, FIRST_STAGES).stream()
-                .collect(Collectors.toMap(QualificationStatisticsYearly::getJmcd, r -> r,
-                        (a, b) -> FIRST_STAGES.indexOf(b.getExamStage()) < FIRST_STAGES.indexOf(a.getExamStage()) ? b : a))
-                .entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        e -> e.getValue().getExaminees() == null ? 0 : e.getValue().getExaminees()));
-    }
 
     private static Scored score(Qualification q, Set<String> jobs, Set<String> fields,
             List<QualificationExamSchedule> schedules, int examinees, LocalDate today) {
