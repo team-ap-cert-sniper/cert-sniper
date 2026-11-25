@@ -12,6 +12,7 @@ import com.certsniper.option.dto.SchoolInfoResponse;
 import com.certsniper.qualification.entity.Qualification;
 import com.certsniper.qualification.repository.QualificationRepository;
 import com.certsniper.qualification.repository.QualificationRepository.FieldCount;
+import com.certsniper.qualification.service.QualificationCatalog;
 import com.certsniper.university.entity.College;
 import com.certsniper.university.entity.Major;
 import com.certsniper.university.entity.University;
@@ -55,6 +56,7 @@ public class OptionService {
     private final CollegeRepository collegeRepository;
     private final MajorRepository majorRepository;
     private final QualificationRepository qualificationRepository;
+    private final QualificationCatalog qualificationCatalog;
     private final InterestFieldRepository interestFieldRepository;
     private final JobCategoryRepository jobCategoryRepository;
 
@@ -186,7 +188,7 @@ public class OptionService {
         if ("S".equals(qualgbcd) && gradeLevel != null && !gradeLevel.isBlank()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "국가전문자격(S)은 등급으로 거를 수 없습니다.");
         }
-        return qualificationRepository.findAll().stream()
+        return qualificationCatalog.all().values().stream()
                 .filter(x -> isBlank(qualgbcd) || qualgbcd.equals(x.getQualgbcd()))
                 .filter(x -> isBlank(gradeLevel) || gradeLevel.equals(x.getGradeLevel()))
                 .filter(x -> isBlank(interestFieldCode) || interestFieldCode.equals(x.getObligfldcd()))
@@ -194,7 +196,7 @@ public class OptionService {
                 .filter(x -> contains(x.getJmfldnm(), q))
                 .sorted(Comparator.comparing(Qualification::getJmfldnm))
                 .map(x -> new OptionItem(null, null, null, null, null, null, null, null, null,
-                        x.getJmcd(), x.getJmfldnm(), x.getQualgbcd(), qualgbnm(x.getQualgbcd()), x.getGradeLevel()))
+                        x.getJmcd(), x.getJmfldnm(), x.getQualgbcd(), QualificationCatalog.qualgbnm(x.getQualgbcd()), x.getGradeLevel()))
                 .toList();
     }
 
@@ -249,16 +251,6 @@ public class OptionService {
     private static String universityLabel(University u) {
         return u.getCampusName() == null || u.getCampusName().isBlank()
                 ? u.getName() : u.getName() + " (" + u.getCampusName() + ")";
-    }
-
-    private static String qualgbnm(String qualgbcd) {
-        if ("T".equals(qualgbcd)) {
-            return "국가기술자격";
-        }
-        if ("S".equals(qualgbcd)) {
-            return "국가전문자격";
-        }
-        return null;
     }
 
     private static boolean contains(String value, String q) {

@@ -8,4 +8,7 @@ public interface MajorRepository extends JpaRepository<Major, Long> {
 
     /** 그 대학의 전공 전체 */
     List<Major> findByUniversityId(Long universityId);
+
+    /** 학부 소속 전공 */
+    List<Major> findByCollegeId(Long collegeId);
 }

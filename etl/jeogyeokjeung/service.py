@@ -238,16 +238,17 @@ class JeogyeokjeungService:
         elif fac:                                  # 학부 이름 항목: 소속 전공 추천 합산, 많이 겹치는 순
             scope = 'FACULTY'
             members = sorted(self.db.faculty_members[fac])
-            share, first = {}, {}
+            share, best_rank = {}, {}                # 겹친 학과 수, 소속 학과 중 가장 높은 연결 순위(동점 정렬용)
             for mid in members:
                 for link in self.db.major_links.get(mid, []):
-                    share[link['jmcd']] = share.get(link['jmcd'], 0) + 1
-                    first.setdefault(link['jmcd'], (int(link['link_rank']), link['basis']))
+                    code, rank = link['jmcd'], int(link['link_rank'])
+                    share[code] = share.get(code, 0) + 1
+                    best_rank[code] = min(best_rank.get(code, rank), rank)
             for code in share:
                 base[code] = dict(item(code, 'faculty_aggregate'),
                                   faculty_share={'majors': share[code], 'of': len(members)})
             recommended = sorted((scored(v, share[v['jmcd']] / len(members)) for k, v in base.items() if k not in owned),
-                                 key=lambda v: (-v['score'], -share[v['jmcd']], first[v['jmcd']][0], v['jmcd']))
+                                 key=lambda v: (-v['score'], -share[v['jmcd']], best_rank[v['jmcd']], v['jmcd']))
         grade = p['grade']
         return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613',
                 'profile': p, 'recommendation_scope': scope,

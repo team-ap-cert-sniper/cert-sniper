@@ -94,7 +94,7 @@
 }
 ```
 - `recommendation_scope`: `MAJOR`(전공 기준) | `FACULTY`(학부 이름 항목 선택 — 소속 전공 추천 합산) | `NONE`(학교 정보 없음).
-- `FACULTY`: `recommended[].basis = faculty_aggregate`, 각 항목에 `faculty_share {majors, of}`(학부 소속 전공 of개 중 majors개에 연결). 정렬: 점수 → 겹침 많은 순.
+- `FACULTY`: `recommended[].basis = faculty_aggregate`, 각 항목에 `faculty_share {majors, of}`(학부 소속 전공 of개 중 majors개에 연결). 정렬: 점수 → 겹침 많은 순 → 소속 학과 중 가장 높은 연결 순위(`link_rank` 최소) → 종목코드.
 - **순위 점수**: 각 항목에 `score`(합계)와 `score_breakdown[] {factor, points, reason}`. 정렬은 `score` 내림차순. 점수표(`jeogyeokjeung/service.py`의 `SCORE`):
   학과 연결(직접 +40 / 전공연관 +35 / 동계열 +30 / 학부 합산 40×겹침비율) ·
   응시 시점(지금 가능·제한 없음 +20 / 다음 학년부터 +10 / 그 뒤 +5 / 개별 확인 +5 / 졸업·경력 후 0) ·
