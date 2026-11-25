@@ -13,6 +13,10 @@ public interface QualificationStatisticsYearlyRepository extends JpaRepository<Q
     List<QualificationStatisticsYearly> findByJmcdInAndYearAndExamStageInOrderByIdAsc(
             Collection<String> jmcds, Short year, Collection<String> examStages);
 
+    /** 연도 구간·시험 단계의 전체 종목 통계 (트렌드 순위용) */
+    List<QualificationStatisticsYearly> findByYearBetweenAndExamStageInOrderByIdAsc(
+            Short from, Short to, Collection<String> examStages);
+
     /** 기준 연도 이전의 가장 최근 통계 (최근 완결 연도 확인용) */
     Optional<QualificationStatisticsYearly> findFirstByYearLessThanOrderByYearDesc(Short year);
 }
