@@ -71,7 +71,7 @@ export default function QualificationDetailPage() {
   };
 
   return (
-    <section className="container qualification-page">
+    <section className="qualification-page">
       <form
         className="qualification-search"
         onSubmit={(e) => {
