@@ -38,4 +38,22 @@ public class TargetExam extends BaseTimeEntity {
 
     @Column(name = "display_color", nullable = false, columnDefinition = "char(7)")
     private String displayColor;
+
+    /** 목표 자격증 생성 */
+    public static TargetExam create(Long userId, String jmcd, Long examScheduleId, LocalDate examDate,
+                                    String displayColor) {
+        TargetExam targetExam = new TargetExam();
+        targetExam.userId = userId;
+        targetExam.jmcd = jmcd;
+        targetExam.examScheduleId = examScheduleId;
+        targetExam.examDate = examDate;
+        targetExam.displayColor = displayColor;
+        return targetExam;
+    }
+
+    /** 시험 회차·시험일 변경 */
+    public void changeExam(Long examScheduleId, LocalDate examDate) {
+        this.examScheduleId = examScheduleId;
+        this.examDate = examDate;
+    }
 }

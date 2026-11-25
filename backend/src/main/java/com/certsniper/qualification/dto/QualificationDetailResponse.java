@@ -16,7 +16,8 @@ public record QualificationDetailResponse(
         @Schema(description = "합격률 연도 목록") List<Short> passRateYears,
         @Schema(description = "연도·단계별 합격률") List<PassRateResponse> passRates,
         @Schema(description = "합격률 자료 상태") String passRateStatus,
-        @Schema(description = "트렌드") TrendResponse.TrendItem trend
+        @Schema(description = "트렌드 (rank = 같은 자격구분 안 순위)") TrendResponse.TrendItem trend,
+        @Schema(description = "같은 자격구분 트렌드 종목 수") Integer trendTypeTotal
 ) {
 
     @Schema(description = "자격증 기본정보")

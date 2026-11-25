@@ -1,0 +1,206 @@
+/* 디자인 값 (이 컴포넌트 안에서만 사용) */
+.trend-list {
+  --color-brand-line: #d5d9ee;
+  --color-brand-ink: #1e1b1c;
+  --color-brand-ink-sub: #59535e;
+  --color-brand-ink-pink: #2a1520;
+  --color-brand-plum: #6d3b5e;
+  --radius-brand: 15px;
+
+  color: var(--color-brand-ink);
+}
+
+.trend-list__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.trend-list__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.trend-list__head h2::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--color-brand-pink);
+}
+
+.trend-list__tabs {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.trend-list__more {
+  margin-left: auto;
+  padding: 8px 16px;
+  border-radius: var(--radius-brand);
+  background: var(--color-brand-lavender);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.trend-list__basis {
+  margin: var(--space-sm) 0 var(--space-md);
+  color: var(--color-text-sub);
+  font-size: var(--font-size-sm);
+}
+
+.trend-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trend-list__rank {
+  color: var(--color-brand-pink-dark);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  text-align: center;
+}
+
+.trend-list__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.trend-list__name small,
+.trend-list__count {
+  color: var(--color-text-sub);
+  font-size: var(--font-size-sm);
+}
+
+/* list: 자격증 상세 첫 화면 */
+.trend-list__item {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.trend-list__item:hover {
+  border-color: var(--color-brand-pink-dark);
+}
+
+.trend-list__badge {
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius);
+  background: var(--color-brand-lavender);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.trend-list__badge--up {
+  color: var(--color-brand-pink-dark);
+}
+
+.trend-list__badge--down {
+  color: var(--color-text-sub);
+}
+
+/* cards: 추천 페이지 가로 카드 */
+.trend-list__items--cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.trend-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  min-height: 96px;
+  padding: 24px 72px 24px 24px;
+  background: var(--color-brand-lavender);
+  font-size: 15px;
+}
+
+.trend-card strong {
+  font-weight: 500;
+}
+
+.trend-card small {
+  color: var(--color-brand-ink-sub);
+  font-size: 15px;
+}
+
+.trend-card__go {
+  position: absolute;
+  top: 50%;
+  right: 24px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-brand-line);
+  border-radius: 9999px;
+  background: var(--color-bg);
+  transform: translateY(-50%);
+}
+
+/* rows: 메인 인기 자격증 */
+.trend-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 72px;
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-brand-lavender);
+}
+
+.trend-row__button {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-brand);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-ink-pink);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.trend-row__button:hover {
+  background: var(--color-brand-pink-dark);
+}
+
+@media (max-width: 768px) {
+  .trend-list__item {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .trend-list__count,
+  .trend-list__badge {
+    grid-column: 2;
+  }
+
+  .trend-list__items--cards {
+    grid-template-columns: 1fr;
+  }
+
+  .trend-row {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .trend-row__button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

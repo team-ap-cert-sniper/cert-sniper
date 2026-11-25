@@ -26,6 +26,7 @@ class NotFoundError(ValidationError):
 
 IDIOM_CYCLE_START = date(2026, 1, 1)   # 사자성어 순환 기준일: 이날이 1번
 GRADES = ('1', '2', '3', '4', '5', '6', 'GRADUATED', 'NOT_ENROLLED')
+GRADE_NAMES = {**{g: g + '학년' for g in GRADES[:6]}, 'GRADUATED': '졸업', 'NOT_ENROLLED': '비재학'}   # 학년 선택 목록 표시명
 PROFILE_KEYS = {'university_id', 'major_id', 'grade', 'owned_jmcds'}   # 전공 맞춤 추천: 학교·학과·학년·보유 자격
 # 같은 해 안에서 단계 표시 순서 (필기→실기, 1차→2차→3차→면접)
 STAGE_ORDER = {'필기': 0, '1차': 1, '2차': 2, '3차': 3, '실기': 4, '면접': 5, '시험': 6}
@@ -109,6 +110,7 @@ class JeogyeokjeungService:
     # ---------- 선택 목록(회원가입 드롭다운) ----------
     def options(self, kind, university_id=None, query='', offset=0, limit=50, qualgbcd=None, grade_level=None,
                 interest_field_code=None, job_category_code=None) -> dict:
+        qualgbcd, grade_level = qualgbcd or None, grade_level or None
         if type(offset) is not int or type(limit) is not int or offset < 0 or not 1 <= limit <= 100:
             raise ValidationError('offset >= 0, 1 <= limit <= 100 필요')
         if not isinstance(query, str):
@@ -118,8 +120,11 @@ class JeogyeokjeungService:
         if qualgbcd is not None and qualgbcd not in QUALGB:
             raise ValidationError('qualgbcd 는 T 또는 S')
         if kind == 'universities':
+            # label = '학교 (캠퍼스)'. 검색은 학교 이름과 캠퍼스 이름 둘 다
             values = [{'id': s['school_id'], 'name': s['school_name'], 'campus_name': s['campus'],
-                       'school_type': s['school_type']} for s in self.db.schools.values()]
+                       'school_type': s['school_type'],
+                       'label': f"{s['school_name']} ({s['campus']})" if s['campus'].strip() else s['school_name']}
+                      for s in self.db.schools.values()]
         elif kind == 'majors':
             if not university_id:
                 raise ValidationError('대학교 선택 필요')
@@ -158,15 +163,18 @@ class JeogyeokjeungService:
                       and (interest_field_code is None or q['obligfldcd'] == interest_field_code)
                       and (job_category_code is None or q['mdobligfldcd'] == job_category_code)]
         elif kind == 'grades':
-            values = [{'id': g, 'name': g} for g in GRADES]
+            values = [{'id': g, 'name': GRADE_NAMES[g]} for g in GRADES]
         else:
             raise ValidationError('알 수 없는 선택 목록: ' + str(kind))
-        q = query.casefold()
+        q = query.strip().casefold()
         label = lambda v: v.get('name', v.get('jmfldnm', ''))
         ident = lambda v: str(v.get('id', v.get('code', v.get('jmcd', ''))))
-        values = sorted((v for v in values if q in label(v).casefold() or q in v.get('group', '').casefold()),
-                        key=lambda v: (v.get('group', ''), label(v) != v.get('group') and not ident(v).startswith('FS:'), label(v),
-                                       json.dumps(v, sort_keys=True, ensure_ascii=False)))
+        hit = lambda v: q in label(v).casefold() or q in v.get('group', '').casefold() or q in v.get('campus_name', '').casefold()
+        values = [v for v in values if hit(v)]
+        if kind != 'grades':                       # 학년은 1~6학년 · 졸업 · 비재학 고정 순서
+            values = sorted(values,
+                            key=lambda v: (v.get('group', ''), label(v) != v.get('group') and not ident(v).startswith('FS:'), label(v),
+                                           json.dumps(v, sort_keys=True, ensure_ascii=False)))
         for v in values:
             v.pop('group', None)
         return {'kind': kind, 'items': values[offset:offset + limit], 'total': len(values),
@@ -238,16 +246,17 @@ class JeogyeokjeungService:
         elif fac:                                  # 학부 이름 항목: 소속 전공 추천 합산, 많이 겹치는 순
             scope = 'FACULTY'
             members = sorted(self.db.faculty_members[fac])
-            share, first = {}, {}
+            share, best_rank = {}, {}                # 겹친 학과 수, 소속 학과 중 가장 높은 연결 순위(동점 정렬용)
             for mid in members:
                 for link in self.db.major_links.get(mid, []):
-                    share[link['jmcd']] = share.get(link['jmcd'], 0) + 1
-                    first.setdefault(link['jmcd'], (int(link['link_rank']), link['basis']))
+                    code, rank = link['jmcd'], int(link['link_rank'])
+                    share[code] = share.get(code, 0) + 1
+                    best_rank[code] = min(best_rank.get(code, rank), rank)
             for code in share:
                 base[code] = dict(item(code, 'faculty_aggregate'),
                                   faculty_share={'majors': share[code], 'of': len(members)})
             recommended = sorted((scored(v, share[v['jmcd']] / len(members)) for k, v in base.items() if k not in owned),
-                                 key=lambda v: (-v['score'], -share[v['jmcd']], first[v['jmcd']][0], v['jmcd']))
+                                 key=lambda v: (-v['score'], -share[v['jmcd']], best_rank[v['jmcd']], v['jmcd']))
         grade = p['grade']
         return {'schema_version': '3', 'qualification_scope': 'QNET_MASTER_613',
                 'profile': p, 'recommendation_scope': scope,
