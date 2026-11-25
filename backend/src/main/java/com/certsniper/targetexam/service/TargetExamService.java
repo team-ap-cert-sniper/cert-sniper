@@ -1,6 +1,8 @@
 package com.certsniper.targetexam.service;
 
+import com.certsniper.examschedule.dto.ExamScheduleResponse;
 import com.certsniper.examschedule.service.DdayCalculator;
+import com.certsniper.examschedule.service.ExamScheduleService;
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.global.util.DateUtils;
@@ -28,6 +30,7 @@ public class TargetExamService {
 
     private final TargetExamRepository targetExamRepository;
     private final QualificationService qualificationService;
+    private final ExamScheduleService examScheduleService;
     private final DdayCalculator ddayCalculator;
     private final ScheduleLimitValidator scheduleLimitValidator;
 
@@ -37,19 +40,20 @@ public class TargetExamService {
                 .toList();
     }
 
-    /** 플래너 검색 팝업에서 직접 추가 (없는 종목 404, 같은 자격증·같은 색 409, 일정 6개 초과 409) */
+    /** 플래너 검색 팝업에서 직접 추가 (없는 종목 404, 회차·시험일 오류 400, 같은 자격증·같은 색 409, 일정 6개 초과 409) */
     @Transactional
     public TargetExamResponse addTargetExam(Long userId, TargetExamRequest request) {
-        qualificationService.getInfo(request.jmcd());
-        if (targetExamRepository.existsByUserIdAndJmcd(userId, request.jmcd())) {
-            throw new BusinessException(ErrorCode.DUPLICATE);
+        String jmcd = qualificationService.getInfo(request.jmcd()).jmcd();
+        validateExam(jmcd, request.examScheduleId(), request.examDate());
+        if (targetExamRepository.existsByUserIdAndJmcd(userId, jmcd)) {
+            throw new BusinessException(ErrorCode.DUPLICATE, "이미 목표로 추가한 자격증입니다.");
         }
         if (targetExamRepository.existsByUserIdAndDisplayColor(userId, request.displayColor())) {
-            throw new BusinessException(ErrorCode.DUPLICATE);
+            throw new BusinessException(ErrorCode.DUPLICATE, "다른 목표 자격증에서 사용 중인 색입니다.");
         }
         scheduleLimitValidator.validateCanAdd(userId);
         TargetExam saved = targetExamRepository.save(TargetExam.create(
-                userId, request.jmcd(), request.examScheduleId(), request.examDate(), request.displayColor()));
+                userId, jmcd, request.examScheduleId(), request.examDate(), request.displayColor()));
         return toResponse(saved);
     }
 
@@ -65,7 +69,9 @@ public class TargetExamService {
 
     /** aiplanner 플랜 저장: 이미 목표면 시험일만 바꾸고, 없으면 안 쓰는 색으로 만들어 ID 반환 */
     @Transactional
-    public Long getOrCreateTargetExam(Long userId, String jmcd, Long examScheduleId, LocalDate examDate) {
+    public Long getOrCreateTargetExam(Long userId, String rawJmcd, Long examScheduleId, LocalDate examDate) {
+        String jmcd = qualificationService.getInfo(rawJmcd).jmcd();
+        validateExam(jmcd, examScheduleId, examDate);
         return targetExamRepository.findByUserIdAndJmcd(userId, jmcd)
                 .map(existing -> {
                     existing.changeExam(examScheduleId, examDate);
@@ -98,6 +104,26 @@ public class TargetExamService {
     @Transactional
     public void deleteAllByUser(Long userId) {
         targetExamRepository.deleteAllByUserId(userId);
+    }
+
+    /** 회차와 시험일은 둘 다 비우거나 둘 다 넣는다. 넣으면 이 자격증의 회차이고, 회차 기간 안이고, 지나지 않은 날이어야 한다 */
+    private void validateExam(String jmcd, Long examScheduleId, LocalDate examDate) {
+        if (examScheduleId == null && examDate == null) {
+            return;
+        }
+        if (examScheduleId == null || examDate == null) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "시험 회차와 시험일을 함께 선택해 주세요.");
+        }
+        ExamScheduleResponse schedule = examScheduleService.getSchedules(jmcd).stream()
+                .filter(s -> s.scheduleId().equals(examScheduleId))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(ErrorCode.VALIDATION_ERROR, "이 자격증의 시험 회차가 아닙니다."));
+        if (examDate.isBefore(schedule.examStartDate()) || examDate.isAfter(schedule.examEndDate())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "시험일이 선택한 회차 기간이 아닙니다.");
+        }
+        if (examDate.isBefore(DateUtils.today())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "이미 지난 시험입니다.");
+        }
     }
 
     private String pickUnusedColor(Long userId) {

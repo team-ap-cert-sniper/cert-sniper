@@ -91,9 +91,11 @@ public class PlannerService {
         throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
     }
 
-    /** user 탈퇴 확정: 플래너·개인 일정 전체 삭제 */
+    /** user 탈퇴 확정: 일정바(세부 일정 포함) → 개인 일정 → 플래너 순서로 전체 삭제 */
     @Transactional
     public void deleteAllByUser(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        plannerBarRepository.deleteAllByUserId(userId);
+        personalScheduleRepository.deleteAllByUserId(userId);
+        plannerRepository.deleteAllByUserId(userId);
     }
 }
