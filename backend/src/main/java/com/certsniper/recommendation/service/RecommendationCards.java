@@ -16,6 +16,7 @@ import com.certsniper.qualification.repository.QualificationStatisticsYearlyRepo
 import com.certsniper.qualification.service.QualificationCatalog;
 import com.certsniper.recommendation.dto.CardInfo;
 import com.certsniper.recommendation.dto.CardInfo.PassRateLatest;
+import com.certsniper.recommendation.dto.ScoreBreakdown;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
@@ -46,6 +47,15 @@ class RecommendationCards {
         return jmcds.isEmpty() ? Map.of()
                 : scheduleRepository.findByJmcdInOrderByExamStartDateAscIdAsc(jmcds).stream()
                         .collect(Collectors.groupingBy(QualificationExamSchedule::getJmcd));
+    }
+
+    /** 기준일 이후 남은 시험 점수 (없으면 null) */
+    static ScoreBreakdown upcoming(List<QualificationExamSchedule> schedules, LocalDate today) {
+        return schedules.stream()
+                .filter(s -> !s.getExamStartDate().isBefore(today))
+                .findFirst()
+                .map(s -> new ScoreBreakdown("UPCOMING_2026", 10, "남은 시험 " + s.getExamStartDate() + " " + s.getExamStage()))
+                .orElse(null);
     }
 
     /** 찜한 종목코드 */
