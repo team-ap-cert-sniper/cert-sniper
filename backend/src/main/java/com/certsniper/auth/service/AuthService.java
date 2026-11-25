@@ -12,6 +12,7 @@ import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.global.security.JwtTokenProvider;
 import com.certsniper.global.util.DateUtils;
 import com.certsniper.option.service.OptionService;
+import com.certsniper.qualification.service.QualificationCatalog;
 import com.certsniper.user.entity.User;
 import com.certsniper.user.service.UserService;
 import java.time.LocalDateTime;
@@ -34,6 +35,7 @@ public class AuthService {
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
     private final OptionService optionService;
+    private final QualificationCatalog qualificationCatalog;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -44,8 +46,8 @@ public class AuthService {
     /**
      * 회원가입 (AUTH-01). 화면 검사와 별개로 서버에서 다시 검증한다.
      * 1) 이메일 규칙(허용 도메인 9개 포함) 2) 비밀번호 규칙 3) 닉네임 규칙
-     * 4) 이메일 인증 완료 여부 5) 대학·전공·학년 묶음
-     * 6) 저장 직전 이메일·닉네임 중복 재확인 후 BCrypt 해시로 저장.
+     * 4) 이메일 인증 완료 여부 5) 대학·전공·학년 묶음 6) 보유 자격 종목코드(중복·빈 값·없는 코드)
+     * 7) 저장 직전 이메일·닉네임 중복 재확인 후 BCrypt 해시로 저장.
      * 자동 로그인은 하지 않는다.
      */
     @Transactional
@@ -59,6 +61,8 @@ public class AuthService {
         emailVerificationService.checkVerified(email, PURPOSE_REGISTER);
         optionService.validateSchoolInfo(
                 request.universityId(), request.collegeId(), request.majorId(), request.grade());
+        // 없는 종목코드가 DB까지 가지 않도록 저장 전에 막음 (문제 있으면 400 "보유 자격을 다시 확인해 주세요.")
+        qualificationCatalog.owned(request.ownedJmcds());
 
         if (userService.findByEmail(email) != null) {
             throw new BusinessException(ErrorCode.DUPLICATE, "이미 가입된 이메일입니다.");
