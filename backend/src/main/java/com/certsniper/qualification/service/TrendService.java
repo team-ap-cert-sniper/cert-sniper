@@ -1,10 +1,10 @@
 package com.certsniper.qualification.service;
 
+import static com.certsniper.global.util.PercentUtils.percent;
+
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.global.util.DateUtils;
-import com.certsniper.job.entity.InterestField;
-import com.certsniper.job.repository.InterestFieldRepository;
 import com.certsniper.qualification.dto.TrendResponse;
 import com.certsniper.qualification.dto.TrendResponse.TrendItem;
 import com.certsniper.qualification.dto.TrendResponse.YearExaminees;
@@ -12,13 +12,13 @@ import com.certsniper.qualification.entity.Qualification;
 import com.certsniper.qualification.entity.QualificationStatisticsYearly;
 import com.certsniper.qualification.repository.QualificationStatisticsYearlyRepository;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +40,9 @@ public class TrendService {
     private static final Set<String> GRADE_LEVELS = Set.of("기능사", "산업기사", "기사", "기능장", "기술사", "서비스");
     private static final int TREND_YEARS = 5;
     private static final BigDecimal THRESHOLD = BigDecimal.TEN;
-    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private final QualificationStatisticsYearlyRepository statisticsRepository;
     private final QualificationCatalog qualificationCatalog;
-    private final InterestFieldRepository interestFieldRepository;
 
     public TrendResponse getTrends(String qualgbcd, String gradeLevel, String interestFieldCode, Short year, int limit) {
         String grade = blankToNull(gradeLevel);
@@ -56,24 +54,51 @@ public class TrendService {
         }
         String basis = baseYear + "년 1차(필기·1차·단일시험) 실제 응시자 수";
 
+        Map<String, Map<Short, QualificationStatisticsYearly>> stats = windowStats(baseYear);
+        List<Qualification> ranked = ranked(stats, baseYear, q -> qualgbcd.equals(q.getQualgbcd())
+                && (grade == null || grade.equals(q.getGradeLevel()))
+                && (field == null || field.equals(q.getObligfldcd())));
+        List<TrendItem> items = IntStream.range(0, Math.min(limit, ranked.size()))
+                .mapToObj(i -> item(i + 1, ranked.get(i), stats.get(ranked.get(i).getJmcd()), baseYear))
+                .toList();
+        return new TrendResponse(baseYear, qualgbcd, grade, field, basis, ranked.size(), items);
+    }
+
+    /** 자격증 상세용 트렌드: 같은 자격구분 안 순위(응시자가 같으면 같은 순위)와 그 구분의 종목 수 */
+    public record DetailTrend(TrendItem item, int typeTotal) {}
+
+    /** 이 종목의 최근 5년 흐름. 최근 완결 연도 자료가 없으면 null */
+    public DetailTrend detailTrend(Qualification q) {
+        Short baseYear = latestYear();
+        if (baseYear == null) {
+            return null;
+        }
+        Map<String, Map<Short, QualificationStatisticsYearly>> stats = windowStats(baseYear);
+        Map<Short, QualificationStatisticsYearly> own = stats.get(q.getJmcd());
+        if (own == null || !own.containsKey(baseYear)) {
+            return null;
+        }
+        List<Qualification> sameType = ranked(stats, baseYear, x -> q.getQualgbcd().equals(x.getQualgbcd()));
+        int mine = examinees(own.get(baseYear));
+        long higher = sameType.stream().filter(x -> examinees(stats.get(x.getJmcd()).get(baseYear)) > mine).count();
+        return new DetailTrend(item((int) higher + 1, q, own, baseYear), sameType.size());
+    }
+
+    /** 기준연도 포함 5개 연도의 종목별·연도별 1차 통계 */
+    private Map<String, Map<Short, QualificationStatisticsYearly>> windowStats(short baseYear) {
         short firstYear = (short) (baseYear - TREND_YEARS + 1);
-        Map<String, Map<Short, QualificationStatisticsYearly>> stats = firstStages(
+        return firstStages(
                 statisticsRepository.findByYearBetweenAndExamStageInOrderByIdAsc(firstYear, baseYear, FIRST_STAGES));
-        List<Qualification> ranked = qualificationCatalog.all().values().stream()
-                .filter(q -> qualgbcd.equals(q.getQualgbcd())
-                        && (grade == null || grade.equals(q.getGradeLevel()))
-                        && (field == null || field.equals(q.getObligfldcd()))
-                        && stats.getOrDefault(q.getJmcd(), Map.of()).containsKey(baseYear))
+    }
+
+    /** 조건에 맞고 기준연도 자료가 있는 종목을 응시자 많은 순 → 종목코드 순으로 */
+    private List<Qualification> ranked(Map<String, Map<Short, QualificationStatisticsYearly>> stats, short baseYear,
+            Predicate<Qualification> condition) {
+        return qualificationCatalog.all().values().stream()
+                .filter(q -> condition.test(q) && stats.getOrDefault(q.getJmcd(), Map.of()).containsKey(baseYear))
                 .sorted(Comparator.comparingInt((Qualification q) -> -examinees(stats.get(q.getJmcd()).get(baseYear)))
                         .thenComparing(Qualification::getJmcd))
                 .toList();
-
-        Map<String, String> fieldNames = interestFieldRepository.findAll().stream()
-                .collect(Collectors.toMap(InterestField::getCode, InterestField::getName));
-        List<TrendItem> items = IntStream.range(0, Math.min(limit, ranked.size()))
-                .mapToObj(i -> item(i + 1, ranked.get(i), stats.get(ranked.get(i).getJmcd()), baseYear, fieldNames))
-                .toList();
-        return new TrendResponse(baseYear, qualgbcd, grade, field, basis, ranked.size(), items);
     }
 
     /** 최근 완결 연도: 올해 이전 중 통계가 있는 마지막 해 (올해는 집계 중) */
@@ -101,7 +126,7 @@ public class TrendService {
         if (grade != null && (!GRADE_LEVELS.contains(grade) || "S".equals(qualgbcd))) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "등급은 국가기술자격에서 기능사·산업기사·기사·기능장·기술사·서비스 중 하나입니다.");
         }
-        if (field != null && !interestFieldRepository.existsById(field)) {
+        if (field != null && qualificationCatalog.interestFieldName(field) == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "관심 분야를 다시 확인해 주세요.");
         }
         if (limit < 1 || limit > 100) {
@@ -109,8 +134,7 @@ public class TrendService {
         }
     }
 
-    private static TrendItem item(int rank, Qualification q, Map<Short, QualificationStatisticsYearly> byYear,
-            short year, Map<String, String> fieldNames) {
+    private TrendItem item(int rank, Qualification q, Map<Short, QualificationStatisticsYearly> byYear, short year) {
         QualificationStatisticsYearly current = byYear.get(year);
         short firstYear = (short) (year - TREND_YEARS + 1);
         List<YearExaminees> series = IntStream.rangeClosed(firstYear, year)
@@ -126,7 +150,7 @@ public class TrendService {
                 : change.compareTo(THRESHOLD.negate()) < 0 ? "DOWN" : "STEADY";
         int passers = current.getPassers() == null ? 0 : current.getPassers();
         return new TrendItem(rank, q.getJmcd(), q.getJmfldnm(), q.getQualgbcd(), q.getGradeLevel(), q.getObligfldcd(),
-                fieldNames.get(q.getObligfldcd()), year, current.getExamStage(), examinees(current), passers,
+                qualificationCatalog.interestFieldName(q.getObligfldcd()), year, current.getExamStage(), examinees(current), passers,
                 percent(passers, examinees(current), 2), series, change, trend);
     }
 
@@ -146,12 +170,6 @@ public class TrendService {
 
     private static int examinees(QualificationStatisticsYearly row) {
         return row.getExaminees() == null ? 0 : row.getExaminees();
-    }
-
-    /** part ÷ whole × 100 사사오입 (etl percent와 같음). whole이 0이면 null */
-    private static BigDecimal percent(int part, int whole, int places) {
-        return whole == 0 ? null
-                : BigDecimal.valueOf(part).multiply(HUNDRED).divide(BigDecimal.valueOf(whole), places, RoundingMode.HALF_UP);
     }
 
     private static String blankToNull(String value) {

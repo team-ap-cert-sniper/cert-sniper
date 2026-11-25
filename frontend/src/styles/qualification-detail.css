@@ -1,0 +1,379 @@
+.qualification-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  color: var(--color-brand-navy);
+}
+
+.qualification-button {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--color-brand-pink);
+  color: var(--color-brand-navy);
+  font-weight: 700;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.qualification-button:hover {
+  background: var(--color-brand-pink-dark);
+}
+
+/* 검색창 */
+.qualification-search {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.qualification-search input {
+  width: min(480px, 100%);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* 종목검색 팝업 */
+.qualification-search-modal {
+  width: min(640px, calc(100% - 32px));
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.qualification-search-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-brand-pink);
+}
+
+.qualification-search-modal__head h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.qualification-search-modal__head button {
+  border: 0;
+  background: none;
+  font-size: var(--font-size-lg);
+}
+
+.qualification-search-modal__form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg) var(--space-lg) 0;
+}
+
+.qualification-search-modal__form label {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.qualification-search-modal__form input {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.qualification-search-modal__hint {
+  margin: var(--space-sm) var(--space-lg);
+  color: var(--color-text-sub);
+  font-size: 12px;
+  text-align: right;
+}
+
+.qualification-search-modal__results {
+  height: 280px;
+  margin: var(--space-md) var(--space-lg) var(--space-lg);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  background: var(--color-brand-lavender);
+}
+
+.qualification-search-modal__placeholder {
+  margin: 0;
+  padding-top: 120px;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.qualification-search-modal__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qualification-search-modal__list button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
+  text-align: left;
+}
+
+.qualification-search-modal__list button:hover {
+  background: var(--color-brand-pink-light);
+}
+
+.qualification-search-modal__list span {
+  color: var(--color-text-sub);
+  font-size: var(--font-size-sm);
+}
+
+/* 자격증 탐색 */
+.qualification-browser {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 280px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.qualification-browser__tabs,
+.qualification-browser__column {
+  margin: 0;
+  padding: var(--space-sm) 0;
+  list-style: none;
+  border-right: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.qualification-browser__tabs {
+  background: var(--color-brand-lavender);
+}
+
+.qualification-browser__column:last-child {
+  border-right: 0;
+}
+
+.qualification-browser__column.is-wide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+.qualification-browser__column.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.qualification-browser button {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.qualification-browser button:hover {
+  background: var(--color-brand-pink-light);
+}
+
+.qualification-browser button.is-active {
+  background: var(--color-brand-pink);
+  font-weight: 700;
+}
+
+/* 상세 카드 */
+.qualification-card {
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+}
+
+.qualification-card__title {
+  margin: 0 0 var(--space-md);
+  font-size: var(--font-size-lg);
+}
+
+.qualification-card__label {
+  margin: var(--space-lg) 0 var(--space-sm);
+  font-size: var(--font-size-md);
+}
+
+.qualification-card__sub {
+  margin: 0 0 var(--space-md);
+  color: var(--color-text-sub);
+  font-size: var(--font-size-sm);
+}
+
+.qualification-card__sub mark {
+  background: var(--color-brand-pink);
+  color: inherit;
+}
+
+.qualification-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-left: 3px solid var(--color-brand-pink-dark);
+  background: var(--color-brand-lavender);
+}
+
+.qualification-head__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.qualification-head__eng {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-sub);
+  font-size: var(--font-size-sm);
+}
+
+.qualification-head__meta {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  gap: var(--space-sm);
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.qualification-head__meta dt {
+  color: var(--color-text-sub);
+}
+
+.qualification-head__meta dd {
+  margin: 0 var(--space-md) 0 0;
+  font-weight: 700;
+}
+
+.qualification-badge {
+  padding: 2px var(--space-sm);
+  border-radius: 999px;
+  background: var(--color-brand-pink);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.qualification-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  list-style: none;
+  background: var(--color-brand-lavender);
+  font-size: var(--font-size-sm);
+}
+
+.qualification-steps p {
+  margin: var(--space-xs) 0 0 var(--space-md);
+  white-space: pre-line;
+}
+
+/* 표 */
+.qualification-table-wrap {
+  overflow-x: auto;
+}
+
+.qualification-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.qualification-table th,
+.qualification-table td {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+}
+
+.qualification-table thead th {
+  background: var(--color-brand-lavender);
+}
+
+.qualification-table tbody th {
+  font-weight: 700;
+}
+
+.qualification-table small {
+  display: block;
+  color: var(--color-text-sub);
+}
+
+.qualification-table .is-ended {
+  color: var(--color-text-sub);
+}
+
+.qualification-notes {
+  margin: var(--space-md) 0 0;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-brand-lavender);
+  font-size: var(--font-size-sm);
+}
+
+.qualification-empty {
+  margin: 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.qualification-link {
+  display: inline-block;
+  margin-top: var(--space-md);
+  color: var(--color-brand-pink-dark);
+  font-size: var(--font-size-sm);
+  text-decoration: underline;
+}
+
+/* 연도별 통계 */
+.qualification-year {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.qualification-year select {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.qualification-year button {
+  margin-left: auto;
+}
+
+.qualification-chart {
+  height: 280px;
+  margin-bottom: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-brand-lavender);
+}
+
+@media (max-width: 768px) {
+  .qualification-browser {
+    grid-template-columns: 1fr;
+  }
+
+  .qualification-browser__tabs,
+  .qualification-browser__column {
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .qualification-head__meta {
+    grid-template-columns: auto auto;
+  }
+}
