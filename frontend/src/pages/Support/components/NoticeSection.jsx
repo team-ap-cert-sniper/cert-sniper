@@ -4,14 +4,14 @@ import { getNotice, getNotices } from '@/api/supportApi';
 import EmptyState from '@/components/common/EmptyState';
 import Loading from '@/components/common/Loading';
 import Pagination from '@/components/common/Pagination';
-import { NOTICE_TYPE_LABELS, PAGE_SIZE, errorMessage } from '@/pages/Support/supportShared';
+import { NOTICE_TYPE_LABELS, PAGE_SIZE, errorMessage, parsePage } from '@/pages/Support/supportShared';
 import { formatDate } from '@/utils/date';
 
 // CS-02 공지사항: 목록(5개씩, 작성일만 표시)과 상세. 상세에서 목록으로 가면 보던 페이지 유지
 export default function NoticeSection() {
   const [params, setParams] = useSearchParams();
   const id = params.get('id');
-  const page = Number(params.get('page') ?? 0);
+  const page = parsePage(params.get('page'));
 
   const goList = (p) => setParams({ menu: 'notices', page: String(p) });
   const goDetail = (noticeId) => setParams({ menu: 'notices', page: String(page), id: String(noticeId) });
