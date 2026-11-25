@@ -1,7 +1,9 @@
 package com.certsniper.global.exception;
 
+import java.sql.SQLException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -17,6 +19,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /** MySQL 중복 키 오류 번호 (Duplicate entry) */
+    private static final int MYSQL_DUPLICATE_KEY = 1062;
 
     /** 비즈니스 예외 */
     @ExceptionHandler(BusinessException.class)
@@ -64,6 +69,20 @@ public class GlobalExceptionHandler {
         ErrorCode code = ErrorCode.VALIDATION_ERROR;
         return ResponseEntity.status(code.getStatus())
                 .body(ErrorResponse.of(code, "지원하지 않는 요청 방식입니다."));
+    }
+
+    /**
+     * DB 제약 위반 (서비스 검사를 지나친 경우: 동시 요청, 잘못된 참조 ID 등).
+     * 중복 키 → 409, 그 외(없는 참조·필수값 누락·형식 위반) → 400. SQL 내용은 로그에만 남긴다.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException e) {
+        Throwable cause = e.getMostSpecificCause();
+        boolean duplicate = cause instanceof SQLException sql && sql.getErrorCode() == MYSQL_DUPLICATE_KEY;
+        log.warn("DB 제약 위반: {}", cause.getMessage());
+        ErrorCode code = duplicate ? ErrorCode.DUPLICATE : ErrorCode.VALIDATION_ERROR;
+        return ResponseEntity.status(code.getStatus())
+                .body(ErrorResponse.of(code, code.getMessage()));
     }
 
     /** 메서드 보안 권한 부족 → 403 */
