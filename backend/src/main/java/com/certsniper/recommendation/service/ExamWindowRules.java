@@ -4,6 +4,7 @@ import com.certsniper.qualification.entity.Qualification;
 import com.certsniper.recommendation.dto.RecommendationItem.ExamWindow;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,19 +92,19 @@ final class ExamWindowRules {
         return "기능사";
     }
 
-    /** 보유 자격보다 낮은 같은 계열 등급의 종목코드 (추천 제외 대상) */
-    static Set<String> lowerLevels(List<Qualification> owned, Collection<Qualification> all) {
+    /** 추천에서 뺄 종목코드: 보유 자격과 그보다 낮은 같은 계열 등급 */
+    static Set<String> excluded(List<Qualification> owned, Collection<Qualification> all) {
         List<Ladder> own = owned.stream().map(ExamWindowRules::ladder).filter(Objects::nonNull).toList();
-        if (own.isEmpty()) {
-            return Set.of();
+        Set<String> result = owned.stream().map(Qualification::getJmcd).collect(Collectors.toCollection(HashSet::new));
+        if (!own.isEmpty()) {
+            all.stream()
+                    .filter(q -> {
+                        Ladder k = ladder(q);
+                        return k != null && own.stream().anyMatch(o -> o.stem().equals(k.stem()) && k.rank() < o.rank());
+                    })
+                    .forEach(q -> result.add(q.getJmcd()));
         }
-        return all.stream()
-                .filter(q -> {
-                    Ladder k = ladder(q);
-                    return k != null && own.stream().anyMatch(o -> o.stem().equals(k.stem()) && k.rank() < o.rank());
-                })
-                .map(Qualification::getJmcd)
-                .collect(Collectors.toSet());
+        return result;
     }
 
     static boolean isTechnical(Qualification q) {

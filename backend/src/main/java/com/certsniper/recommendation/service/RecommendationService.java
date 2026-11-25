@@ -33,7 +33,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class RecommendationService {
     public RecommendationResponse recommend(Long userId, RecommendationRequest request) {
         LocalDate today = DateUtils.today();
         Map<String, Qualification> catalog = qualificationCatalog.all();
-        List<Qualification> owned = validate(request, catalog);
+        List<Qualification> owned = validate(request);
         if (request.universityId() == null) {
             return response("NONE", true, List.of(), 0, today);
         }
@@ -99,8 +98,7 @@ public class RecommendationService {
                 : majorRepository.findByCollegeId(facultyId).stream().map(Major::getId).toList();
         List<Candidate> candidates = candidates(majorIds, facultyId != null);
 
-        Set<String> excluded = new HashSet<>(request.ownedJmcds() == null ? List.of() : request.ownedJmcds());
-        excluded.addAll(ExamWindowRules.lowerLevels(owned, catalog.values()));
+        Set<String> excluded = ExamWindowRules.excluded(owned, catalog.values());
         List<Candidate> kept = candidates.stream().filter(c -> !excluded.contains(c.jmcd())).toList();
 
         String schoolType = universityRepository.findById(request.universityId())
@@ -130,24 +128,19 @@ public class RecommendationService {
                 .map(s -> new RecommendationItem(s.candidate().jmcd(), s.qualification().getJmfldnm(),
                         s.candidate().basis(),
                         profile.facultySize() > 0 ? new FacultyShare(s.candidate().share(), profile.facultySize()) : null,
-                        s.window(), null, s.score(), s.breakdown(), cards.get(s.candidate().jmcd()),
+                        s.window(), null, s.score(), s.breakdown(), null, null, cards.get(s.candidate().jmcd()),
                         favorites.contains(s.candidate().jmcd())))
                 .toList();
         return response(facultyId == null ? "MAJOR" : "FACULTY", false, items, candidates.size() - kept.size(), today);
     }
 
     /** 학교 정보 묶음·보유 자격 검증. 보유 자격 행을 종목코드 순으로 돌려준다 */
-    private List<Qualification> validate(RecommendationRequest request, Map<String, Qualification> catalog) {
+    private List<Qualification> validate(RecommendationRequest request) {
         if (request.collegeId() != null && request.majorId() != null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "학과와 학부 중 하나만 선택해 주세요.");
         }
         optionService.validateSchoolInfo(request.universityId(), request.collegeId(), request.majorId(), request.grade());
-        List<String> codes = request.ownedJmcds() == null ? List.of() : request.ownedJmcds();
-        if (new HashSet<>(codes).size() != codes.size()
-                || !codes.stream().allMatch(c -> c != null && catalog.containsKey(c))) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "보유 자격을 다시 확인해 주세요.");
-        }
-        return codes.stream().sorted().map(catalog::get).toList();
+        return qualificationCatalog.owned(request.ownedJmcds());
     }
 
     /**
@@ -179,11 +172,10 @@ public class RecommendationService {
                     LINK_LABEL.get(c.basis()) + (faculty ? " " + percent(ratio) : "")));
         }
         parts.add(windowPart(window, p.grade(), catalog));
-        schedules.stream()
-                .filter(s -> !s.getExamStartDate().isBefore(p.today()))
-                .findFirst()
-                .ifPresent(s -> parts.add(new ScoreBreakdown("UPCOMING_2026", 10,
-                        "남은 시험 " + s.getExamStartDate() + " " + s.getExamStage())));
+        ScoreBreakdown upcoming = RecommendationCards.upcoming(schedules, p.today());
+        if (upcoming != null) {
+            parts.add(upcoming);
+        }
         if (isTechnical(q) && p.startLevel().equals(q.getGradeLevel())) {
             parts.add(new ScoreBreakdown("LEVEL_FIT", 5, "지금 학년에 딸 수 있는 시작 등급(" + p.startLevel() + ")"));
         }
@@ -212,7 +204,7 @@ public class RecommendationService {
 
     private RecommendationResponse response(String scope, boolean needsSchoolInfo, List<RecommendationItem> items,
             int ownedExcludedCount, LocalDate today) {
-        return new RecommendationResponse(schemaVersion, null, scope, needsSchoolInfo, items, RESULT_LIMIT,
+        return new RecommendationResponse(schemaVersion, null, scope, needsSchoolInfo, items, null, RESULT_LIMIT,
                 ownedExcludedCount, today);
     }
 }

@@ -15,9 +15,18 @@ public record RecommendationItem(
         @Schema(description = "일치한 조건") List<InterestMatch> interestMatches,
         @Schema(description = "점수") int score,
         @Schema(description = "항목별 점수") List<ScoreBreakdown> scoreBreakdown,
+        @Schema(description = "최근 완결 연도 1차 응시자 수 (조건 선택 동점 정렬)") RecentExaminees recentExaminees,
+        @Schema(description = "응시 조건 필요 여부 (Y · N)") String eligibilityRequired,
         @Schema(description = "카드 표시값") CardInfo card,
         @Schema(description = "찜 여부") boolean favorited
 ) {
+
+    @Schema(description = "최근 완결 연도 1차 응시자 수")
+    public record RecentExaminees(
+            @Schema(description = "연도") Integer year,
+            @Schema(description = "응시자 수") int count
+    ) {
+    }
 
     @Schema(description = "학부 합산 겹침")
     public record FacultyShare(
