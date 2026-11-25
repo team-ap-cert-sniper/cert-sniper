@@ -34,16 +34,16 @@
 
 | kind | 필요한 값 | items 원소 |
 |---|---|---|
-| universities | - | `{id, name, campus_name, school_type}` |
+| universities | - | `{id, name, campus_name, school_type, label}` — `label`: 화면 표시용 `학교 (캠퍼스)`(캠퍼스가 없으면 학교 이름). `query`는 학교 이름과 캠퍼스 이름 둘 다 검색 |
 | majors | university_id | `{id, name, parent_name, scope, label}` — 그 학교 전공 + '(학부 전체)' 항목. `scope`: `MAJOR`(전공 기준) / `FACULTY`(학부 이름 항목 → 소속 전공 합산). `label`: 화면 표시용 `전공 · 소속 학부`(소속 학부가 있을 때). `query`는 전공 이름과 소속 학부 이름 둘 다 검색(경상 → 경상학부·경영학·회계학). 정렬은 학부별로 묶어 학부 항목 먼저. Java 응답에서 `FACULTY` 항목의 `id`는 학부 ID(`colleges.id`), `MAJOR` 항목의 `id`는 학과 ID(`majors.id`) |
-| grades | - | `{id, name}` — `1`~`6`, `GRADUATED`, `NOT_ENROLLED` |
+| grades | - | `{id, name}` — `id`: `1`~`6`, `GRADUATED`, `NOT_ENROLLED` / `name`: `1학년`~`6학년`, `졸업`, `비재학` (이 순서 고정) |
 | interest_fields | (선택) `qualgbcd` | `{code, name, count}` — Q-Net 직무분야(대분류), `code` = `interest_fields.code`. `count` = 그 분야 종목 수(`qualgbcd`를 주면 그 구분만). 종목이 0개인 분야는 목록에 없음 |
 | job_categories | (선택) `qualgbcd`, `interest_field_code` | `{code, name, count}` — Q-Net 직무분야(중분류), `code` = `job_categories.code`. `interest_field_code`를 주면 그 대분류 아래만 |
 | qualifications | (선택) `qualgbcd` = T · S | `{jmcd, jmfldnm, qualgbcd, qualgbnm, grade_level}` — 613종(국가기술 513 · 국가전문 100). `qualgbcd`를 주면 그 구분만, 안 주면 전체. `grade_level`(국가기술 등급: 기능사·산업기사·기사·기능장·기술사·서비스)로 등급만 걸러 볼 수 있음(S와 함께 주면 오류). 국가전문은 `grade_level` null. `interest_field_code`·`job_category_code`로 직무분야별 종목만 |
 
 자격증 상세 탐색(자격구분 → 직무분야 → 분류 → 종목): `interest_fields?qualgbcd=T` → `job_categories?qualgbcd=T&interest_field_code=21` → `qualifications?qualgbcd=T&interest_field_code=21&job_category_code=211`.
 
-응답: `{kind, items[], total, offset, limit}` · `limit` 1~100 · 이름 가나다순 · `query`는 이름 부분일치.
+응답: `{kind, items[], total, offset, limit}` · `limit` 1~100 · 이름 가나다순 · `query`는 앞뒤 공백을 빼고 이름 부분일치. 없는 `university_id`, 국가기술 등급이 아닌 `grade_level`(또는 `qualgbcd=S`와 함께)은 400. 빈 `qualgbcd`·`grade_level`은 조건 없음으로 본다.
 
 ## 2. 전공 맞춤 추천 (처음 진입, 회원정보 기준) — `service.recommend(profile, today=None)`
 
