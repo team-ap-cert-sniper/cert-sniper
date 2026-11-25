@@ -73,6 +73,9 @@ public class OptionService {
         if (offset < 0 || limit < 1 || limit > 100) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "offset은 0 이상, limit은 1~100이어야 합니다.");
         }
+        if (universityId != null && !universityRepository.existsById(universityId)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "대학교를 다시 확인해 주세요.");
+        }
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
 
         List<OptionItem> items = switch (kind == null ? "" : kind) {
@@ -185,8 +188,8 @@ public class OptionService {
     private List<OptionItem> qualifications(
             String q, String qualgbcd, String gradeLevel, String interestFieldCode, String jobCategoryCode) {
         requireQualgbcd(qualgbcd);
-        if ("S".equals(qualgbcd) && gradeLevel != null && !gradeLevel.isBlank()) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "국가전문자격(S)은 등급으로 거를 수 없습니다.");
+        if (!isBlank(gradeLevel) && (!QualificationCatalog.GRADE_LEVELS.contains(gradeLevel) || "S".equals(qualgbcd))) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, QualificationCatalog.GRADE_LEVEL_MESSAGE);
         }
         return qualificationCatalog.all().values().stream()
                 .filter(x -> isBlank(qualgbcd) || qualgbcd.equals(x.getQualgbcd()))

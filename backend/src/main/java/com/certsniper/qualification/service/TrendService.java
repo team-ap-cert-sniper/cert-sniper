@@ -17,7 +17,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -37,7 +36,6 @@ public class TrendService {
 
     /** 1차 시험 단계 (앞에 있을수록 우선) */
     private static final List<String> FIRST_STAGES = List.of("필기", "1차", "시험");
-    private static final Set<String> GRADE_LEVELS = Set.of("기능사", "산업기사", "기사", "기능장", "기술사", "서비스");
     private static final int TREND_YEARS = 5;
     private static final BigDecimal THRESHOLD = BigDecimal.TEN;
 
@@ -123,8 +121,8 @@ public class TrendService {
         if (!"T".equals(qualgbcd) && !"S".equals(qualgbcd)) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "qualgbcd는 T 또는 S만 가능합니다.");
         }
-        if (grade != null && (!GRADE_LEVELS.contains(grade) || "S".equals(qualgbcd))) {
-            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "등급은 국가기술자격에서 기능사·산업기사·기사·기능장·기술사·서비스 중 하나입니다.");
+        if (grade != null && (!QualificationCatalog.GRADE_LEVELS.contains(grade) || "S".equals(qualgbcd))) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, QualificationCatalog.GRADE_LEVEL_MESSAGE);
         }
         if (field != null && qualificationCatalog.interestFieldName(field) == null) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "관심 분야를 다시 확인해 주세요.");

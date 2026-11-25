@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,10 @@ import org.springframework.stereotype.Component;
 public class QualificationCatalog {
 
     private static final Map<String, String> QUALGB_NAMES = Map.of("T", "국가기술자격", "S", "국가전문자격");
+
+    /** 국가기술자격 등급 (qualifications.grade_level CHECK 값과 같음) */
+    public static final Set<String> GRADE_LEVELS = Set.of("기능사", "산업기사", "기사", "기능장", "기술사", "서비스");
+    public static final String GRADE_LEVEL_MESSAGE = "등급은 국가기술자격에서 기능사·산업기사·기사·기능장·기술사·서비스 중 하나입니다.";
 
     private final QualificationRepository qualificationRepository;
     private final InterestFieldRepository interestFieldRepository;
