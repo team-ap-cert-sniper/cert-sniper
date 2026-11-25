@@ -5,10 +5,6 @@ import com.certsniper.examschedule.entity.QualificationExamSchedule;
 import com.certsniper.examschedule.repository.QualificationExamScheduleRepository;
 import com.certsniper.favorite.entity.Favorite;
 import com.certsniper.favorite.repository.FavoriteRepository;
-import com.certsniper.job.entity.InterestField;
-import com.certsniper.job.entity.JobCategory;
-import com.certsniper.job.repository.InterestFieldRepository;
-import com.certsniper.job.repository.JobCategoryRepository;
 import com.certsniper.qualification.dto.PassRateResponse;
 import com.certsniper.qualification.entity.Qualification;
 import com.certsniper.qualification.entity.QualificationStatisticsYearly;
@@ -32,14 +28,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class RecommendationCards {
 
-    /** 같은 해 안에서 단계 표시 순서 (필기→실기, 1차→2차→3차→면접) */
-    private static final Map<String, Integer> STAGE_ORDER =
-            Map.of("필기", 0, "1차", 1, "2차", 2, "3차", 3, "실기", 4, "면접", 5, "시험", 6);
-
     private final QualificationExamScheduleRepository scheduleRepository;
     private final QualificationStatisticsYearlyRepository statisticsRepository;
-    private final InterestFieldRepository interestFieldRepository;
-    private final JobCategoryRepository jobCategoryRepository;
+    private final QualificationCatalog qualificationCatalog;
     private final FavoriteRepository favoriteRepository;
 
     /** 종목코드 → 시험일정 (시험일 순) */
@@ -73,10 +64,6 @@ class RecommendationCards {
         Map<String, List<QualificationStatisticsYearly>> stats = statisticsRepository
                 .findByJmcdInOrderByIdAsc(qualifications.stream().map(Qualification::getJmcd).toList()).stream()
                 .collect(Collectors.groupingBy(QualificationStatisticsYearly::getJmcd));
-        Map<String, String> fields = interestFieldRepository.findAll().stream()
-                .collect(Collectors.toMap(InterestField::getCode, InterestField::getName));
-        Map<String, String> jobs = jobCategoryRepository.findAll().stream()
-                .collect(Collectors.toMap(JobCategory::getCode, JobCategory::getName));
         return qualifications.stream().collect(Collectors.toMap(Qualification::getJmcd, q -> {
             List<ExamScheduleResponse> active = schedules.getOrDefault(q.getJmcd(), List.of()).stream()
                     .map(s -> ExamScheduleResponse.of(s, today))
@@ -87,7 +74,8 @@ class RecommendationCards {
                             && !ExamScheduleResponse.CLOSED.equals(s.registrationStatus()))
                     .findFirst().orElse(null);
             return new CardInfo(q.getQualgbcd(), QualificationCatalog.qualgbnm(q.getQualgbcd()), q.getGradeLevel(),
-                    jobs.get(q.getMdobligfldcd()), fields.get(q.getObligfldcd()), q.getSummary(),
+                    qualificationCatalog.jobCategoryName(q.getMdobligfldcd()),
+                    qualificationCatalog.interestFieldName(q.getObligfldcd()), q.getSummary(),
                     passRateLatest(stats.getOrDefault(q.getJmcd(), List.of())),
                     nextRegistration, active.isEmpty() ? null : active.get(0));
         }));
@@ -98,7 +86,7 @@ class RecommendationCards {
         Short year = rows.stream().map(QualificationStatisticsYearly::getYear).max(Comparator.naturalOrder()).orElse(null);
         List<PassRateResponse> items = rows.stream()
                 .filter(r -> r.getYear().equals(year))
-                .sorted(Comparator.comparingInt(r -> STAGE_ORDER.getOrDefault(r.getExamStage(), 99)))
+                .sorted(Comparator.comparingInt(r -> PassRateResponse.stageOrder(r.getExamStage())))
                 .map(r -> new PassRateResponse(null, r.getExamStage(), null, r.getExaminees(), r.getPassers(),
                         null, r.getPassRatePct(), null, null))
                 .toList();
