@@ -116,6 +116,15 @@ class NoticeServiceTest {
     }
 
     @Test
+    void 본문이_text_컬럼_크기를_넘으면_입력_오류() {
+        String tooLong = "가".repeat(21_846); // UTF-8 3바이트 × 21,846 = 65,538바이트
+
+        assertErrorCode(() -> noticeService.createNotice(1L, new NoticeRequest("GENERAL", "제목", tooLong)),
+                ErrorCode.VALIDATION_ERROR);
+        verify(noticeRepository, never()).save(any());
+    }
+
+    @Test
     void 공지_수정은_변경_전후를_기록한다() {
         Notice notice = notice(1L, "이전 본문");
         when(noticeRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(notice));

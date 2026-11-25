@@ -11,6 +11,7 @@ import com.certsniper.support.entity.Notice;
 import com.certsniper.support.repository.NoticeRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,8 @@ public class NoticeService {
     /** notices.notice_type CHECK 값 */
     private static final Set<String> NOTICE_TYPES = Set.of("GENERAL", "MAINTENANCE");
     private static final int MAX_PAGE_SIZE = 100;
+    /** notices.content(text) 최대 크기. 넘으면 DB 오류(500) 대신 입력 오류로 돌려줌 */
+    private static final int MAX_CONTENT_BYTES = 65_535;
     private static final String TARGET_TABLE = "notices";
 
     private final NoticeRepository noticeRepository;
@@ -91,11 +94,14 @@ public class NoticeService {
         }
     }
 
-    /** 저장 전 XSS 필터링. 허용 태그만 남긴 뒤 글자가 없으면 입력 오류 */
+    /** 저장 전 XSS 필터링. 허용 태그만 남긴 뒤 글자가 없거나 text 컬럼 크기를 넘으면 입력 오류 */
     private String sanitizeContent(String content) {
         String sanitized = HtmlSanitizer.sanitize(content);
         if (sanitized == null || HtmlSanitizer.toText(sanitized).isBlank()) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR);
+        }
+        if (sanitized.getBytes(StandardCharsets.UTF_8).length > MAX_CONTENT_BYTES) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "공지 본문이 너무 깁니다.");
         }
         return sanitized;
     }
