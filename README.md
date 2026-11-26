@@ -9,7 +9,7 @@
 | 이름 | 담당 화면 | 백엔드 패키지 | 비고 |
 |---|---|---|---|
 | **박준성(PM)** | 플래너 다이어리(AI · 직접 쓰기) VIEW-07·08 | `targetexam` `planner` `memo` `aiplanner` | Git관리, GitHub 저장소·백엔드 초기 설정, AI 학습 |
-| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` `global` | 개발 뼈대(백엔드 공통·API 틀, 프론트 공통·라우터), 자동 검사·코드 규칙, DB 관리자(Flyway·Docker Compose), 추천 알고리즘·ETL(`etl/`) |
+| **이은아(PL)** | 자격증 추천 VIEW-05, 자격증 상세 VIEW-06 | `option` `university` `job` `recommendation` `qualification` `examschedule` `global` | 개발 뼈대(백엔드 공통·API 틀, 프론트 공통·라우터), 자동 검사·코드 규칙, DB 관리자(공용 DB 구조·데이터), 추천 알고리즘·ETL(`etl/`) |
 | **유다연** | 초기 화면(메인·온보딩) VIEW-01, 회원가입·로그인·비밀번호 재설정 VIEW-02~04 | `auth` | 기능 흐름, 디자인, 공통 헤더·푸터·팝업 |
 | **최기완** | 저격왕 합격수기 VIEW-09·10, 마이페이지 VIEW-11 | `user` `favorite` `passstory` `report` `rank` | 기능 흐름, 디자인 |
 | **황정규** | 고객센터 VIEW-12·13, 관리자 VIEW-14~19 | `support` `admin` | 기능 흐름, 디자인 |
@@ -66,9 +66,9 @@
 ### **Backend**
 
 * **Framework**: Java 21 · Spring Boot 3.5.16 · Gradle 8.14.3 (래퍼 포함)
-* **Database**: MySQL 8.0 (Docker Compose로 팀원 각자 실행)
+* **Database**: MySQL 8.0 (팀 공용 DB 1개)
 * **JPA/ORM**: Spring Data JPA
-* **DB 변경 관리**: Flyway 11 (DB 관리자만 마이그레이션 추가)
+* **DB 변경 관리**: DB 관리자만 공용 DB에 반영
 * **인증**: Spring Security · JWT (jjwt 0.12.6)
 * **API 문서**: springdoc-openapi 2.8.9 (Swagger UI)
 * **코드 생성**: Lombok
@@ -93,7 +93,6 @@
 * **IDE**: VS Code 또는 Antigravity. 코드 모양은 `.editorconfig`·Prettier·ESLint·PR 자동 검사로 맞춥니다 (VS Code 확장: Extension Pack for Java, Spring Boot Extension Pack, ESLint, Prettier, EditorConfig)
 * **VCS**: Git · GitHub (Organization)
 * **CI**: GitHub Actions (PR 자동 검사)
-* **Container**: Docker · Docker Compose
 * **Docs / Design**: Notion · Figma
 
 ---
@@ -104,7 +103,7 @@ React ↔ Spring Boot **REST API (JSON, `/api/v1`)**
 
 * **Client**: 화면별 페이지와 API 호출 모듈로 사용자 요청 처리
 * **Server**: 기능별 패키지(Controller → Service → Repository)로 비즈니스 로직 수행
-* **Storage**: MySQL `cert_sniper` (31개 테이블, [ERD](docs/ERD.md))
+* **Storage**: MySQL 공용 DB (31개 테이블, [ERD](docs/ERD.md))
 * **Data Pipeline**: Python으로 공공데이터를 수집·정제해 CSV로 만들고 DB에 적재. 추천 로직의 기준 구현과 테스트도 함께 보관
 
 ---
@@ -117,11 +116,6 @@ React ↔ Spring Boot **REST API (JSON, `/api/v1`)**
 ├─ 📁 frontend/   React 웹
 ├─ 📁 etl/        공공데이터 정리 결과 + 추천 로직 기준 구현
 ├─ 📁 docs/       ERD · API 명세 · 기능 추적표 · 플로우차트
-├─ 📁 db/         DB 관리 (DB 관리자만 수정)
-│  ├─ 📁 init/       계정·권한 (컨테이너 처음 만들 때 1번)
-│  ├─ 📁 migration/  테이블 구조 (Flyway, `V번호__설명.sql`)
-│  └─ 📁 seed/       처음 넣는 데이터 (관리자 계정). 자격증·학교·학과·시험일정·합격률·사자성어 50개는 `etl/data` CSV에서 만들어 넣음
-├─ 📄 docker-compose.yml
 ├─ 📄 .env.example
 └─ 📁 .github/    PR·이슈 템플릿, CODEOWNERS, 자동 검사(workflows)
 ```
@@ -138,24 +132,18 @@ React ↔ Spring Boot **REST API (JSON, `/api/v1`)**
 
 ---
 
-## 🐳 로컬 DB 실행
+## 🗄 공용 DB
 
-DB·백엔드·프론트·Swagger는 각자 노트북에서 실행합니다. 다른 팀원 노트북과 관계없습니다.
+DB는 팀 공용 DB 하나를 같이 씁니다. 각자 DB를 설치하거나 실행하지 않습니다. 백엔드·프론트·Swagger만 각자 노트북에서 실행합니다.
 
-1. Docker Desktop 실행
-2. 레포 루트에서 `cp .env.example .env` (개발용 값이 이미 채워져 있음, 메일 칸만 팀에서 받아 채움). 백엔드도 이 `.env`를 그대로 읽습니다
-3. `docker compose up -d`
+1. 레포 루트에서 `cp .env.example .env`
+2. `.env`의 DB·JWT·메일 값을 카톡으로 받아 채웁니다. 백엔드도 이 `.env`를 그대로 읽습니다
 
-처음 실행하면 스키마(Flyway)와 서비스 데이터(`etl/data` CSV 10종: 공공데이터 9종 + 사자성어 50개), 관리자 계정 1개(`euna@certsniper.admin`, 초기 비밀번호는 팀 안에서 공유)가 들어갑니다. 이후 `git pull`로 새 마이그레이션을 받으면 `docker compose up -d`만 다시 실행합니다. 내 테스트 데이터는 유지됩니다.
+공용 DB에는 서비스 데이터(`etl/data` CSV 10종: 공공데이터 9종 + 사자성어 50개)와 관리자 계정 1개(`euna@certsniper.admin`, 비밀번호는 팀 안에서 공유)가 들어 있습니다.
 
-| 접속 | 값 |
-|---|---|
-| 주소 | `localhost:3307` |
-| DB | `cert_sniper` |
-| 백엔드 계정 | `cert_app` / `.env`의 `DB_APP_PASSWORD` (조회·등록·수정·삭제만) |
-
-* DB 구조는 DB 관리자(이은아)만 바꿉니다. 컬럼·테이블이 필요하면 이슈로 요청합니다
-* 테이블 구조는 `db/migration`, 처음 넣는 데이터는 `db/seed`로 나눕니다. 마이그레이션 파일은 병합된 뒤 고치지 않고 다음 번호(`V2__...sql`)로 추가합니다
+* 접속 정보(주소·포트·계정·비밀번호)는 레포·문서·PR에 쓰지 않습니다
+* 내가 만든 테스트 데이터도 팀원 모두에게 보입니다. 다른 팀원이 만든 데이터는 수정·삭제하지 않습니다
+* Workbench 등으로 공용 DB에 직접 접속해 데이터·구조를 바꾸지 않습니다. DB 구조·기준 데이터 변경은 DB 관리자(이은아)만 하고, 필요하면 이슈로 요청합니다
 
 ## ▶ 백엔드 · 프론트 실행
 
@@ -241,6 +229,6 @@ main        ← 최종(배포). 이은아·박준성만 병합
 | `develop` | 직접 push 금지, PR 필수, 승인 1명 이상, CODEOWNERS 승인 필수, 자동 검사 통과 |
 | `feature/*` | 담당자 자유롭게 push |
 
-* 승인자는 `.github/CODEOWNERS`에 있습니다: 모든 PR은 이은아·박준성 중 1명, DB·마이그레이션·ETL·Docker·백엔드 `global` 변경은 이은아
+* 승인자는 `.github/CODEOWNERS`에 있습니다: 모든 PR은 이은아·박준성 중 1명, ETL·`.env.example`·백엔드 `global` 변경은 이은아
 * 자동 검사: PR을 올리면 GitHub Actions(`.github/workflows/ci.yml`)가 backend 컴파일, frontend 코드 모양·규칙(`npm run format` · `npm run lint`)·빌드, etl 테스트를 실행합니다. 실패하면 병합하지 않습니다
 * API 키·비밀번호는 **절대 커밋하지 않습니다** (`.env`, `application-local.yml`은 `.gitignore` 대상)

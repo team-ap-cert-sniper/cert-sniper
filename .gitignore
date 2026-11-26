@@ -39,5 +39,7 @@ __pycache__/
 venv/
 etl/tmp/
 
-# 초기 적재용으로 만드는 SQL (etl/tools/load_service_data.py 출력, 커밋 안 함)
-service_data*.sql
+# ===== DB (공용 DB 스키마·적재 SQL과 적재 도구는 DB 관리자 로컬에서만 관리) =====
+db/
+etl/tools/
+*.sql

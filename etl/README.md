@@ -2,7 +2,7 @@
 
 공공데이터로 만든 **서비스용 데이터(CSV 9종)** 와 팀이 정한 사자성어 목록(CSV 1종), 그 데이터를 쓰는 **추천·자격증 정보 로직(Python)** 을 담고 있습니다.
 
-* **DB 적재 원천**: `data/*.csv`를 `cert_sniper` 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
+* **DB 적재 원천**: `data/*.csv`를 공용 DB 테이블에 적재합니다 (CSV ↔ 테이블 대응은 `docs/DATA_TABLES.md`)
 * **백엔드 이식 기준**: `jeogyeokjeung/`의 함수 흐름과 [docs/API_CONTRACT.md](../docs/API_CONTRACT.md)의 입출력을 Spring Boot로 옮깁니다
 * **결과 검증 기준**: `tests/golden_recommendations.json`과 같은 입력을 넣어 Java 결과가 같은지 비교합니다
 
@@ -36,9 +36,6 @@ Python 3.9 이상, 외부 라이브러리 없음. 담당: 이은아.
 │  ├─ 📄 eligibility_rules.csv          응시 조건 목록 (등급별·종목별)
 │  ├─ 📄 daily_idioms.csv               오늘의 사자성어 50개 (팀 제공, 1~50번 하루 1개씩 순환)
 │  └─ 📄 MANIFEST.json                  행 수·체크섬·빌드 통계
-│
-├─ 📁 tools/
-│  └─ 📄 load_service_data.py           빈 DB 초기 적재 SQL 생성 (CSV 10종, 실행할 때만 만들고 레포에 두지 않음)
 │
 ├─ 📁 tests/                            테스트
 │  ├─ 📄 __init__.py
@@ -137,16 +134,8 @@ python run.py check
 
 ## MySQL 초기 적재
 
-팀 DB는 `docker compose up -d` 때 자동으로 적재됩니다. Docker 없이 넣을 때만 아래를 씁니다 (`V1__create_tables.sql`을 적용한 빈 DB, 한 트랜잭션).
+공용 DB 적재는 DB 관리자가 합니다.
 
-```powershell
-mysql --login-path=cert_sniper_local --execute="CREATE DATABASE IF NOT EXISTS cert_sniper CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
-mysql --login-path=cert_sniper_local --default-character-set=utf8mb4 cert_sniper --execute="source db/migration/V1__create_tables.sql"
-python etl/tools/load_service_data.py --output service_data.sql
-mysql --login-path=cert_sniper_local --skip-force --default-character-set=utf8mb4 cert_sniper --execute="source service_data.sql"
-```
-
-* `service_data.sql`은 실행할 때 만들어지는 파일이라 커밋하지 않습니다
 * CSV의 원천 ID는 DB ID(1부터)로 바꿔 넣고, 합격률(`pass_rate_pct`)은 생성 컬럼이라 넣지 않습니다
 
 ## 트렌드와 시험 단계

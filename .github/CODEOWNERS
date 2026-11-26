@@ -1,9 +1,7 @@
 # 모든 PR은 이은아 또는 박준성 중 한 명이 승인합니다.
 *                                    @euna0428 @I-LOVE-CABBAGE
 
-# DB 스키마·데이터·공통 백엔드는 이은아만 승인합니다.
-/db/                                 @euna0428
+# 데이터·환경 설정·공통 백엔드는 이은아만 승인합니다.
 /etl/                                @euna0428
-/docker-compose.yml                  @euna0428
 /.env.example                        @euna0428
 /backend/src/main/java/com/certsniper/global/ @euna0428
