@@ -3,19 +3,31 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deletePassStory, getPassStory } from '@/api/passStoryApi';
 import { reportPassStory } from '@/api/reportApi';
 import AlertModal from '@/components/common/AlertModal';
-import ConfirmModal from '@/components/common/ConfirmModal';
 import Loading from '@/components/common/Loading';
 import HiddenNotice from '@/components/passstory/HiddenNotice';
 import RankBadge from '@/components/passstory/RankBadge';
 import { ATTEMPT_LABELS, EXAMINEE_BASE_LABELS, PREP_PERIOD_LABELS } from '@/components/passstory/labels';
 import { errorMessage } from '@/components/passstory/utils';
+import DeleteModal from '@/pages/PassStory/components/DeleteModal';
 import ReportModal from '@/pages/PassStory/components/ReportModal';
 import { formatDate } from '@/utils/date';
+import '@/styles/passstory.css';
 
 const REPORT_ERRORS = {
   DUPLICATE: '이미 신고한 글입니다.',
   FORBIDDEN: '본인 글은 신고할 수 없습니다.',
 };
+
+// 선택 입력 항목: 값이 없으면 줄을 그리지 않음
+function Info({ label, value }) {
+  if (!value) return null;
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
 
 export default function PassStoryDetailPage() {
   const { id } = useParams();
@@ -52,94 +64,72 @@ export default function PassStoryDetailPage() {
 
   if (error) {
     return (
-      <section>
-        <p className="field-error">{error}</p>
-        <Link to="/pass-stories">목록으로</Link>
+      <section className="ps">
+        <div className="ps-detail ps-box">
+          <p className="field-error">{error}</p>
+          <Link to="/pass-stories" className="btn">
+            ← 목록으로
+          </Link>
+        </div>
       </section>
     );
   }
   if (!story) return <Loading />;
 
   return (
-    <section>
-      <h1>{story.jmfldnm} 합격수기</h1>
-      <p>
-        {story.nickname} <RankBadge rank={story.current_rank} /> · {formatDate(story.created_at)}
-      </p>
+    <section className="ps">
+      <div className="ps-detail">
+        <article className="ps-detail__card ps-box">
+          <h1 className="ps-detail__cert">{story.jmfldnm}</h1>
+          <p className="ps-detail__meta">
+            {story.nickname} <RankBadge rank={story.current_rank} /> | {formatDate(story.created_at)}
+          </p>
 
-      <HiddenNotice status={story.status} hiddenReason={story.hidden_reason} />
+          <HiddenNotice status={story.status} hiddenReason={story.hidden_reason} />
 
-      <dl>
-        {story.examinee_base && (
-          <>
-            <dt>응시자 베이스</dt>
-            <dd>{EXAMINEE_BASE_LABELS[story.examinee_base]}</dd>
-          </>
-        )}
-        {story.prep_period && (
-          <>
-            <dt>준비 기간</dt>
-            <dd>{PREP_PERIOD_LABELS[story.prep_period]}</dd>
-          </>
-        )}
-        {story.attempt_band && (
-          <>
-            <dt>응시 횟수</dt>
-            <dd>{ATTEMPT_LABELS[story.attempt_band]}</dd>
-          </>
-        )}
-        {story.textbook_name && (
-          <>
-            <dt>사용 교재</dt>
-            <dd>{story.textbook_name}</dd>
-          </>
-        )}
-        {story.pass_score != null && (
-          <>
-            <dt>합격 점수</dt>
-            <dd>{story.pass_score}</dd>
-          </>
-        )}
-        {story.exam_date && (
-          <>
-            <dt>응시일</dt>
-            <dd>{formatDate(story.exam_date)}</dd>
-          </>
-        )}
-      </dl>
+          <div className="ps-detail__panel">
+            <dl>
+              <Info label="응시자 베이스" value={EXAMINEE_BASE_LABELS[story.examinee_base]} />
+              <Info label="시험 준비 기간" value={PREP_PERIOD_LABELS[story.prep_period]} />
+              <Info label="시험 응시 횟수" value={ATTEMPT_LABELS[story.attempt_band]} />
+              <Info label="사용한 교재 / 학습 수단" value={story.textbook_name} />
+              <Info label="합격 점수" value={story.pass_score != null && `${story.pass_score}점`} />
+              <Info label="시험 응시일" value={story.exam_date && formatDate(story.exam_date)} />
+            </dl>
 
-      {/* body는 서버에서 허용 태그만 남긴 HTML (HtmlSanitizer). 타인의 숨김 글이면 null */}
-      {story.body != null && <div className="pass-story-body" dangerouslySetInnerHTML={{ __html: story.body }} />}
+            {/* body는 서버에서 허용 태그만 남긴 HTML (HtmlSanitizer). 타인의 숨김 글이면 null */}
+            {story.body != null && (
+              <>
+                <h2>생생한 합격 후기</h2>
+                <div className="pass-story-body" dangerouslySetInnerHTML={{ __html: story.body }} />
+              </>
+            )}
+          </div>
 
-      <div>
-        <Link to="/pass-stories" className="btn">
-          목록으로
-        </Link>
-        {story.mine && (
-          <>
-            <Link to={`/pass-stories/${id}/edit`} className="btn">
-              수정
+          <div className="ps-detail__actions">
+            {story.mine && (
+              <>
+                <Link to={`/pass-stories/${id}/edit`} className="btn">
+                  ✎ 수정하기
+                </Link>
+                <button type="button" className="btn btn--danger" onClick={() => setModal('delete')}>
+                  삭제
+                </button>
+              </>
+            )}
+            {!story.mine && story.status === 'PUBLISHED' && (
+              <button type="button" className="btn btn--danger" onClick={() => setModal('report')}>
+                신고하기
+              </button>
+            )}
+            <Link to="/pass-stories" className="btn btn--primary">
+              ← 목록으로
             </Link>
-            <button type="button" className="btn" onClick={() => setModal('delete')}>
-              삭제
-            </button>
-          </>
-        )}
-        {!story.mine && story.status === 'PUBLISHED' && (
-          <button type="button" className="btn" onClick={() => setModal('report')}>
-            신고하기
-          </button>
-        )}
+          </div>
+        </article>
       </div>
 
-      {modal === 'delete' && (
-        <ConfirmModal
-          message="삭제한 글은 되돌릴 수 없습니다. 삭제할까요?"
-          confirmText="삭제"
-          onConfirm={remove}
-          onCancel={() => setModal(null)}
-        />
-      )}
+      {modal === 'delete' && <DeleteModal onConfirm={remove} onCancel={() => setModal(null)} />}
       {modal === 'report' && <ReportModal onSubmit={report} onCancel={() => setModal(null)} />}
       {modal?.alert && <AlertModal message={modal.alert} onClose={() => setModal(null)} />}
     </section>

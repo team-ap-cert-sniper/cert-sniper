@@ -20,6 +20,14 @@ export const REPORT_LABELS = {
   ETC: '기타',
 };
 
+export const REPORT_DESCRIPTIONS = {
+  IRRELEVANT: '주제와 무관하거나 도배성 내용',
+  ABUSE: '타인을 비하하거나 불쾌감 조성',
+  PRIVACY: '연락처, 계좌번호, 사생활 등 노출',
+  AD: '상업적 영리 목적 또는 스팸 링크',
+  ETC: '위 분류에 해당하지 않는 기타 사항',
+};
+
 export const REPORT_STATUS_LABELS = {
   PENDING: '관리자 검토 중 (숨김)',
   CONFIRMED: '숨김 확정',

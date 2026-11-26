@@ -16,6 +16,7 @@ import com.certsniper.passstory.repository.PassStoryRepository;
 import com.certsniper.passstory.service.PassStoryService;
 import com.certsniper.qualification.service.QualificationService;
 import com.certsniper.report.dto.ReportRequest;
+import com.certsniper.report.entity.PassStoryReport;
 import com.certsniper.report.repository.PassStoryModerationLogRepository;
 import com.certsniper.report.repository.PassStoryReportRepository;
 import com.certsniper.report.service.ReportService;
@@ -72,5 +73,19 @@ class ReportServiceTest {
         service.reportPassStory(REPORTER, STORY, abuse);
         verify(reportRepo).save(any());
         verify(logRepo, never()).save(any());
+    }
+
+    @Test
+    void 신고_1건_조회() {
+        PassStoryReport report = PassStoryReport.of(STORY, REPORTER, "ABUSE");
+        when(reportRepo.findById(5L)).thenReturn(Optional.of(report));
+        assertEquals(STORY, service.getReport(5L).getStoryId());
+    }
+
+    @Test
+    void 없는_신고는_NOT_FOUND() {
+        when(reportRepo.findById(5L)).thenReturn(Optional.empty());
+        assertEquals(ErrorCode.NOT_FOUND,
+                assertThrows(BusinessException.class, () -> service.getReport(5L)).getErrorCode());
     }
 }

@@ -114,6 +114,12 @@ public class ReportService {
                 : passStoryReportRepository.findByStatus(status, pageable);
     }
 
+    /** admin 신고 검토: 신고 1건 (글 번호·상태 등). 없으면 NOT_FOUND */
+    public PassStoryReport getReport(Long reportId) {
+        return passStoryReportRepository.findById(reportId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+    }
+
     /** admin 신고 처리 결과 (CONFIRMED · DISMISSED) */
     @Transactional
     public void resolve(Long reportId, String status) {

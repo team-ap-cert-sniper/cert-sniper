@@ -73,45 +73,56 @@ export default function PassStoryListPage() {
       : '아직 등록된 합격수기가 없습니다.';
 
   return (
-    <section>
-      <h1>저격왕</h1>
+    <section className="ps ps-list">
+      <header className="ps-head">
+        <div>
+          <h1>시험 합격 후기</h1>
+          <p>실제 합격생들의 생생한 공부법과 검증된 꿀팁을 확인해 보세요</p>
+        </div>
+        <Link to="/pass-stories/new" className="btn btn--primary">
+          ✎ 후기 작성하기
+        </Link>
+      </header>
+
       <RankDashboard />
 
-      <div>
-        <button type="button" className="btn" aria-pressed={!mine} onClick={() => setParams({})}>
-          전체보기
-        </button>
-        <button type="button" className="btn" aria-pressed={mine} onClick={() => setParams({ mine: 'true' })}>
-          내가 쓴 글
-        </button>
-        <Link to="/pass-stories/new" className="btn btn--primary">
-          글쓰기
-        </Link>
-      </div>
-
-      {!mine && (
-        <form onSubmit={search} role="search">
-          <label htmlFor="pass-story-search">자격증 이름</label>
-          <input
-            id="pass-story-search"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="자격증 이름으로 검색"
-          />
-          <button type="submit" className="btn">
-            검색
+      <div className="ps-toolbar ps-box">
+        {!mine && (
+          <form onSubmit={search} role="search">
+            <label htmlFor="pass-story-search" className="sr-only">
+              자격증 이름
+            </label>
+            <input
+              id="pass-story-search"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="자격증 이름으로 검색 (예: SQLD, 정보처리기사)"
+            />
+            <button type="submit" className="btn">
+              검색
+            </button>
+          </form>
+        )}
+        <div className="ps-toolbar__tabs">
+          <button type="button" className="btn" aria-pressed={!mine} onClick={() => setParams({})}>
+            전체 보기
           </button>
-        </form>
-      )}
+          <button type="button" className="btn" aria-pressed={mine} onClick={() => setParams({ mine: 'true' })}>
+            내가 쓴 글 보기
+          </button>
+        </div>
+      </div>
 
       {error && <p className="field-error">{error}</p>}
       {!data && !error && <Loading />}
       {data && data.items.length === 0 && <EmptyState message={emptyMessage} />}
       {data && data.items.length > 0 && (
         <>
-          {data.items.map((story) => (
-            <PassStoryCard key={story.id} story={story} />
-          ))}
+          <div className="ps-cards">
+            {data.items.map((story) => (
+              <PassStoryCard key={story.id} story={story} />
+            ))}
+          </div>
           <Pagination page={data.page} total={data.total} size={data.size} onChange={changePage} />
         </>
       )}

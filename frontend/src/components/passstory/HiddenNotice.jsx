@@ -1,4 +1,5 @@
 import { REPORT_LABELS } from '@/components/passstory/labels';
+import '@/styles/passstory.css';
 
 export default function HiddenNotice({ status, hiddenReason }) {
   if (status === 'HIDDEN') {
