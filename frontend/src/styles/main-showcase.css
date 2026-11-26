@@ -1,0 +1,92 @@
+/*
+ * 메인 기능 소개 스크롤 애니메이션 (ScrollShowcase, 담당: 유다연)
+ * 카드 자리: 화면 가로 49% · 세로 최대 65% (가로:세로 = 6:5), 좌우 여백 4.9vw
+ *  - right: 왼쪽 46% ~ 오른쪽 95% (Recommend, Story)
+ *  - left : 왼쪽 5% ~ 54% (Planner, 대칭)
+ */
+
+.showcase {
+  --showcase-side: 4.9vw; /* 좌우 여백 (히어로 왼쪽 여백과 같음) */
+  --showcase-card-w: min(49vw, calc(65vh * 6 / 5)); /* 카드 폭: 가로 49%, 단 세로 65%를 넘지 않게 */
+  position: relative;
+}
+
+.showcase__stage {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  margin-bottom: -100vh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.showcase__word {
+  grid-area: 1 / 1;
+  font-size: clamp(80px, 14vw, 200px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #1f2328;
+  opacity: 0;
+  white-space: nowrap;
+  will-change: opacity;
+}
+
+.showcase__step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 0 var(--showcase-side);
+}
+
+.showcase__step--right {
+  justify-content: flex-end;
+}
+
+.showcase__step--left {
+  justify-content: flex-start;
+}
+
+.showcase__step--center {
+  justify-content: center;
+}
+
+/* 제목 + 설명 + 카드 묶음: 카드 폭에 맞춤 */
+.showcase__item {
+  width: var(--showcase-card-w);
+}
+
+.showcase__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2328;
+}
+
+.showcase__desc {
+  margin: 6px 0 16px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.showcase__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 6 / 5;
+  padding: 40px;
+  border-radius: 32px;
+  background: #f8f9fc;
+  color: #c9ccd6;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+}
