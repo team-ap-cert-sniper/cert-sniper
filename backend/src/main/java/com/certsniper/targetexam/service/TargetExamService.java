@@ -57,14 +57,27 @@ public class TargetExamService {
         return toResponse(saved);
     }
 
+    /** 플래너에서 수정: 시험 회차·시험일·색상만 바꾼다. 자격증 자체는 바꿀 수 없다 (없음 404, 남의 것 403, 색 중복 409) */
     @Transactional
     public TargetExamResponse updateTargetExam(Long userId, Long targetExamId, TargetExamRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        TargetExam targetExam = findOwned(userId, targetExamId);
+        String jmcd = qualificationService.getInfo(request.jmcd()).jmcd();
+        if (!jmcd.equals(targetExam.getJmcd())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "목표 자격증의 자격증은 바꿀 수 없습니다. 삭제 후 새로 추가해 주세요.");
+        }
+        validateExam(jmcd, request.examScheduleId(), request.examDate());
+        if (targetExamRepository.existsByUserIdAndDisplayColorAndIdNot(userId, request.displayColor(), targetExamId)) {
+            throw new BusinessException(ErrorCode.DUPLICATE, "다른 목표 자격증에서 사용 중인 색입니다.");
+        }
+        targetExam.changeExam(request.examScheduleId(), request.examDate());
+        targetExam.changeColor(request.displayColor());
+        return toResponse(targetExam);
     }
 
+    /** 플래너에서 삭제: 이 자격증의 일정바·세부 일정·메모는 DB의 ON DELETE CASCADE로 같이 삭제된다 (없음 404, 남의 것 403) */
     @Transactional
     public void deleteTargetExam(Long userId, Long targetExamId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        targetExamRepository.delete(findOwned(userId, targetExamId));
     }
 
     /** aiplanner 플랜 저장: 이미 목표면 시험일만 바꾸고, 없으면 안 쓰는 색으로 만들어 ID 반환 */
@@ -88,11 +101,7 @@ public class TargetExamService {
 
     /** planner·memo: 내 목표 자격증인지 확인 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
     public void validateOwner(Long userId, Long targetExamId) {
-        TargetExam targetExam = targetExamRepository.findById(targetExamId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        if (!targetExam.getUserId().equals(userId)) {
-            throw new BusinessException(ErrorCode.FORBIDDEN);
-        }
+        findOwned(userId, targetExamId);
     }
 
     /** planner 일정 6개 제한 검사: 목표 자격증 수 */
@@ -104,6 +113,16 @@ public class TargetExamService {
     @Transactional
     public void deleteAllByUser(Long userId) {
         targetExamRepository.deleteAllByUserId(userId);
+    }
+
+    /** 내 목표 자격증 찾기 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
+    private TargetExam findOwned(Long userId, Long targetExamId) {
+        TargetExam targetExam = targetExamRepository.findById(targetExamId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "목표 자격증을 찾을 수 없습니다."));
+        if (!targetExam.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return targetExam;
     }
 
     /** 회차와 시험일은 둘 다 비우거나 둘 다 넣는다. 넣으면 이 자격증의 회차이고, 회차 기간 안이고, 지나지 않은 날이어야 한다 */

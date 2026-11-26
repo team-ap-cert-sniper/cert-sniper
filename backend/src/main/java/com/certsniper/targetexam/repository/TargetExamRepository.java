@@ -20,6 +20,9 @@ public interface TargetExamRepository extends JpaRepository<TargetExam, Long> {
 
     boolean existsByUserIdAndDisplayColor(Long userId, String displayColor);
 
+    /** 수정할 때 색 중복 검사: 자기 자신은 빼고 본다 */
+    boolean existsByUserIdAndDisplayColorAndIdNot(Long userId, String displayColor, Long id);
+
     // 벌크 삭제: 일정바·메모·세부 일정은 DB의 ON DELETE CASCADE로 같이 삭제된다
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from TargetExam t where t.userId = :userId")
