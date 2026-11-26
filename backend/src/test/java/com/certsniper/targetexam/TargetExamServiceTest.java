@@ -204,4 +204,82 @@ class TargetExamServiceTest {
         assertEquals(ErrorCode.VALIDATION_ERROR, e.getErrorCode());
         verify(repo, never()).save(any());
     }
+
+    // ===== 수정·삭제 =====
+
+    /** 저장된 내 목표 자격증 (실제 객체라 값이 바뀌는지 확인할 수 있다) */
+    private TargetExam storedReal(Long targetExamId, Long ownerId) {
+        TargetExam t = TargetExam.create(ownerId, "2290", null, null, "#E5484D");
+        when(repo.findById(targetExamId)).thenReturn(Optional.of(t));
+        return t;
+    }
+
+    @Test
+    void 수정하면_시험일과_색이_바뀐다() {
+        TargetExam t = storedReal(10L, 1L);
+
+        TargetExamResponse res = service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("2290", 7L, EXAM_DATE, "#30A46C"));
+
+        assertEquals(7L, t.getExamScheduleId());
+        assertEquals(EXAM_DATE, t.getExamDate());
+        assertEquals("#30A46C", t.getDisplayColor());
+        assertEquals("#30A46C", res.displayColor());
+    }
+
+    @Test
+    void 수정할_때_자격증을_바꾸면_400() {
+        storedReal(10L, 1L);
+        QualificationDetailResponse.QualificationInfo other = mock(QualificationDetailResponse.QualificationInfo.class);
+        when(other.jmcd()).thenReturn("1320");
+        when(qualificationService.getInfo("1320")).thenReturn(other);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("1320", null, null, "#E5484D")));
+        assertEquals(ErrorCode.VALIDATION_ERROR, e.getErrorCode());
+    }
+
+    @Test
+    void 수정할_때_다른_목표와_같은_색이면_DUPLICATE() {
+        TargetExam t = storedReal(10L, 1L);
+        when(repo.existsByUserIdAndDisplayColorAndIdNot(1L, "#30A46C", 10L)).thenReturn(true);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("2290", null, null, "#30A46C")));
+        assertEquals(ErrorCode.DUPLICATE, e.getErrorCode());
+        assertEquals("#E5484D", t.getDisplayColor());
+    }
+
+    @Test
+    void 수정할_때_회차_기간_밖이면_400() {
+        storedReal(10L, 1L);
+        BusinessException e = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("2290", 7L, EXAM_DATE.plusDays(1), "#E5484D")));
+        assertEquals(ErrorCode.VALIDATION_ERROR, e.getErrorCode());
+    }
+
+    @Test
+    void 남의_목표_자격증은_수정_삭제_FORBIDDEN() {
+        storedReal(10L, 2L);
+        BusinessException update = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("2290", null, null, "#E5484D")));
+        BusinessException delete = assertThrows(BusinessException.class, () -> service.deleteTargetExam(1L, 10L));
+        assertEquals(ErrorCode.FORBIDDEN, update.getErrorCode());
+        assertEquals(ErrorCode.FORBIDDEN, delete.getErrorCode());
+        verify(repo, never()).delete(any());
+    }
+
+    @Test
+    void 삭제하면_리포지토리에서_지운다() {
+        TargetExam t = storedReal(10L, 1L);
+        service.deleteTargetExam(1L, 10L);
+        verify(repo).delete(t);
+    }
+
+    @Test
+    void 없는_목표_자격증_삭제는_NOT_FOUND() {
+        when(repo.findById(99L)).thenReturn(Optional.empty());
+        BusinessException e = assertThrows(BusinessException.class, () -> service.deleteTargetExam(1L, 99L));
+        assertEquals(ErrorCode.NOT_FOUND, e.getErrorCode());
+    }
 }

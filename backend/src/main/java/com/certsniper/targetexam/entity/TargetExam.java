@@ -56,4 +56,9 @@ public class TargetExam extends BaseTimeEntity {
         this.examScheduleId = examScheduleId;
         this.examDate = examDate;
     }
+
+    /** 일정 색상 변경 */
+    public void changeColor(String displayColor) {
+        this.displayColor = displayColor;
+    }
 }
