@@ -1,4 +1,5 @@
 import { INQUIRY_TYPES } from '@/constants/inquiry';
+import { formatDate } from '@/utils/date';
 
 // 고객센터 목록은 5개씩 (개발 시작 공지)
 export const PAGE_SIZE = 5;
@@ -16,6 +17,28 @@ export const parsePage = (value) => {
 };
 
 export const inquiryTypeLabel = (value) => INQUIRY_TYPES.find((t) => t.value === value)?.label ?? value;
+
+// 목록 표에 쓰는 짧은 문의 유형 이름 (시안의 유형 태그)
+const INQUIRY_TYPE_SHORT = {
+  ACCOUNT: '계정/로그인',
+  PLANNER: '플래너',
+  SUGGESTION: '기능 제안',
+  CERT_DATA: '자격증 정보',
+  ETC: '기타',
+};
+
+export const inquiryTypeShortLabel = (value) => INQUIRY_TYPE_SHORT[value] ?? inquiryTypeLabel(value);
+
+// 2026.11.25 14:22
+export const formatDateTime = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${formatDate(value)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// 목록 번호: 최신 글이 가장 큰 번호
+export const rowNumber = (data, index) => data.total - data.page * data.size - index;
 
 export const errorMessage = (e, fallback = '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.') =>
   e.response?.data?.message ?? fallback;
