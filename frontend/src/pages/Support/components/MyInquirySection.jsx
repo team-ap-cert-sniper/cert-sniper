@@ -5,14 +5,14 @@ import EmptyState from '@/components/common/EmptyState';
 import Loading from '@/components/common/Loading';
 import Pagination from '@/components/common/Pagination';
 import { INQUIRY_STATUS } from '@/constants/inquiry';
-import { PAGE_SIZE, errorMessage, inquiryTypeLabel } from '@/pages/Support/supportShared';
+import { PAGE_SIZE, errorMessage, inquiryTypeLabel, parsePage } from '@/pages/Support/supportShared';
 import { formatDate } from '@/utils/date';
 
 // CS-05 나의 문의 내역: 목록(5개씩)과 상세. 상세에서 목록으로 가면 보던 페이지 유지
 export default function MyInquirySection() {
   const [params, setParams] = useSearchParams();
   const id = params.get('id');
-  const page = Number(params.get('page') ?? 0);
+  const page = parsePage(params.get('page'));
 
   const goList = (p) => setParams({ menu: 'my-inquiries', page: String(p) });
   const goDetail = (inquiryId) => setParams({ menu: 'my-inquiries', page: String(page), id: String(inquiryId) });
