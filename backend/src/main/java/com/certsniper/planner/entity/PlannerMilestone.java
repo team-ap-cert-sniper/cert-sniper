@@ -40,4 +40,17 @@ public class PlannerMilestone {
 
     @Column(name = "source", nullable = false, length = 10)
     private String source = "MANUAL";
+
+    /** 세부 일정 생성 */
+    public static PlannerMilestone create(Long barId, Long userId, LocalDate pointDate, String content,
+                                          boolean isRest, String source) {
+        PlannerMilestone milestone = new PlannerMilestone();
+        milestone.barId = barId;
+        milestone.userId = userId;
+        milestone.pointDate = pointDate;
+        milestone.content = content;
+        milestone.isRest = isRest;
+        milestone.source = source;
+        return milestone;
+    }
 }

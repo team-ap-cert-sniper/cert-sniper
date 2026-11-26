@@ -4,14 +4,25 @@ import { getNotice, getNotices } from '@/api/supportApi';
 import EmptyState from '@/components/common/EmptyState';
 import Loading from '@/components/common/Loading';
 import Pagination from '@/components/common/Pagination';
-import { NOTICE_TYPE_LABELS, PAGE_SIZE, errorMessage } from '@/pages/Support/supportShared';
+import { Breadcrumb, PageHead } from '@/pages/Support/components/SupportParts';
+import {
+  NOTICE_TYPE_LABELS,
+  PAGE_SIZE,
+  errorMessage,
+  formatDateTime,
+  parsePage,
+  rowNumber,
+} from '@/pages/Support/supportShared';
 import { formatDate } from '@/utils/date';
+import iconCalendar from '@/pages/Support/assets/calendar.svg';
+import iconListWhite from '@/pages/Support/assets/list-white.svg';
+import iconMaintenance from '@/pages/Support/assets/notice-maintenance.svg';
 
 // CS-02 공지사항: 목록(5개씩, 작성일만 표시)과 상세. 상세에서 목록으로 가면 보던 페이지 유지
 export default function NoticeSection() {
   const [params, setParams] = useSearchParams();
   const id = params.get('id');
-  const page = Number(params.get('page') ?? 0);
+  const page = parsePage(params.get('page'));
 
   const goList = (p) => setParams({ menu: 'notices', page: String(p) });
   const goDetail = (noticeId) => setParams({ menu: 'notices', page: String(page), id: String(noticeId) });
@@ -19,8 +30,24 @@ export default function NoticeSection() {
   return id ? (
     <NoticeDetail noticeId={id} onBack={() => goList(page)} />
   ) : (
-    <NoticeList page={page} onPage={goList} onSelect={goDetail} />
+    <>
+      <PageHead crumbs={['고객지원실', '공지사항']} title="공지사항" />
+      <NoticeList page={page} onPage={goList} onSelect={goDetail} />
+    </>
   );
+}
+
+function NoticeTypeBadge({ type }) {
+  const label = NOTICE_TYPE_LABELS[type] ?? type;
+  if (type === 'MAINTENANCE') {
+    return (
+      <span className="support-pill support-pill--pink">
+        <img src={iconMaintenance} alt="" />
+        {label}
+      </span>
+    );
+  }
+  return <span className="support-pill support-pill--soft">{label}</span>;
 }
 
 function NoticeList({ page, onPage, onSelect }) {
@@ -43,38 +70,53 @@ function NoticeList({ page, onPage, onSelect }) {
     };
   }, [page]);
 
-  if (error) return <p role="alert">{error}</p>;
-  if (!data) return <Loading />;
-  if (data.items.length === 0) return <EmptyState message="등록된 공지사항이 없습니다." />;
-
-  return (
-    <div>
-      <h2>공지사항</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>유형</th>
-            <th>제목</th>
-            <th>작성일</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.items.map((notice) => (
-            <tr key={notice.id}>
-              <td>{NOTICE_TYPE_LABELS[notice.notice_type] ?? notice.notice_type}</td>
-              <td>
-                <button type="button" className="btn--link" onClick={() => onSelect(notice.id)}>
-                  {notice.title}
-                </button>
-              </td>
-              <td>{formatDate(notice.created_at)}</td>
+  let body;
+  if (error)
+    body = (
+      <p className="support-error" role="alert">
+        {error}
+      </p>
+    );
+  else if (!data) body = <Loading />;
+  else if (data.items.length === 0) body = <EmptyState message="등록된 공지사항이 없습니다." />;
+  else {
+    body = (
+      <>
+        <table className="support-table">
+          <thead>
+            <tr>
+              <th className="support-table__center">번호</th>
+              <th>제목</th>
+              <th className="support-table__center">작성일</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <Pagination page={data.page} total={data.total} size={data.size} onChange={onPage} />
-    </div>
-  );
+          </thead>
+          <tbody>
+            {data.items.map((notice, i) => (
+              <tr key={notice.id}>
+                <td className="support-table__num">{rowNumber(data, i)}</td>
+                <td>
+                  <button type="button" className="support-table__link" onClick={() => onSelect(notice.id)}>
+                    {notice.notice_type === 'MAINTENANCE' && (
+                      <span className="support-tag support-tag--pink">{NOTICE_TYPE_LABELS.MAINTENANCE}</span>
+                    )}
+                    {notice.title}
+                  </button>
+                </td>
+                <td className="support-table__date">{formatDate(notice.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {data.total > data.size && (
+          <div className="support-table-foot">
+            <Pagination page={data.page} total={data.total} size={data.size} onChange={onPage} />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return <div className="support-card support-card--clip">{body}</div>;
 }
 
 function NoticeDetail({ noticeId, onBack }) {
@@ -98,21 +140,36 @@ function NoticeDetail({ noticeId, onBack }) {
   }, [noticeId]);
 
   return (
-    <div>
-      {error && <p role="alert">{error}</p>}
-      {!error && !notice && <Loading />}
-      {notice && (
-        <article>
-          <p>{NOTICE_TYPE_LABELS[notice.notice_type] ?? notice.notice_type}</p>
-          <h2>{notice.title}</h2>
-          <p>작성일 {formatDate(notice.created_at)}</p>
-          {/* 본문은 서버에서 허용 태그만 남겨 저장함 (HtmlSanitizer) */}
-          <div dangerouslySetInnerHTML={{ __html: notice.content }} />
-        </article>
-      )}
-      <button type="button" className="btn" onClick={onBack}>
-        목록으로
-      </button>
-    </div>
+    <>
+      <Breadcrumb items={['고객센터', '공지사항', '세부내용']} home />
+      <article className="support-card support-card--clip">
+        {error && (
+          <p className="support-error" role="alert">
+            {error}
+          </p>
+        )}
+        {!error && !notice && <Loading />}
+        {notice && (
+          <>
+            <header className="support-article__head">
+              <NoticeTypeBadge type={notice.notice_type} />
+              <h2 className="support-article__title">{notice.title}</h2>
+              <p className="support-meta">
+                <img src={iconCalendar} alt="" />
+                작성일: {formatDateTime(notice.created_at)}
+              </p>
+            </header>
+            {/* 본문은 서버에서 허용 태그만 남겨 저장함 (HtmlSanitizer) */}
+            <div className="support-article__body" dangerouslySetInnerHTML={{ __html: notice.content }} />
+          </>
+        )}
+        <div className="support-article__actions">
+          <button type="button" className="support-btn support-btn--plum support-btn--sm" onClick={onBack}>
+            <img src={iconListWhite} alt="" />
+            목록으로
+          </button>
+        </div>
+      </article>
+    </>
   );
 }

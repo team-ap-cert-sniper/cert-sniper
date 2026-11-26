@@ -46,4 +46,24 @@ public class PlannerBar {
 
     @Column(name = "source", nullable = false, length = 10)
     private String source = "MANUAL";
+
+    /** 일정바 생성. 목표 자격증 ID와 개인 일정 ID 중 하나만 넣는다 */
+    public static PlannerBar create(Long userId, Long targetExamId, Long personalScheduleId, String title,
+                                    LocalDate startDate, LocalDate endDate, boolean isSingleDay, String source) {
+        PlannerBar bar = new PlannerBar();
+        bar.userId = userId;
+        bar.targetExamId = targetExamId;
+        bar.personalScheduleId = personalScheduleId;
+        bar.title = title;
+        bar.startDate = startDate;
+        bar.endDate = endDate;
+        bar.isSingleDay = isSingleDay;
+        bar.source = source;
+        return bar;
+    }
+
+    /** 날짜가 이 일정바 기간 안인지 */
+    public boolean contains(LocalDate date) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
 }
