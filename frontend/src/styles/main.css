@@ -1,0 +1,211 @@
+/*
+ * 메인 페이지 (VIEW-01, 담당: 유다연)
+ * 구성: ① 히어로(배너 + 사이드바) → ② 스크롤 애니메이션(ScrollShowcase, main-showcase.css) → ③ 인기 자격증
+ * 히어로는 아래로 내려갈 때 흐려지고, 인기 자격증은 들어올 때 진해진다. (--enter, --exit: useScrollScene이 0 ~ 1로 넣어 줌)
+ * 비율은 와이어프레임(1378 x 860) 기준: 왼쪽 여백 67, 배너 | 37 | 사이드바 210, 위 30 · 아래 71
+ * 다른 팀원 부품(TodaySchedulePanel, TrendList)은 파일을 고치지 않고 이 파일 안에서만 배치를 잡는다.
+ */
+
+/* 메인에서는 공통 .container 폭 제한(1200)을 풀고 화면 전체를 씀 */
+main:has(> .main-page) {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.main-page {
+  --side-left: 4.9vw; /* 67 / 1378 */
+  --side-right: 1.5vw; /* 21 / 1378 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ───────── 1. 히어로: 첫 화면 = 화면 높이 - 헤더(84) ───────── */
+.main-hero {
+  --enter: 0;
+  --exit: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 15.2vw, 300px); /* 사이드바 210 / 1378 */
+  gap: 2.7vw; /* 37 / 1378 */
+  box-sizing: border-box;
+  height: calc(100vh - 84px);
+  padding: 3.5vh var(--side-right) 8.3vh var(--side-left); /* 위 30 / 860 · 아래 71 / 860 */
+  /* 다음 장면이 올라올 때 흐릿하게 사라짐 */
+  opacity: calc(1 - var(--exit) * 0.9);
+  transform: translateY(calc(var(--exit) * -40px));
+}
+
+.main-hero__banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d9d9d9; /* TODO 히어로 디자인 확정 후 변경 */
+}
+
+.main-hero__banner p {
+  margin: 0;
+  font-size: clamp(28px, 3.3vw, 48px);
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  text-align: center;
+}
+
+/* 사이드바: 달력 위쪽 선을 배너 위쪽 선에 맞추고, 달력 → 사자성어 → 오늘의 일정 순서 */
+.main-hero__side {
+  min-width: 0;
+}
+
+.main-hero__side .today-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  text-align: center;
+}
+
+.main-hero__side .mini-calendar {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.main-hero__side .daily-quote {
+  order: 1;
+}
+
+.main-hero__side .daily-quote p {
+  margin: 0;
+}
+
+.main-hero__side .daily-quote__label {
+  font-size: 12px;
+  color: #9aa0b4;
+}
+
+.main-hero__side .daily-quote__idiom {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111111;
+}
+
+.main-hero__side .daily-quote__meaning {
+  font-size: 12px;
+  color: #454b5a;
+}
+
+.main-hero__side .today-panel__date {
+  order: 2;
+  margin: 8px 0 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #111111;
+}
+
+/* ───────── 2. 기능 소개 스크롤 애니메이션 (ScrollShowcase, main-showcase.css) ───────── */
+/* 애니메이션 모양은 main-showcase.css가 담당. 여기서는 자리만 잡는다. */
+.main-showcase {
+  position: relative;
+}
+
+/* ───────── 3. 인기 자격증: 화면에 들어오면서 아래에서 진하게 나타남 ───────── */
+.main-popular {
+  --enter: 0;
+  position: relative;
+  padding: 96px var(--side-left);
+  opacity: calc(0.2 + var(--enter) * 0.8);
+  transform: translateY(calc((1 - var(--enter)) * 80px));
+}
+
+/*
+ * 인기 자격증 카드 쌓기 + 마우스 올린 카드가 살짝 앞으로 나옴 (이은아님 TrendList는 수정하지 않고 메인에서만 덮어씀)
+ * - 평소: 둥근 카드 5개가 간격 없이 딱 붙어 쌓여 있음 (1위가 맨 앞)
+ * - 마우스를 올리면: 그 카드만 2.5% 커지며 앞으로, 나머지는 살짝 흐려짐
+ */
+.main-popular .trend-list__items--rows {
+  gap: 0; /* TrendList 기본 간격(--space-sm)을 없애서 카드끼리 붙임 */
+  padding: 8px 0 0; /* 제목과 첫 카드 사이 숨 쉴 틈 */
+}
+
+.main-popular .trend-list__items--rows > li {
+  position: relative;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(69, 75, 90, 0.06);
+  transform-origin: center;
+  transition:
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 300ms ease,
+    box-shadow 300ms ease;
+}
+
+/* 위아래 테두리가 두 줄로 겹쳐 보이지 않게 1px만 포개기 */
+.main-popular .trend-list__items--rows > li + li {
+  margin-top: -1px;
+}
+
+/* 평소 쌓이는 순서: 1위가 맨 앞 */
+.main-popular .trend-list__items--rows > li:nth-child(1) {
+  z-index: 5;
+}
+
+.main-popular .trend-list__items--rows > li:nth-child(2) {
+  z-index: 4;
+}
+
+.main-popular .trend-list__items--rows > li:nth-child(3) {
+  z-index: 3;
+}
+
+.main-popular .trend-list__items--rows > li:nth-child(4) {
+  z-index: 2;
+}
+
+.main-popular .trend-list__items--rows > li:nth-child(5) {
+  z-index: 1;
+}
+
+/* 카드 크기: 와이어프레임 기준 높이 = 화면 가로의 약 6.9% (1476 화면에서 101px) · 모든 카드 네 모서리 둥글게 */
+.main-popular .trend-row {
+  box-sizing: border-box;
+  min-height: clamp(88px, 6.9vw, 132px);
+  padding: 0 clamp(24px, 2.6vw, 48px);
+  border: 1px solid #e4e7f5;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.main-popular .trend-list__name strong {
+  font-size: clamp(16px, 1.3vw, 22px);
+}
+
+.main-popular .trend-list__name small {
+  font-size: clamp(13px, 1vw, 16px);
+}
+
+/* 목록에 마우스가 올라가 있으면 나머지 카드는 살짝 흐려지기만 함 (크기는 그대로라 틈이 안 생김) */
+.main-popular .trend-list__items--rows:hover > li,
+.main-popular .trend-list__items--rows:focus-within > li {
+  opacity: 0.85;
+}
+
+/* 마우스가 올라간 카드(키보드로 버튼에 포커스한 카드 포함)는 커지며 앞으로 (1.025배 = 2.5% 확대) */
+.main-popular .trend-list__items--rows > li:hover,
+.main-popular .trend-list__items--rows > li:focus-within {
+  z-index: 10;
+  opacity: 1;
+  transform: scale(1.025);
+  box-shadow: 0 14px 30px rgba(69, 75, 90, 0.16);
+}
+
+/* 움직임 줄이기 설정을 켠 사용자는 애니메이션 없이 바로 보여 줌 */
+@media (prefers-reduced-motion: reduce) {
+  .main-hero,
+  .main-popular {
+    --enter: 1 !important;
+    --exit: 0 !important;
+  }
+
+  .main-popular .trend-list__items--rows > li {
+    transition: none;
+  }
+}
