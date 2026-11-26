@@ -26,19 +26,25 @@ export default function MyPostTab() {
 
   return (
     <section>
-      <h2>내 작성글</h2>
+      <h2 className="mypage-title">
+        내 작성글 <span className="ps-chip ps-chip--pink">총 {data.total}건</span>
+      </h2>
       {data.items.length === 0 && (
-        <EmptyState message="작성한 합격수기가 없습니다.">
-          <Link to="/pass-stories/new">합격수기 쓰러 가기</Link>
-        </EmptyState>
-      )}
-      {data.items.map((story) => (
-        <div key={story.id}>
-          <PassStoryCard story={story} />
-          {/* 숨김 사유는 상세에서 확인 후 수정 (카드 응답에는 사유가 없음) */}
-          <HiddenNotice status={story.status} />
+        <div className="mypage-card">
+          <EmptyState message="작성한 합격수기가 없습니다.">
+            <Link to="/pass-stories/new">합격수기 쓰러 가기</Link>
+          </EmptyState>
         </div>
-      ))}
+      )}
+      <div className="mypage-list">
+        {data.items.map((story) => (
+          <div key={story.id} className="mypage-post">
+            <PassStoryCard story={story} />
+            {/* 숨김 사유는 상세에서 확인 후 수정 (카드 응답에는 사유가 없음) */}
+            <HiddenNotice status={story.status} />
+          </div>
+        ))}
+      </div>
       <Pagination page={data.page} total={data.total} size={data.size} onChange={setPage} />
     </section>
   );
