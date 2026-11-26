@@ -92,21 +92,6 @@ class DataIntegrity(unittest.TestCase):
         for r in idioms:
             self.assertTrue(1 <= len(r['idiom']) <= 10 and len(r['hanja']) <= 10 and 1 <= len(r['meaning']) <= 200, r)
 
-    def test_load_sql_builds(self):          # 초기 적재 SQL이 CSV 10종으로 끝까지 만들어지는지
-        import importlib.util, io
-        path = DATA.parent / 'tools' / 'load_service_data.py'
-        spec = importlib.util.spec_from_file_location('load_service_data', path)
-        loader = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(loader)
-        out = io.StringIO()
-        loader.write_load_sql(DATA, out)
-        sql = out.getvalue()
-        self.assertTrue(sql.rstrip().endswith('COMMIT;'))
-        for table in ('universities', 'colleges', 'majors', 'interest_fields', 'job_categories', 'qualifications',
-                      'major_qualification_links', 'qualification_exam_schedules', 'qualification_statistics_yearly',
-                      'qualification_eligibility_rules', 'daily_idioms'):
-            self.assertIn(f'INSERT INTO {table} (', sql, table)
-
 
 if __name__ == '__main__':
     unittest.main()

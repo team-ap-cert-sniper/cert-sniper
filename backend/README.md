@@ -2,7 +2,7 @@
 
 패키지 하나가 기능 하나입니다. 엔티티·리포지토리·DTO·컨트롤러 URL·서비스 메서드 이름까지 만들어져 있고, 담당자는 서비스 메서드 안을 채웁니다. [← 처음으로](../README.md)
 
-* 테이블 정의: [docs/ERD.md](../docs/ERD.md) · [db/migration](../db/migration)
+* 테이블 정의: [docs/ERD.md](../docs/ERD.md)
 * 기능 ID → 화면 → API → 패키지 → 테이블: [docs/TRACEABILITY.md](../docs/TRACEABILITY.md)
 * 화면 흐름: [docs/FLOWCHART.md](../docs/FLOWCHART.md)
 * 표시: `★` 뼈대에서 동작하게 만들어 둔 공통 파일, `[이름]` 패키지 담당, 오른쪽 끝은 기능 ID / 테이블
@@ -438,12 +438,13 @@
 
 ## 뼈대 사용법
 
-1. 루트에서 `docker compose up -d` (DB·데이터 자동 적재)
+1. DB는 팀 공용 DB를 씁니다. 따로 설치·실행하지 않습니다
 2. 백엔드 설정은 레포 루트 `.env`를 그대로 읽습니다. 따로 만들 설정 파일은 없습니다
 
    | `.env` 칸 | 넣을 값 |
    |---|---|
-   | `DB_ROOT_PASSWORD` · `DB_MIGRATOR_PASSWORD` · `DB_APP_PASSWORD` · `JWT_SECRET` | 개발용 값이 채워져 있어 그대로 씁니다 (내 노트북 DB 전용) |
+   | `DB_HOST` · `DB_PORT` · `DB_NAME` · `DB_USERNAME` · `DB_PASSWORD` | 공용 DB 접속 정보 (카톡으로 받음). 비어 있으면 백엔드가 실행되지 않습니다 |
+   | `JWT_SECRET` | 카톡으로 받음 |
    | `MAIL_USERNAME` · `MAIL_PASSWORD` | 팀 프로젝트용 Gmail 계정·앱 비밀번호 (카톡으로 받음). 비워 두면 인증 메일만 안 가고 나머지는 실행됩니다 |
 3. `./gradlew bootRun` (Windows `gradlew.bat bootRun`) → http://localhost:8080/swagger-ui.html 에서 전체 API 확인
 4. 각자 `feature/{파트}/{작업}` 브랜치에서 자기 서비스 메서드의 `throw new BusinessException(ErrorCode.NOT_IMPLEMENTED)`를 지우고 구현합니다. 구현 전 API는 501 `NOT_IMPLEMENTED`로 응답합니다
@@ -461,6 +462,6 @@
 ## 지켜 주세요
 
 * 다른 기능 패키지의 클래스를 고치지 않습니다. 여러 기능이 같이 쓰는 것은 `global/`에 둡니다
-* DB 구조는 루트 `db/migration`의 SQL 파일로만 바꾸고, DB 관리자(이은아)만 추가합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
+* DB 구조는 DB 관리자(이은아)만 공용 DB에 반영합니다. 엔티티는 테이블에 맞추고(`ddl-auto: validate`), 컬럼이 필요하면 이슈로 요청합니다
 * DB 비밀번호·JWT 키·SMTP 앱 비밀번호·AI API 키는 루트 `.env`에 둡니다 (커밋 금지)
 * 추천·자격증 로직(`recommendation`, `qualification`, `examschedule`)의 기준 구현은 [etl/](../etl/README.md)에 있습니다. 같은 입력에 같은 결과가 나와야 합니다
