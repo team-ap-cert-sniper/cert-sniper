@@ -31,7 +31,7 @@ export default function NoticeSection() {
     <NoticeDetail noticeId={id} onBack={() => goList(page)} />
   ) : (
     <>
-      <PageHead crumbs={['고객지원실', '공지사항']} title="공지사항" />
+      <PageHead crumbs={['고객센터', '공지사항']} title="공지사항" />
       <NoticeList page={page} onPage={goList} onSelect={goDetail} />
     </>
   );

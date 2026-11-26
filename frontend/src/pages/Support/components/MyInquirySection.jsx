@@ -48,7 +48,7 @@ export default function MyInquirySection() {
   ) : (
     <>
       <PageHead
-        crumbs={['고객지원실', '나의 문의 내역']}
+        crumbs={['고객센터', '나의 문의 내역']}
         title="나의 문의 내역"
         action={
           <button type="button" className="support-btn support-btn--primary support-btn--sm" onClick={goWrite}>

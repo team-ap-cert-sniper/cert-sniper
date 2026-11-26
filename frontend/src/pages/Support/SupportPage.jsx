@@ -25,7 +25,7 @@ export default function SupportPage() {
   return (
     <section className="support">
       <aside className="support__aside">
-        <h1 className="support__aside-title">고객센터 지원실</h1>
+        <h1 className="support__aside-title">고객센터</h1>
         <nav className="support__menu" aria-label="고객센터 메뉴">
           {MENUS.map((m) => (
             <button
