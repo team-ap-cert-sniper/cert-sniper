@@ -282,4 +282,15 @@ class TargetExamServiceTest {
         BusinessException e = assertThrows(BusinessException.class, () -> service.deleteTargetExam(1L, 99L));
         assertEquals(ErrorCode.NOT_FOUND, e.getErrorCode());
     }
+
+    @Test
+    void 지난_시험이어도_색만_바꾸면_수정된다() {
+        LocalDate past = DateUtils.today().minusDays(10);
+        TargetExam t = TargetExam.create(1L, "2290", 3L, past, "#E5484D");
+        when(repo.findById(10L)).thenReturn(Optional.of(t));
+
+        service.updateTargetExam(1L, 10L, new TargetExamRequest("2290", 3L, past, "#30A46C"));
+
+        assertEquals("#30A46C", t.getDisplayColor());
+    }
 }

@@ -13,6 +13,7 @@ import com.certsniper.targetexam.dto.TargetExamResponse;
 import com.certsniper.targetexam.entity.TargetExam;
 import com.certsniper.targetexam.repository.TargetExamRepository;
 import java.time.LocalDate;
+import java.util.Objects;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class TargetExamService {
         return toResponse(saved);
     }
 
-    /** 플래너에서 수정: 시험 회차·시험일·색상만 바꾼다. 자격증 자체는 바꿀 수 없다 (없음 404, 남의 것 403, 색 중복 409) */
+        /** 플래너에서 수정: 시험 회차·시험일·색상만 바꾼다. 자격증 자체는 바꿀 수 없다 (없음 404, 남의 것 403, 색 중복 409) */
     @Transactional
     public TargetExamResponse updateTargetExam(Long userId, Long targetExamId, TargetExamRequest request) {
         TargetExam targetExam = findOwned(userId, targetExamId);
@@ -65,7 +66,12 @@ public class TargetExamService {
         if (!jmcd.equals(targetExam.getJmcd())) {
             throw new BusinessException(ErrorCode.VALIDATION_ERROR, "목표 자격증의 자격증은 바꿀 수 없습니다. 삭제 후 새로 추가해 주세요.");
         }
-        validateExam(jmcd, request.examScheduleId(), request.examDate());
+        // 회차·시험일이 실제로 바뀔 때만 검사한다 (지난 시험이어도 색만 바꾸는 건 허용)
+        boolean examChanged = !Objects.equals(request.examScheduleId(), targetExam.getExamScheduleId())
+                || !Objects.equals(request.examDate(), targetExam.getExamDate());
+        if (examChanged) {
+            validateExam(jmcd, request.examScheduleId(), request.examDate());
+        }
         if (targetExamRepository.existsByUserIdAndDisplayColorAndIdNot(userId, request.displayColor(), targetExamId)) {
             throw new BusinessException(ErrorCode.DUPLICATE, "다른 목표 자격증에서 사용 중인 색입니다.");
         }
