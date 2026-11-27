@@ -31,4 +31,19 @@ public class PersonalSchedule extends BaseTimeEntity {
 
     @Column(name = "display_color", nullable = false, columnDefinition = "char(7)")
     private String displayColor;
+
+    /** 개인 일정 생성 */
+    public static PersonalSchedule create(Long userId, String name, String displayColor) {
+        PersonalSchedule schedule = new PersonalSchedule();
+        schedule.userId = userId;
+        schedule.name = name;
+        schedule.displayColor = displayColor;
+        return schedule;
+    }
+
+    /** 이름·색 변경 */
+    public void change(String name, String displayColor) {
+        this.name = name;
+        this.displayColor = displayColor;
+    }
 }

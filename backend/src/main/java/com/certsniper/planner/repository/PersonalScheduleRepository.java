@@ -13,6 +13,11 @@ public interface PersonalScheduleRepository extends JpaRepository<PersonalSchedu
 
     List<PersonalSchedule> findAllByUserIdOrderByIdAsc(Long userId);
 
+    boolean existsByUserIdAndDisplayColor(Long userId, String displayColor);
+
+    /** 수정할 때 색 중복 검사: 자기 자신은 빼고 본다 */
+    boolean existsByUserIdAndDisplayColorAndIdNot(Long userId, String displayColor, Long id);
+
     // 탈퇴 시 벌크 삭제
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from PersonalSchedule p where p.userId = :userId")

@@ -8,6 +8,7 @@ import com.certsniper.planner.dto.MilestoneRequest;
 import com.certsniper.planner.dto.PersonalScheduleRequest;
 import com.certsniper.planner.dto.PlannerResponse;
 import com.certsniper.planner.dto.TodayScheduleResponse;
+import com.certsniper.planner.entity.PersonalSchedule;
 import com.certsniper.planner.entity.Planner;
 import com.certsniper.planner.entity.PlannerBar;
 import com.certsniper.planner.entity.PlannerMilestone;
@@ -15,10 +16,13 @@ import com.certsniper.planner.repository.PersonalScheduleRepository;
 import com.certsniper.planner.repository.PlannerBarRepository;
 import com.certsniper.planner.repository.PlannerMilestoneRepository;
 import com.certsniper.planner.repository.PlannerRepository;
+import com.certsniper.targetexam.dto.TargetExamResponse;
+import com.certsniper.targetexam.repository.TargetExamRepository;
 import com.certsniper.targetexam.service.TargetExamService;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +41,8 @@ public class PlannerService {
     private final PlannerMilestoneRepository plannerMilestoneRepository;
     private final PersonalScheduleRepository personalScheduleRepository;
     private final TargetExamService targetExamService;
+    private final TargetExamRepository targetExamRepository;
+    private final ScheduleLimitValidator scheduleLimitValidator;
 
     /** 한 번에 조회할 수 있는 최대 기간 (일) */
     static final long MAX_RANGE_DAYS = 366;
@@ -85,53 +91,185 @@ public class PlannerService {
                 () -> plannerRepository.save(Planner.create(userId, mode)));
     }
 
+    /** 일정바 추가: 목표 자격증 또는 개인 일정 중 하나에만 속한다 (내 것만, 날짜 검사) */
     @Transactional
     public void createBar(Long userId, BarRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        boolean forTargetExam = request.targetExamId() != null;
+        if (forTargetExam == (request.personalScheduleId() != null)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "목표 자격증 또는 개인 일정 중 하나를 선택해 주세요.");
+        }
+        if (forTargetExam) {
+            targetExamService.validateOwner(userId, request.targetExamId());
+        } else {
+            findOwnedPersonalSchedule(userId, request.personalScheduleId());
+        }
+        validateBarDates(request);
+        plannerBarRepository.save(PlannerBar.create(userId, request.targetExamId(), request.personalScheduleId(),
+                request.title().strip(), request.startDate(), request.endDate(), request.isSingleDay(), "MANUAL"));
     }
 
+    /** 일정바 수정: 소속은 못 바꾼다. 기간을 줄이면 기간 밖 세부 일정은 같이 삭제 */
     @Transactional
     public void updateBar(Long userId, Long barId, BarRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        PlannerBar bar = findOwnedBar(userId, barId);
+        boolean otherTargetExam = request.targetExamId() != null && !request.targetExamId().equals(bar.getTargetExamId());
+        boolean otherPersonal = request.personalScheduleId() != null
+                && !request.personalScheduleId().equals(bar.getPersonalScheduleId());
+        if (otherTargetExam || otherPersonal) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "일정바가 속한 자격증·개인 일정은 바꿀 수 없습니다.");
+        }
+        validateBarDates(request);
+        // 일정바를 먼저 바꾸고 삭제한다 (삭제 쿼리가 바뀐 내용을 먼저 저장한 뒤 실행된다)
+        bar.change(request.title().strip(), request.startDate(), request.endDate(), request.isSingleDay());
+        plannerMilestoneRepository.deleteOutside(barId, request.startDate(), request.endDate());
     }
 
+    /** 일정바 삭제: 세부 일정은 DB의 ON DELETE CASCADE로 같이 삭제 */
     @Transactional
     public void deleteBar(Long userId, Long barId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        plannerBarRepository.delete(findOwnedBar(userId, barId));
     }
 
+    /** 세부 일정 추가: 날짜는 일정바 기간 안이어야 한다 */
     @Transactional
     public void createMilestone(Long userId, Long barId, MilestoneRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        PlannerBar bar = findOwnedBar(userId, barId);
+        validateInBar(bar, request.pointDate());
+        plannerMilestoneRepository.save(PlannerMilestone.create(barId, userId, request.pointDate(),
+                request.content().strip(), request.isRest(), "MANUAL"));
     }
 
+    /** 세부 일정 수정: 날짜는 그 일정바 기간 안에서만 */
     @Transactional
     public void updateMilestone(Long userId, Long milestoneId, MilestoneRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        PlannerMilestone milestone = findOwnedMilestone(userId, milestoneId);
+        PlannerBar bar = findOwnedBar(userId, milestone.getBarId());
+        validateInBar(bar, request.pointDate());
+        milestone.change(request.pointDate(), request.content().strip(), request.isRest());
     }
 
     @Transactional
     public void deleteMilestone(Long userId, Long milestoneId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        plannerMilestoneRepository.delete(findOwnedMilestone(userId, milestoneId));
     }
 
+    /** 내 일정바 찾기 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
+    private PlannerBar findOwnedBar(Long userId, Long barId) {
+        PlannerBar bar = plannerBarRepository.findById(barId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "일정을 찾을 수 없습니다."));
+        if (!bar.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return bar;
+    }
+
+    /** 내 세부 일정 찾기 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
+    private PlannerMilestone findOwnedMilestone(Long userId, Long milestoneId) {
+        PlannerMilestone milestone = plannerMilestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "세부 일정을 찾을 수 없습니다."));
+        if (!milestone.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return milestone;
+    }
+
+    private static void validateBarDates(BarRequest request) {
+        if (request.endDate().isBefore(request.startDate())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "종료일이 시작일보다 빠릅니다.");
+        }
+        if (request.isSingleDay() && !request.startDate().equals(request.endDate())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "당일 일정은 시작일과 종료일이 같아야 합니다.");
+        }
+    }
+
+    private static void validateInBar(PlannerBar bar, LocalDate date) {
+        if (!bar.contains(date)) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "세부 일정 날짜가 일정 기간 밖입니다.");
+        }
+    }
+
+    /** 개인 일정 추가: 다른 일정과 같은 색 불가(409), 목표 자격증+개인 일정 6개 제한(409) */
     @Transactional
     public void createPersonalSchedule(Long userId, PersonalScheduleRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        validateColorUnused(userId, request.displayColor(), null);
+        scheduleLimitValidator.validateCanAdd(userId);
+        personalScheduleRepository.save(
+                PersonalSchedule.create(userId, request.name().strip(), request.displayColor()));
     }
 
+    /** 개인 일정 이름·색 수정 (없음 404, 남의 것 403, 색 중복 409) */
     @Transactional
     public void updatePersonalSchedule(Long userId, Long scheduleId, PersonalScheduleRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        PersonalSchedule schedule = findOwnedPersonalSchedule(userId, scheduleId);
+        validateColorUnused(userId, request.displayColor(), scheduleId);
+        schedule.change(request.name().strip(), request.displayColor());
     }
 
+    /** 개인 일정 삭제: 그 일정의 일정바·세부 일정은 DB의 ON DELETE CASCADE로 같이 삭제 */
     @Transactional
     public void deletePersonalSchedule(Long userId, Long scheduleId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        personalScheduleRepository.delete(findOwnedPersonalSchedule(userId, scheduleId));
     }
 
-    public TodayScheduleResponse getTodaySchedule(Long userId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+    /** 내 개인 일정 찾기 (없으면 NOT_FOUND, 남의 것이면 FORBIDDEN) */
+    private PersonalSchedule findOwnedPersonalSchedule(Long userId, Long scheduleId) {
+        PersonalSchedule schedule = personalScheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "개인 일정을 찾을 수 없습니다."));
+        if (!schedule.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+        return schedule;
+    }
+
+    /** 색 중복 검사: 목표 자격증·다른 개인 일정에서 쓰는 색은 못 쓴다 (수정할 때는 자기 자신 제외) */
+    private void validateColorUnused(Long userId, String color, Long exceptScheduleId) {
+        boolean usedByTargetExam = targetExamRepository.existsByUserIdAndDisplayColor(userId, color);
+        boolean usedByPersonal = exceptScheduleId == null
+                ? personalScheduleRepository.existsByUserIdAndDisplayColor(userId, color)
+                : personalScheduleRepository.existsByUserIdAndDisplayColorAndIdNot(userId, color, exceptScheduleId);
+        if (usedByTargetExam || usedByPersonal) {
+            throw new BusinessException(ErrorCode.DUPLICATE, "다른 일정에서 사용 중인 색입니다.");
+        }
+    }
+
+    /** 그날의 일정: 그날에 걸친 일정바마다 그날 세부 일정 내용(없으면 일정바 제목)을 자격증·개인 일정별로 묶는다 */
+    public TodayScheduleResponse getTodaySchedule(Long userId, LocalDate date) {
+        List<PlannerBar> bars = plannerBarRepository.findOverlapping(userId, date, date);
+        if (bars.isEmpty()) {
+            return new TodayScheduleResponse(date, List.of());
+        }
+        Set<Long> barIds = bars.stream().map(PlannerBar::getId).collect(Collectors.toSet());
+        Map<Long, List<String>> contentsByBar = plannerMilestoneRepository
+                .findAllByBarIdInAndPointDateBetweenOrderByPointDateAscIdAsc(barIds, date, date).stream()
+                .collect(Collectors.groupingBy(PlannerMilestone::getBarId,
+                        Collectors.mapping(PlannerMilestone::getContent, Collectors.toList())));
+
+        Map<Long, List<String>> itemsByTargetExam = new LinkedHashMap<>();
+        Map<Long, List<String>> itemsByPersonal = new LinkedHashMap<>();
+        for (PlannerBar bar : bars) {
+            List<String> items = contentsByBar.getOrDefault(bar.getId(), List.of(bar.getTitle()));
+            if (bar.getTargetExamId() != null) {
+                itemsByTargetExam.computeIfAbsent(bar.getTargetExamId(), id -> new ArrayList<>()).addAll(items);
+            } else {
+                itemsByPersonal.computeIfAbsent(bar.getPersonalScheduleId(), id -> new ArrayList<>()).addAll(items);
+            }
+        }
+
+        List<TodayScheduleResponse.Group> groups = new ArrayList<>();
+        for (TargetExamResponse exam : targetExamService.getTargetExams(userId)) {
+            List<String> items = itemsByTargetExam.get(exam.id());
+            if (items != null) {
+                groups.add(new TodayScheduleResponse.Group(exam.id(), null, exam.jmfldnm(), exam.displayColor(), items));
+            }
+        }
+        for (PersonalSchedule schedule : personalScheduleRepository.findAllByUserIdOrderByIdAsc(userId)) {
+            List<String> items = itemsByPersonal.get(schedule.getId());
+            if (items != null) {
+                groups.add(new TodayScheduleResponse.Group(null, schedule.getId(), schedule.getName(),
+                        schedule.getDisplayColor(), items));
+            }
+        }
+        return new TodayScheduleResponse(date, groups);
     }
 
     /**
