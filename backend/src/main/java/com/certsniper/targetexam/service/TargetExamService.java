@@ -86,6 +86,15 @@ public class TargetExamService {
         targetExamRepository.delete(findOwned(userId, targetExamId));
     }
 
+        /** AI 플랜 생성 전에 미리 검사: 회차·시험일, 새 목표라면 6개 제한 (잘못된 요청에 AI 시간을 쓰지 않게) */
+    public void validateBeforeAiPlan(Long userId, String rawJmcd, Long examScheduleId, LocalDate examDate) {
+        String jmcd = qualificationService.getInfo(rawJmcd).jmcd();
+        validateExam(jmcd, examScheduleId, examDate);
+        if (!targetExamRepository.existsByUserIdAndJmcd(userId, jmcd)) {
+            scheduleLimitValidator.validateCanAdd(userId);
+        }
+    }
+    
     /** aiplanner 플랜 저장: 이미 목표면 시험일만 바꾸고, 없으면 안 쓰는 색으로 만들어 ID 반환 */
     @Transactional
     public Long getOrCreateTargetExam(Long userId, String rawJmcd, Long examScheduleId, LocalDate examDate) {

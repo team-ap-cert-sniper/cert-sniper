@@ -293,4 +293,17 @@ class TargetExamServiceTest {
 
         assertEquals("#30A46C", t.getDisplayColor());
     }
+
+    @Test
+    void AI_생성_전_새_목표면_6개_제한도_검사() {
+        service.validateBeforeAiPlan(1L, "QNET:2290", 7L, EXAM_DATE);
+        verify(limitValidator).validateCanAdd(1L);
+    }
+
+    @Test
+    void AI_생성_전_이미_목표면_6개_제한은_검사_안_함() {
+        when(repo.existsByUserIdAndJmcd(1L, "2290")).thenReturn(true);
+        service.validateBeforeAiPlan(1L, "2290", 7L, EXAM_DATE);
+        verify(limitValidator, never()).validateCanAdd(any());
+    }
 }
