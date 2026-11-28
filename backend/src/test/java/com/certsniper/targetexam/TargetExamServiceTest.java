@@ -15,6 +15,8 @@ import com.certsniper.examschedule.service.ExamScheduleService;
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.global.util.DateUtils;
+import com.certsniper.planner.entity.PersonalSchedule;
+import com.certsniper.planner.repository.PersonalScheduleRepository;
 import com.certsniper.planner.service.ScheduleLimitValidator;
 import com.certsniper.qualification.dto.QualificationDetailResponse;
 import com.certsniper.qualification.service.QualificationService;
@@ -37,8 +39,9 @@ class TargetExamServiceTest {
     private final ExamScheduleService examScheduleService = mock(ExamScheduleService.class);
     private final DdayCalculator ddayCalculator = mock(DdayCalculator.class);
     private final ScheduleLimitValidator limitValidator = mock(ScheduleLimitValidator.class);
+    private final PersonalScheduleRepository personalRepo = mock(PersonalScheduleRepository.class);
     private final TargetExamService service = new TargetExamService(
-            repo, qualificationService, examScheduleService, ddayCalculator, limitValidator);
+            repo, qualificationService, examScheduleService, ddayCalculator, limitValidator, personalRepo);
 
     /** 오늘 기준 30일 뒤 시험 (날짜가 지나도 테스트가 깨지지 않게) */
     private static final LocalDate EXAM_DATE = DateUtils.today().plusDays(30);
@@ -169,7 +172,31 @@ class TargetExamServiceTest {
                 addFails(new TargetExamRequest("2290", 7L, EXAM_DATE, "#E5484D")).getErrorCode());
     }
 
+    @Test
+    void 개인_일정과_같은_색이면_DUPLICATE() {
+        when(personalRepo.existsByUserIdAndDisplayColor(1L, "#E5484D")).thenReturn(true);
+        assertEquals(ErrorCode.DUPLICATE,
+                addFails(new TargetExamRequest("2290", 7L, EXAM_DATE, "#E5484D")).getErrorCode());
+        verify(repo, never()).save(any());
+    }
+
     // ===== AI 플랜 저장 =====
+
+    @Test
+    void AI_저장_새_목표면_개인_일정_색도_피한다() {
+        TargetExam used = mock(TargetExam.class);
+        when(used.getDisplayColor()).thenReturn("#E5484D");
+        when(repo.findByUserIdAndJmcd(1L, "2290")).thenReturn(Optional.empty());
+        when(repo.findAllByUserIdOrderByIdAsc(1L)).thenReturn(List.of(used));
+        when(personalRepo.findAllByUserIdOrderByIdAsc(1L))
+                .thenReturn(List.of(PersonalSchedule.create(1L, "알바", "#f5a524")));
+
+        service.getOrCreateTargetExam(1L, "2290", 7L, EXAM_DATE);
+
+        ArgumentCaptor<TargetExam> saved = ArgumentCaptor.forClass(TargetExam.class);
+        verify(repo).save(saved.capture());
+        assertEquals("#30A46C", saved.getValue().getDisplayColor());
+    }
 
     @Test
     void AI_저장_이미_목표면_시험일만_바꾸고_기존_ID() {
@@ -243,6 +270,17 @@ class TargetExamServiceTest {
     void 수정할_때_다른_목표와_같은_색이면_DUPLICATE() {
         TargetExam t = storedReal(10L, 1L);
         when(repo.existsByUserIdAndDisplayColorAndIdNot(1L, "#30A46C", 10L)).thenReturn(true);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
+                new TargetExamRequest("2290", null, null, "#30A46C")));
+        assertEquals(ErrorCode.DUPLICATE, e.getErrorCode());
+        assertEquals("#E5484D", t.getDisplayColor());
+    }
+
+    @Test
+    void 수정할_때_개인_일정과_같은_색이면_DUPLICATE() {
+        TargetExam t = storedReal(10L, 1L);
+        when(personalRepo.existsByUserIdAndDisplayColor(1L, "#30A46C")).thenReturn(true);
 
         BusinessException e = assertThrows(BusinessException.class, () -> service.updateTargetExam(1L, 10L,
                 new TargetExamRequest("2290", null, null, "#30A46C")));
