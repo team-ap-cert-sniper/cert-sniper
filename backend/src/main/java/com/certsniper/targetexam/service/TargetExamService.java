@@ -6,6 +6,8 @@ import com.certsniper.examschedule.service.ExamScheduleService;
 import com.certsniper.global.exception.BusinessException;
 import com.certsniper.global.exception.ErrorCode;
 import com.certsniper.global.util.DateUtils;
+import com.certsniper.planner.entity.PersonalSchedule;
+import com.certsniper.planner.repository.PersonalScheduleRepository;
 import com.certsniper.planner.service.ScheduleLimitValidator;
 import com.certsniper.qualification.service.QualificationService;
 import com.certsniper.targetexam.dto.TargetExamRequest;
@@ -17,6 +19,7 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ public class TargetExamService {
     private final ExamScheduleService examScheduleService;
     private final DdayCalculator ddayCalculator;
     private final ScheduleLimitValidator scheduleLimitValidator;
+    private final PersonalScheduleRepository personalScheduleRepository;
 
     public List<TargetExamResponse> getTargetExams(Long userId) {
         return targetExamRepository.findAllByUserIdOrderByIdAsc(userId).stream()
@@ -49,16 +53,14 @@ public class TargetExamService {
         if (targetExamRepository.existsByUserIdAndJmcd(userId, jmcd)) {
             throw new BusinessException(ErrorCode.DUPLICATE, "이미 목표로 추가한 자격증입니다.");
         }
-        if (targetExamRepository.existsByUserIdAndDisplayColor(userId, request.displayColor())) {
-            throw new BusinessException(ErrorCode.DUPLICATE, "다른 목표 자격증에서 사용 중인 색입니다.");
-        }
+        validateColorUnused(userId, request.displayColor(), null);
         scheduleLimitValidator.validateCanAdd(userId);
         TargetExam saved = targetExamRepository.save(TargetExam.create(
                 userId, jmcd, request.examScheduleId(), request.examDate(), request.displayColor()));
         return toResponse(saved);
     }
 
-        /** 플래너에서 수정: 시험 회차·시험일·색상만 바꾼다. 자격증 자체는 바꿀 수 없다 (없음 404, 남의 것 403, 색 중복 409) */
+    /** 플래너에서 수정: 시험 회차·시험일·색상만 바꾼다. 자격증 자체는 바꿀 수 없다 (없음 404, 남의 것 403, 색 중복 409) */
     @Transactional
     public TargetExamResponse updateTargetExam(Long userId, Long targetExamId, TargetExamRequest request) {
         TargetExam targetExam = findOwned(userId, targetExamId);
@@ -72,9 +74,7 @@ public class TargetExamService {
         if (examChanged) {
             validateExam(jmcd, request.examScheduleId(), request.examDate());
         }
-        if (targetExamRepository.existsByUserIdAndDisplayColorAndIdNot(userId, request.displayColor(), targetExamId)) {
-            throw new BusinessException(ErrorCode.DUPLICATE, "다른 목표 자격증에서 사용 중인 색입니다.");
-        }
+        validateColorUnused(userId, request.displayColor(), targetExamId);
         targetExam.changeExam(request.examScheduleId(), request.examDate());
         targetExam.changeColor(request.displayColor());
         return toResponse(targetExam);
@@ -86,7 +86,7 @@ public class TargetExamService {
         targetExamRepository.delete(findOwned(userId, targetExamId));
     }
 
-        /** AI 플랜 생성 전에 미리 검사: 회차·시험일, 새 목표라면 6개 제한 (잘못된 요청에 AI 시간을 쓰지 않게) */
+    /** AI 플랜 생성 전에 미리 검사: 회차·시험일, 새 목표라면 6개 제한 (잘못된 요청에 AI 시간을 쓰지 않게) */
     public void validateBeforeAiPlan(Long userId, String rawJmcd, Long examScheduleId, LocalDate examDate) {
         String jmcd = qualificationService.getInfo(rawJmcd).jmcd();
         validateExam(jmcd, examScheduleId, examDate);
@@ -94,7 +94,7 @@ public class TargetExamService {
             scheduleLimitValidator.validateCanAdd(userId);
         }
     }
-    
+
     /** aiplanner 플랜 저장: 이미 목표면 시험일만 바꾸고, 없으면 안 쓰는 색으로 만들어 ID 반환 */
     @Transactional
     public Long getOrCreateTargetExam(Long userId, String rawJmcd, Long examScheduleId, LocalDate examDate) {
@@ -160,9 +160,23 @@ public class TargetExamService {
         }
     }
 
+    /** 색 중복 검사: 다른 목표 자격증·개인 일정에서 쓰는 색은 못 쓴다 (수정할 때는 자기 자신 제외) */
+    private void validateColorUnused(Long userId, String color, Long exceptTargetExamId) {
+        boolean usedByTargetExam = exceptTargetExamId == null
+                ? targetExamRepository.existsByUserIdAndDisplayColor(userId, color)
+                : targetExamRepository.existsByUserIdAndDisplayColorAndIdNot(userId, color, exceptTargetExamId);
+        if (usedByTargetExam || personalScheduleRepository.existsByUserIdAndDisplayColor(userId, color)) {
+            throw new BusinessException(ErrorCode.DUPLICATE, "다른 일정에서 사용 중인 색입니다.");
+        }
+    }
+
+    /** AI가 새 목표를 만들 때: 목표 자격증·개인 일정 어디에서도 안 쓰는 색을 고른다 */
     private String pickUnusedColor(Long userId) {
-        Set<String> used = targetExamRepository.findAllByUserIdOrderByIdAsc(userId).stream()
-                .map(t -> t.getDisplayColor().toUpperCase())
+        Set<String> used = Stream.concat(
+                        targetExamRepository.findAllByUserIdOrderByIdAsc(userId).stream().map(TargetExam::getDisplayColor),
+                        personalScheduleRepository.findAllByUserIdOrderByIdAsc(userId).stream()
+                                .map(PersonalSchedule::getDisplayColor))
+                .map(String::toUpperCase)
                 .collect(Collectors.toSet());
         return PALETTE.stream()
                 .filter(color -> !used.contains(color))
