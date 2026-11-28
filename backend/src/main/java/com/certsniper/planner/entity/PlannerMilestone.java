@@ -53,4 +53,11 @@ public class PlannerMilestone {
         milestone.source = source;
         return milestone;
     }
+
+    /** 날짜·내용·휴식 여부 변경 */
+    public void change(LocalDate pointDate, String content, boolean isRest) {
+        this.pointDate = pointDate;
+        this.content = content;
+        this.isRest = isRest;
+    }
 }

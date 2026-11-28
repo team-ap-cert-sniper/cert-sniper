@@ -66,4 +66,12 @@ public class PlannerBar {
     public boolean contains(LocalDate date) {
         return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
+
+    /** 일정명·기간·당일 여부 변경 (소속은 바꾸지 않는다) */
+    public void change(String title, LocalDate startDate, LocalDate endDate, boolean isSingleDay) {
+        this.title = title;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.isSingleDay = isSingleDay;
+    }
 }
