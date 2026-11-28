@@ -54,7 +54,7 @@ app:
   ai:
     base-url: ${AI_BASE_URL:http://localhost:11434}
     model: ${AI_MODEL:qwen2.5}
-    timeout-seconds: 60
+    timeout-seconds: 180
   schema-version: "3"
 
 # Swagger
